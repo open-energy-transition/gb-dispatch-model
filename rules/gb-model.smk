@@ -201,8 +201,11 @@ rule create_powerplants_table:
     input:
         gsp_data=resources("gb-model/regional_gb_data.csv"),
         eur_data=resources("gb-model/national_eur_data.csv"),
+        tech_costs=lambda w: resources(
+            f"costs_{config_provider('costs', 'year')(w)}.csv"
+        ),
     output:
-        csv=resources("gb-model/fes_p_nom.csv"),
+        csv=resources("gb-model/fes_powerplants.csv"),
     log:
         logs("create_powerplants_table.log"),
     script:
@@ -235,7 +238,7 @@ rule compose_network:
     input:
         unpack(input_profile_tech),
         network=resources("networks/base_s_{clusters}.nc"),
-        powerplants=resources("powerplants_s_{clusters}.csv"),
+        powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
@@ -257,7 +260,7 @@ rule compose_network:
                 business_type=config["entsoe_unavailability"]["business_types"],
             ),
             resources("gb-model/merged_shapes.geojson"),
-            resources("gb-model/fes_p_nom.csv"),
+            resources("gb-model/fes_powerplants.csv"),
             resources("gb-model/interconnectors_p_nom.csv"),
             resources("gb-model/GB_generator_monthly_unavailability.csv"),
         ],

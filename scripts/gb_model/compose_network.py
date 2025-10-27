@@ -174,7 +174,8 @@ def integrate_renewables(
         k: v for k, v in renewable_profiles.items() if k != "profile_hydro"
     }
 
-    ppl = load_powerplants(powerplants_path, costs, clustering_config)
+    # Load FES powerplants data (already enriched with costs from create_powerplants_table)
+    ppl = pd.read_csv(powerplants_path, index_col=0, dtype={"bus": "str"})
 
     if renewable_profiles:
         landfall_lengths = {
@@ -400,7 +401,8 @@ def compose_network(
     )
 
     conventional_carriers = list(electricity_config["conventional_carriers"])
-    ppl = load_powerplants(powerplants_path, costs, clustering_config)
+    # Load FES powerplants data (already enriched with costs from create_powerplants_table)
+    ppl = pd.read_csv(powerplants_path, index_col=0, dtype={"bus": "str"})
     attach_conventional_generators(
         network,
         costs,
