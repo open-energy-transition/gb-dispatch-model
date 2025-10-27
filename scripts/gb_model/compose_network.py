@@ -23,16 +23,16 @@ import pypsa
 
 from scripts._helpers import configure_logging, set_scenario_config
 from scripts.add_electricity import (
+    attach_conventional_generators,
     attach_hydro,
     attach_wind_and_solar,
-    attach_conventional_generators,
     load_and_aggregate_powerplants,
     load_costs,
     sanitize_carriers,
     sanitize_locations,
 )
-from scripts.prepare_sector_network import add_electricity_grid_connection
 from scripts.gb_model.chp_utils import attach_chp_constraints
+from scripts.prepare_sector_network import add_electricity_grid_connection
 
 logger = logging.getLogger(__name__)
 
@@ -180,8 +180,7 @@ def integrate_renewables(
         landfall_lengths = {
             tech: settings["landfall_length"]
             for tech, settings in renewable_config.items()
-            if isinstance(settings, dict)
-            and "landfall_length" in settings
+            if isinstance(settings, dict) and "landfall_length" in settings
         }
 
         attach_wind_and_solar(
@@ -407,9 +406,9 @@ def compose_network(
         costs,
         ppl,
         conventional_carriers,
-        extendable_carriers = {"Generator": []},
-        conventional_params = {},
-        conventional_inputs = {},
+        extendable_carriers={"Generator": []},
+        conventional_params={},
+        conventional_inputs={},
         unit_commitment=None,
     )
 

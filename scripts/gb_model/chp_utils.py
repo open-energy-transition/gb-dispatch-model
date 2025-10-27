@@ -10,7 +10,6 @@ based on heat demand profiles, without full sector-coupling.
 """
 
 import logging
-from typing import Optional
 
 import pandas as pd
 import pypsa
@@ -36,7 +35,9 @@ def identify_chp_powerplants(powerplants: pd.DataFrame) -> pd.DataFrame:
         Filtered dataframe containing only CHP powerplants.
     """
     if "set" not in powerplants.columns:
-        logger.warning("Column 'set' not found in powerplants data. No CHPs identified.")
+        logger.warning(
+            "Column 'set' not found in powerplants data. No CHPs identified."
+        )
         return pd.DataFrame()
 
     chp_plants = powerplants[powerplants["set"] == "CHP"].copy()
@@ -100,10 +101,17 @@ def calculate_chp_minimum_operation(
         ds = xr.open_dataset(heat_demand_path)
 
         # Sum all heat demand types (residential + services, water + space)
-        heat_vars = [v for v in ds.data_vars if v in [
-            "residential water", "residential space",
-            "services water", "services space"
-        ]]
+        heat_vars = [
+            v
+            for v in ds.data_vars
+            if v
+            in [
+                "residential water",
+                "residential space",
+                "services water",
+                "services space",
+            ]
+        ]
 
         if not heat_vars:
             logger.warning(

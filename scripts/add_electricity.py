@@ -357,8 +357,7 @@ def load_and_aggregate_powerplants(
     set_column = ppl_raw["Set"].copy() if "Set" in ppl_raw.columns else None
 
     ppl = (
-        ppl_raw
-        .powerplant.to_pypsa_names()
+        ppl_raw.powerplant.to_pypsa_names()
         .rename(columns=str.lower)
         .replace({"carrier": carrier_dict, "technology": tech_dict})
     )
