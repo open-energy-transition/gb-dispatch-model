@@ -32,6 +32,7 @@ from scripts.add_electricity import (
     sanitize_locations,
 )
 from scripts.prepare_sector_network import add_electricity_grid_connection
+from scripts.gb_model.chp_utils import attach_chp_constraints
 
 logger = logging.getLogger(__name__)
 
@@ -108,9 +109,9 @@ def load_powerplants(
     pd.DataFrame
         Aggregated powerplant data
     """
-    consider_efficiency = clustering_config.get("consider_efficiency_classes", False)
-    aggregation_strategies = clustering_config.get("aggregation_strategies", {})
-    exclude_carriers = clustering_config.get("exclude_carriers", [])
+    consider_efficiency = clustering_config["consider_efficiency_classes"]
+    aggregation_strategies = clustering_config["aggregation_strategies"]
+    exclude_carriers = clustering_config["exclude_carriers"]
 
     return load_and_aggregate_powerplants(
         powerplants_path,
@@ -157,6 +158,7 @@ def integrate_renewables(
         Path to hydro capacities CSV file
     """
     renewable_carriers = list(electricity_config["renewable_carriers"])
+    extendable_carriers = electricity_config["extendable_carriers"]
 
     if not renewable_carriers:
         logger.info("No renewable carriers configured; skipping integration")
@@ -172,19 +174,14 @@ def integrate_renewables(
         k: v for k, v in renewable_profiles.items() if k != "profile_hydro"
     }
 
-    extendable_carriers = copy.deepcopy(
-        electricity_config.get("extendable_carriers", {})
-    )
-    extendable_carriers.setdefault("Generator", [])
-
     ppl = load_powerplants(powerplants_path, costs, clustering_config)
 
     if renewable_profiles:
         landfall_lengths = {
-            tech: settings.get("landfall_length")
+            tech: settings["landfall_length"]
             for tech, settings in renewable_config.items()
             if isinstance(settings, dict)
-            and settings.get("landfall_length") is not None
+            and "landfall_length" in settings
         }
 
         attach_wind_and_solar(
@@ -206,8 +203,8 @@ def integrate_renewables(
         logger.warning("Hydro capacities file missing; skipping hydro integration")
         return
 
-    hydro_cfg = copy.deepcopy(renewable_config.get("hydro", {}))
-    carriers = hydro_cfg.pop("carriers", [])
+    hydro_cfg = copy.deepcopy(renewable_config["hydro"])
+    carriers = hydro_cfg.pop("carriers")
 
     attach_hydro(
         n,
@@ -326,12 +323,14 @@ def compose_network(
     powerplants_path: str,
     hydro_capacities_path: str | None,
     renewable_profiles: dict[str, str],
+    heat_demand_path: str,
     countries: list[str],
     costs_config: dict[str, Any],
     electricity_config: dict[str, Any],
     clustering_config: dict[str, Any],
     renewable_config: dict[str, Any],
     lines_config: dict[str, Any],
+    chp_config: dict[str, Any],
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -350,6 +349,8 @@ def compose_network(
         Path to hydro capacities CSV file
     renewable_profiles : dict
         Mapping of carrier names to profile file paths
+    heat_demand_path : str
+        Path to hourly heat demand NetCDF file for CHP constraints
     countries : list[str]
         List of country codes to include
     costs_config : dict
@@ -362,9 +363,14 @@ def compose_network(
         Renewable configuration dictionary
     lines_config : dict
         Lines configuration dictionary
+    chp_config : dict
+        CHP configuration with required keys:
+        - 'enable': bool
+        - 'heat_to_power_ratio': float
+        - 'min_operation_level': float
     """
     network = pypsa.Network(network_path)
-    max_hours = electricity_config.get("max_hours")
+    max_hours = electricity_config["max_hours"]
     context = create_context(
         network_path, costs_path, countries, costs_config, max_hours
     )
@@ -372,8 +378,8 @@ def compose_network(
 
     costs = None
     if context.costs_path.exists():
-        weights = getattr(network.snapshot_weightings, "objective", None)
-        nyears = float(weights.sum()) / 8760.0 if weights is not None else 1.0
+        weights = network.snapshot_weightings.objective
+        nyears = float(weights.sum()) / 8760.0
         costs = load_costs(
             str(context.costs_path),
             context.costs_config,
@@ -381,7 +387,7 @@ def compose_network(
             nyears=nyears,
         )
 
-    line_length_factor = lines_config.get("length_factor", 1.0)
+    line_length_factor = lines_config["length_factor"]
     integrate_renewables(
         network,
         electricity_config,
@@ -401,12 +407,22 @@ def compose_network(
         costs,
         ppl,
         conventional_carriers,
-        extendable_carriers = [],
+        extendable_carriers = {"Generator": []},
         conventional_params = {},
         conventional_inputs = {},
         unit_commitment=None,
     )
 
+    # Add simplified CHP constraints if enabled
+    if chp_config["enable"]:
+        logger.info("Adding simplified CHP constraints based on heat demand.")
+        attach_chp_constraints(
+            network,
+            ppl,
+            heat_demand_path=heat_demand_path,
+            heat_to_power_ratio=chp_config["heat_to_power_ratio"],
+            min_operation_level=chp_config["min_operation_level"],
+        )
 
     add_pypsaeur_components(network, electricity_config, context, costs)
     finalise_composed_network(network, context)
@@ -433,12 +449,14 @@ if __name__ == "__main__":
         output_path=snakemake.output.network,
         costs_path=snakemake.input.tech_costs,
         powerplants_path=snakemake.input.powerplants,
-        hydro_capacities_path=getattr(snakemake.input, "hydro_capacities", None),
+        hydro_capacities_path=snakemake.input.hydro_capacities,
         renewable_profiles=renewable_profiles,
+        heat_demand_path=snakemake.input.hourly_heat_demand_total,
         countries=snakemake.params.countries,
         costs_config=snakemake.params.costs_config,
         electricity_config=snakemake.params.electricity,
         clustering_config=snakemake.params.clustering,
         renewable_config=snakemake.params.renewable,
         lines_config=snakemake.params.lines,
+        chp_config=snakemake.params.chp,
     )

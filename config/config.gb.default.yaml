@@ -42,6 +42,14 @@ enable:
 clustering:
   focus_weights: {NL: 0.01, "NO": 0.01, BE: 0.01, DK: 0.01, IE: 0.02, FR: 0.03, GB: 0.91}
   mode: gb_shapes
+  exclude_carriers: []
+  consider_efficiency_classes: false
+  aggregation_strategies:
+    generators:
+      committable: any  # From default config
+      ramp_limit_up: max  # From default config
+      ramp_limit_down: max  # From default config
+      set: first  # Preserve 'set' column (CHP, PP, Store) during aggregation
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#solving
 solving:
@@ -54,6 +62,13 @@ solving:
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:
   powerplants_filter: (DateOut >= 2020 or DateOut != DateOut) and not (Country == 'Germany' and Fueltype == 'Nuclear')
+
+# Simplified CHP configuration for GB model (electricity-only)
+# CHPs are modeled as generators with minimum operation constraints based on heat demand
+chp:
+  enable: true  # Enable simplified CHP constraints
+  heat_to_power_ratio: 1.5  # Heat-to-power ratio (c_b coefficient) - typical for gas CHPs
+  min_operation_level: 0.3  # Minimum operation level when running (30% of capacity)
 
 urls:
   gb-etys-boundaries: https://api.neso.energy/dataset/997f4820-1ad4-499b-b1fe-4b8d3d7fbc72/resource/e914fcec-1dc9-4f1f-97e7-59c0d9521bea/download/etys-boundary-gis-data-mar25.zip

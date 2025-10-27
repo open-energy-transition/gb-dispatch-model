@@ -352,12 +352,20 @@ def load_and_aggregate_powerplants(
         "Reservoir": "hydro",
         "Pumped Storage": "PHS",
     }
+    # Read raw powerplants and preserve 'set' column through processing
+    ppl_raw = pd.read_csv(ppl_fn, index_col=0, dtype={"bus": "str"})
+    set_column = ppl_raw["Set"].copy() if "Set" in ppl_raw.columns else None
+
     ppl = (
-        pd.read_csv(ppl_fn, index_col=0, dtype={"bus": "str"})
+        ppl_raw
         .powerplant.to_pypsa_names()
         .rename(columns=str.lower)
         .replace({"carrier": carrier_dict, "technology": tech_dict})
     )
+
+    # Restore 'set' column if it existed in raw data
+    if set_column is not None:
+        ppl["set"] = set_column
 
     # Replace carriers "natural gas" and "hydro" with the respective technology;
     # OCGT or CCGT and hydro, PHS, or ror)

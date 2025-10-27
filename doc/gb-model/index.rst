@@ -45,6 +45,13 @@ The gb-open-market-model workflow is continuously tested for Linux, macOS and Wi
 .. toctree::
    :hidden:
    :maxdepth: 2
+   :caption: Development
+
+   implementation
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
    :caption: References
 
    release_notes

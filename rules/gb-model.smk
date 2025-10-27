@@ -225,8 +225,13 @@ rule create_interconnectors_table:
 
 rule compose_network:
     params:
-        electricity=config_provider("electricity"),
-
+        countries=config["countries"],
+        costs_config=config["costs"],
+        electricity=config["electricity"],
+        clustering=config["clustering"],
+        renewable=config["renewable"],
+        lines=config["lines"],
+        chp=config["chp"],
     input:
         unpack(input_profile_tech),
         network=resources("networks/base_s_{clusters}.nc"),
@@ -258,13 +263,6 @@ rule compose_network:
         ],
     output:
         network=resources("networks/composed_{clusters}.nc"),
-    params:
-        countries=config["countries"],
-        costs_config=config["costs"],
-        electricity=config["electricity"],
-        clustering=config["clustering"],
-        renewable=config["renewable"],
-        lines=config["lines"],
     log:
         logs("compose_network_{clusters}.log"),
     resources:
