@@ -224,6 +224,9 @@ rule create_interconnectors_table:
 
 
 rule compose_network:
+    params:
+        electricity=config_provider("electricity"),
+
     input:
         unpack(input_profile_tech),
         network=resources("networks/base_s_{clusters}.nc"),
@@ -232,6 +235,9 @@ rule compose_network:
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
         hydro_capacities=ancient("data/hydro_capacities.csv"),
+        hourly_heat_demand_total=resources(
+            "hourly_heat_demand_total_base_s_{clusters}.nc"
+        ),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(

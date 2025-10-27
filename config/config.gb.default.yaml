@@ -12,7 +12,7 @@ foresight: overnight
 scenario:
   clusters:
   - clustered
-  - all
+  # - all
   opts:
   - ""
   sector_opts:

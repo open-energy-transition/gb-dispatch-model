@@ -25,6 +25,7 @@ from scripts._helpers import configure_logging, set_scenario_config
 from scripts.add_electricity import (
     attach_hydro,
     attach_wind_and_solar,
+    attach_conventional_generators,
     load_and_aggregate_powerplants,
     load_costs,
     sanitize_carriers,
@@ -85,7 +86,7 @@ def create_context(
     )
 
 
-def _load_powerplants(
+def load_powerplants(
     powerplants_path: str,
     costs: pd.DataFrame | None,
     clustering_config: dict[str, Any],
@@ -121,7 +122,7 @@ def _load_powerplants(
 
 
 def integrate_renewables(
-    network: pypsa.Network,
+    n: pypsa.Network,
     electricity_config: dict[str, Any],
     renewable_config: dict[str, Any],
     clustering_config: dict[str, Any],
@@ -155,7 +156,7 @@ def integrate_renewables(
     hydro_capacities_path : str or None
         Path to hydro capacities CSV file
     """
-    renewable_carriers = list(electricity_config.get("renewable_carriers", []))
+    renewable_carriers = list(electricity_config["renewable_carriers"])
 
     if not renewable_carriers:
         logger.info("No renewable carriers configured; skipping integration")
@@ -176,7 +177,7 @@ def integrate_renewables(
     )
     extendable_carriers.setdefault("Generator", [])
 
-    ppl = _load_powerplants(powerplants_path, costs, clustering_config)
+    ppl = load_powerplants(powerplants_path, costs, clustering_config)
 
     if renewable_profiles:
         landfall_lengths = {
@@ -187,7 +188,7 @@ def integrate_renewables(
         }
 
         attach_wind_and_solar(
-            network,
+            n,
             costs,
             ppl,
             non_hydro_profiles,
@@ -209,7 +210,7 @@ def integrate_renewables(
     carriers = hydro_cfg.pop("carriers", [])
 
     attach_hydro(
-        network,
+        n,
         costs,
         ppl,
         renewable_profiles["profile_hydro"],
@@ -392,6 +393,20 @@ def compose_network(
         powerplants_path,
         hydro_capacities_path,
     )
+
+    conventional_carriers = list(electricity_config["conventional_carriers"])
+    ppl = load_powerplants(powerplants_path, costs, clustering_config)
+    attach_conventional_generators(
+        network,
+        costs,
+        ppl,
+        conventional_carriers,
+        extendable_carriers = [],
+        conventional_params = {},
+        conventional_inputs = {},
+        unit_commitment=None,
+    )
+
 
     add_pypsaeur_components(network, electricity_config, context, costs)
     finalise_composed_network(network, context)
