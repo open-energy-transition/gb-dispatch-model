@@ -20,8 +20,6 @@ rule download_data:
     log:
         logs("download_{gb_data}.log"),
     localrule: True
-    conda:
-        "../envs/gb-model/workflow.yaml"
     shell:
         "curl -sSLvo {output} {params.url}"
 
@@ -37,8 +35,6 @@ rule create_region_shapes:
         logs("raw_region_shapes.log"),
     resources:
         mem_mb=1000,
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/create_region_shapes.py"
 
@@ -54,8 +50,6 @@ rule manual_region_merger:
         logs("manual_region_merger.log"),
     resources:
         mem_mb=1000,
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/manual_region_merger.py"
 
@@ -77,8 +71,6 @@ rule retrieve_entsoe_unavailability_data:
         logs("retrieve_entsoe_unavailability_data_{zone}_{business_type}.log"),
     resources:
         mem_mb=1000,
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/retrieve_entsoe_unavailability_data.py"
 
@@ -98,8 +90,6 @@ rule process_entsoe_unavailability_data:
         ],
     resources:
         mem_mb=1000,
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/process_entsoe_unavailability_data.py"
 
@@ -119,8 +109,6 @@ rule generator_monthly_unavailability:
         csv=resources("gb-model/{zone}_generator_monthly_unavailability.csv"),
     log:
         logs("{zone}_generator_monthly_unavailability.log"),
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/generator_monthly_unavailability.py"
 
@@ -132,8 +120,6 @@ rule extract_transmission_availability:
         csv=resources("gb-model/transmission_availability.csv"),
     log:
         logs("extract_transmission_availability.log"),
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/extract_transmission_availability.py"
 
@@ -383,8 +369,6 @@ rule compose_network:
         logs("compose_network_{clusters}.log"),
     resources:
         mem_mb=4000,
-    conda:
-        "../envs/environment.yaml"
     script:
         "../scripts/gb_model/compose_network.py"
 

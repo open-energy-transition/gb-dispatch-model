@@ -12,7 +12,7 @@ SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]
 path = [
-    "envs/**/*.pin.txt",
+    "envs/gb-model/*.lock.yaml",
 ]
 SPDX-FileCopyrightText = "gb-dispatch-model contributors"
 SPDX-License-Identifier = "CC0-1.0"
