@@ -54,10 +54,10 @@ def capacity_table(
             f"Some technologies could not be mapped to a carrier: {missing_names}"
         )
 
-    df_cleaned = df_cleaned.dropna(subset=["carrier"])
+    df_cleaned_nona = df_cleaned.dropna(subset=["carrier"])
 
     df_capacity = (
-        df_cleaned.groupby(["bus", "year", "carrier", "set"])["data"]
+        df_cleaned_nona.groupby(["bus", "year", "carrier", "set"])["data"]
         .sum()
         .rename("p_nom")
         .reset_index()
@@ -77,9 +77,14 @@ if __name__ == "__main__":
     # Load the file paths
     df_gsp = (
         pd.read_csv(snakemake.input.gsp_data)
-        .query("Template == 'Generation'")
+        .query("Template in ['Generation', 'Storage & Flexibility']")
         .dropna(subset=["Latitude", "Longitude"])
     )
+    # Simply add any distributed TO_data to the GSP data for capacity calculations
+    # FIXME: this will place some capacity into the wrong regions (e.g. pumped hydro).
+    # We should ideally distribute TO-level capacity based on existing UK capacities from DUKES.
+    df_gsp["data"] = df_gsp["data"].fillna(0) + df_gsp["TO_data"].fillna(0)
+
     df_eur = pd.read_csv(snakemake.input.eur_data).query("Variable == 'Capacity (MW)'")
 
     # Load all the params

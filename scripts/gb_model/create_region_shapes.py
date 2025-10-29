@@ -70,7 +70,9 @@ def align_crs(gdf1: gpd.GeoDataFrame, gdf2: gpd.GeoDataFrame) -> tuple:
 
 
 def create_regions_from_boundaries(
-    country_shapes: gpd.GeoDataFrame, boundary_lines: gpd.GeoDataFrame
+    country_shapes: gpd.GeoDataFrame,
+    boundary_lines: gpd.GeoDataFrame,
+    area_loss_tolerance_percent: float,
 ) -> gpd.GeoDataFrame:
     """
     Create regions by dividing country shapes using boundary lines.
@@ -217,7 +219,7 @@ def create_regions_from_boundaries(
         )
 
         # raise exception if area loss is significant
-        if area_loss_percent > snakemake.config["area_loss_tolerance_percent"]:
+        if area_loss_percent > area_loss_tolerance_percent:
             raise ValueError(
                 f"Significant area loss detected after splitting: {area_loss_percent:.3f}%"
             )
@@ -308,7 +310,9 @@ if __name__ == "__main__":
         raise ValueError("No boundary lines found in the provided ETYS data!")
 
     # create regions from boundaries
-    regions = create_regions_from_boundaries(country_shapes, boundary_lines)
+    regions = create_regions_from_boundaries(
+        country_shapes, boundary_lines, snakemake.params.area_loss_tolerance_percent
+    )
     logger.debug(f"Created {len(regions)} initial regions")
     if len(regions) > 1:
         logger.debug(
@@ -319,7 +323,7 @@ if __name__ == "__main__":
         )
 
     # Clean regions with appropriate threshold
-    min_area = snakemake.config["min_region_area"]
+    min_area = snakemake.params.min_region_area
     logger.debug(
         f"\nCleaning regions (removing regions < {min_area / 1000000:.0f} km²)..."
     )

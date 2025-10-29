@@ -31,7 +31,9 @@ def projects_to_pypsa_links(interconnector_config, gdf_regions):
         ]
     ).set_index("name")
 
-    df["bus0"] = map_points_to_regions(df, gdf_regions, "lat", "lon").values
+    df["bus0"] = map_points_to_regions(
+        df, gdf_regions, "lat", "lon", "EPSG:4326", snakemake.params.target_crs
+    )["name"]
     country_codes = {x: coco.convert(x, to="ISO2") for x in df["neighbour"].unique()}
     df["bus1"] = df["neighbour"].replace(country_codes)
 

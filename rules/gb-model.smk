@@ -33,6 +33,11 @@ rule create_region_shapes:
         etys_boundary_lines="data/gb-model/downloaded/gb-etys-boundaries.zip",
     output:
         raw_region_shapes=resources("gb-model/raw_region_shapes.geojson"),
+    params:
+        area_loss_tolerance_percent=config["region_operations"][
+            "area_loss_tolerance_percent"
+        ],
+        min_region_area=config["region_operations"]["min_region_area"],
     log:
         logs("raw_region_shapes.log"),
     resources:
@@ -178,6 +183,7 @@ rule process_fes_gsp_data:
     params:
         scenario=config["fes"]["gb"]["scenario"],
         year_range=config["fes"]["year_range_incl"],
+        target_crs=config["target_crs"],
     input:
         bb1_sheet=resources("gb-model/fes/2021/BB1.csv"),
         bb2_sheet=resources("gb-model/fes/2021/BB2.csv"),
@@ -217,6 +223,7 @@ rule create_interconnectors_table:
     params:
         interconnector_config=config["interconnectors"],
         year_range=config["fes"]["year_range_incl"],
+        target_crs=config["target_crs"],
     log:
         logs("create_interconnectors_table.log"),
     script:
