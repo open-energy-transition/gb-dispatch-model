@@ -78,7 +78,9 @@ def _ensure_column_with_default(
     else:
         missing = df[col].isna().sum()
         if missing > 0:
-            logger.warning(f"Missing {col} for {missing} rows; using default {default}{unit_str}")
+            logger.warning(
+                f"Missing {col} for {missing} rows; using default {default}{unit_str}"
+            )
             df[col] = df[col].fillna(default)
 
     return df
@@ -115,8 +117,8 @@ def assign_technical_and_costs_defaults(
     # Calculate marginal cost if possible
     if all(col in df.columns for col in ["VOM", "fuel", "efficiency"]):
         df["marginal_cost"] = (
-            df["carrier"].map(costs["VOM"]) +
-            df["carrier"].map(costs["fuel"]) / df["efficiency"]
+            df["carrier"].map(costs["VOM"])
+            + df["carrier"].map(costs["fuel"]) / df["efficiency"]
         )
 
     # Ensure all required columns exist with defaults
@@ -133,10 +135,13 @@ def assign_technical_and_costs_defaults(
     # Create unique index: "bus carrier-year-idx"
     df["idx_counter"] = df.groupby(["bus", "carrier", "year"]).cumcount()
     df.index = (
-        df["bus"] + " " +
-        df["carrier"] + "-" +
-        df["year"].astype(int).astype(str) + "-" +
-        df["idx_counter"].astype(str)
+        df["bus"]
+        + " "
+        + df["carrier"]
+        + "-"
+        + df["year"].astype(int).astype(str)
+        + "-"
+        + df["idx_counter"].astype(str)
     )
     df = df.drop(columns=["idx_counter"])
 
