@@ -1,20 +1,20 @@
 version = 1
-SPDX-PackageName = "gb-open-market-model"
+SPDX-PackageName = "gb-dispatch-model"
 SPDX-PackageSupplier = "Open Energy Transition gGmbH"
-SPDX-PackageDownloadLocation = "https://github.com/open-energy-transition/gb-open-market-model"
+SPDX-PackageDownloadLocation = "https://github.com/open-energy-transition/gb-dispatch-model"
 
 [[annotations]]
 path = [
     "doc/gb-model/**",
 ]
-SPDX-FileCopyrightText = "gb-open-market-model contributors"
+SPDX-FileCopyrightText = "gb-dispatch-model contributors"
 SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]
 path = [
     "envs/**/*.pin.txt",
 ]
-SPDX-FileCopyrightText = "gb-open-market-model contributors"
+SPDX-FileCopyrightText = "gb-dispatch-model contributors"
 SPDX-License-Identifier = "CC0-1.0"
 
 [[annotations]]

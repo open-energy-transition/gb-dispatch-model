@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText:  gb-open-market-model contributors
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
 #
 # SPDX-License-Identifier: CC0-1.0
 
@@ -73,7 +73,8 @@ chp:
 urls:
   gb-etys-boundaries: https://api.neso.energy/dataset/997f4820-1ad4-499b-b1fe-4b8d3d7fbc72/resource/e914fcec-1dc9-4f1f-97e7-59c0d9521bea/download/etys-boundary-gis-data-mar25.zip
   transmission-availability: https://www.neso.energy/document/211021/download
-  fes-workbook: https://www.neso.energy/document/199971/download # FES 2021 workbook
+  fes-2021-workbook: https://www.neso.energy/document/199971/download # FES 2021 workbook
+  fes-2023-workbook: https://www.neso.energy/document/283061/download # FES 2023 workbook
   gsp-coordinates: https://api.neso.energy/dataset/963525d6-5d83-4448-a99c-663f1c76330a/resource/41fb4ca1-7b59-4fce-b480-b46682f346c9/download/fes2021_regional_breakdown_gsp_info.csv
   eur-supply-table: https://api.neso.energy/dataset/bd83ce0b-7b1e-4ff2-89e8-12d524c34d99/resource/6563801b-6da4-46e7-b147-3d81c0237779/download/fes2023_es2_v001.csv
 target_crs: "EPSG:27700"
@@ -186,36 +187,120 @@ entsoe_unavailability:
     # B24: "Transformer"
 
 fes-sheet-config:
-  SV.34:
-    usecols: "I:AN"
-    skiprows: 5
-    index_col: 0
-    header: 0
-    rename:
-      index: scenario
-      columns: year
+  2021:
+    SV.34:
+      usecols: "I:AN"
+      skiprows: 5
+      index_col: 0
+      header: 0
+      rename:
+        index: scenario
+        columns: year
 
-  BB1:
-    usecols: "A:C,E,H:AK" # Ignore columns: "Baseline (2020)", "Share of GSP" (empty), "DNO License Area"
-    skiprows: 0
-    index_col: [0, 1, 2, 3]
-    header: 0
-    rename:
-      columns: year
+    BB1:
+      usecols: "A:C,E,H:AK" # Ignore columns: "Baseline (2020)", "Share of GSP" (empty), "DNO License Area"
+      skiprows: 0
+      index_col: [0, 1, 2, 3]
+      header: 0
+      rename:
+        columns: year
 
-  BB2:
-    usecols: "A:E"
-    skiprows: 2
-    index_col: [0, 1, 3]
-    header: 0
-    rename:
-      columns: Parameter
+    # Annual H2 demand for industrial sector in GWh between 2021-2050
+    CV.53:
+      usecols: "O:BD"
+      skiprows: 6
+      index_col: 0
+      header: 0
+      rename:
+        index: scenario
+        columns: year
+
+    # Annual H2 demand for commercial sector in GWh between 2021-2050
+    CV.54:
+      usecols: "O:BD"
+      skiprows: 6
+      index_col: 0
+      header: 0
+      rename:
+        index: scenario
+        columns: year
+
+    # Annual H2 demand for home heating in TWh between 2021-2050
+    CV.10:
+      usecols: "M:AR"
+      skiprows: 5
+      index_col: 0
+      header: 0
+      rename:
+        index: scenario
+        columns: year
+
+    # Annual road transport demand in TWh between 2021-2050
+    CV.33:
+      usecols: "M:AW"
+      skiprows: 7
+      index_col: 0
+      header: 0
+      rename:
+        index: carrier
+        columns: year
+
+    # Annual H2 production in TWh between 2021-2050
+    SV.20:
+      usecols: "M:AW"
+      skiprows: 5
+      index_col: 0
+      header: 0
+      rename:
+        index: carrier
+        columns: year
+
+    # Annual electricity demand in TWh for non-grid connected electrolysis between 2021-2050
+    ED1:
+      usecols: "B:E,G:BA"
+      skiprows: 4
+      index_col: [0, 1, 2, 3]
+      header: 0
+      rename:
+        columns: year
+
+    # Annual hydrogen storage capacity in tonnes for 2020-2050
+    FL.6:
+      usecols: "K:O"
+      skiprows: 9
+      index_col: 0
+      header: 0
+      rename:
+        index: year
+        columns: scenario
+
+    BB2:
+      usecols: "A:E"
+      skiprows: 2
+      index_col: [0, 1, 3]
+      header: 0
+      rename:
+        columns: Parameter
+
+  2023:
+    WS1:
+      usecols: "A:D,H:AM" # Ignore columns: "Baseline (2022)", "Share of GSP" (empty), "DNO License Area"
+      skiprows: 7
+      index_col: [0, 1, 2, 3, 4]
+      header: 0
+      rename:
+        columns: year
 
 fes:
   year_range_incl: [2022, 2041] # 20-year period over which we will run the simulation
   default_set: PP
   gb:
-    scenario: Leading The Way   # fes workbook
+    scenario: leading the way   # fes workbook
+    scenario_abbreviations:
+      leading the way: LW
+      consumer transformation: CT
+      system transformation: ST
+      steady progression: SP
     carrier_mapping:
       # Mapping undertaken in different columns for different carriers
       Technology:
@@ -299,6 +384,36 @@ fes:
         Lignite CHP: CHP
         Peat CHP: CHP
         Reservoir Hydro with pumping: Store
+
+  hydrogen:
+    demand:
+      annual_demand_sheets:
+        2021:
+          industrial: CV.53
+          commercial: CV.54
+          residential: CV.10
+          road transport: CV.33  # annual demand for Leading the Way scenario only
+        2023:
+          other: WS1
+      other_sectors_list:
+      - shipping and aviation
+      - blending
+      - direct air carbon capture and storage
+      - transmission losses
+    supply:
+      supply_sheets:
+        2021:
+          hydrogen_supply: SV.20
+          electricity_demand: ED1
+      exogeneous_supply_list:
+      - non-networked electrolysis
+      - beccs
+      - imports
+    storage:
+      storage_sheets:
+        2021:
+          storage_capacity: FL.6
+      interpolation_method: linear  # Options: linear, s_curve, step. Interpolation method for hydrogen storage capacity between FES years
 
 interconnectors:
   # lat/lon values are approximate.

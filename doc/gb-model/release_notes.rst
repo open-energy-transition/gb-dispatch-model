@@ -1,7 +1,7 @@
 
 ..
   SPDX-FileCopyrightText: Open Energy Transition gGmbH and contributors to PyPSA-Eur <https://github.com/pypsa/pypsa-eur>
-  SPDX-FileCopyrightText: Contributors to gb-open-market-model <https://github.com/open-energy-transition/gb-open-market-model>
+  SPDX-FileCopyrightText: gb-dispatch-model contributors
 
   SPDX-License-Identifier: CC-BY-4.0
 
@@ -12,6 +12,8 @@ Release Notes
 Upcoming Release
 ================
 
+* Tabulated regional EV demand data (#83).
+* Tabulated hydrogen related data including demand, supply, storage, and generation capacities (#73).
 * Tabulated interconnector capacities between GB regions and neighbouring countries (#10).
 * Tabulated monthly GB powerplant fractional availability profiles (#71).
 * Remove unnecessary output in `compose_networks` rule that causes error (#2)

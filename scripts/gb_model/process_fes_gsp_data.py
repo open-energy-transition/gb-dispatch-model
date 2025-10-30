@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText:  gb-open-market-model contributors
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
 #
 # SPDX-License-Identifier: MIT
 
@@ -16,14 +16,9 @@ import geopandas as gpd
 import pandas as pd
 
 from scripts._helpers import configure_logging, set_scenario_config
-from scripts.gb_model._helpers import map_points_to_regions
+from scripts.gb_model._helpers import map_points_to_regions, strip_srt
 
 logger = logging.getLogger(__name__)
-
-
-def _strip_str(series: pd.Series) -> pd.Series:
-    """Strip whitespace from strings in a pandas Series."""
-    return series.str.strip() if series.dtype == "object" else series
 
 
 def parse_inputs(
@@ -60,13 +55,13 @@ def parse_inputs(
         .reset_index()
         .set_index("Building Block ID Number")
         .drop("level_0", axis=1)
-        .apply(_strip_str)
+        .apply(strip_srt)
     )
 
     df_bb1 = pd.read_csv(bb1_path)
-    df_bb1 = df_bb1.apply(_strip_str)
+    df_bb1 = df_bb1.apply(strip_srt)
     df_bb1_scenario = df_bb1[
-        (df_bb1["FES Scenario"] == fes_scenario)
+        (df_bb1["FES Scenario"].str.lower() == fes_scenario)
         & (df_bb1["year"].isin(range(year_range[0], year_range[1] + 1)))
     ]
     df_bb1_bb2_scenario = pd.merge(
@@ -93,7 +88,7 @@ def parse_inputs(
     )
 
     df_gsp_coordinates = pd.read_csv(gsp_coordinates_path)
-    df_gsp_coordinates = df_gsp_coordinates.apply(_strip_str)
+    df_gsp_coordinates = df_gsp_coordinates.apply(strip_srt)
 
     # Note
     # The GSP's "East Claydon" and "Ferrybridge B" have duplicates
