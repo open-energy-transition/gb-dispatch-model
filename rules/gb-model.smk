@@ -201,8 +201,11 @@ rule create_powerplants_table:
     input:
         gsp_data=resources("gb-model/regional_gb_data.csv"),
         eur_data=resources("gb-model/national_eur_data.csv"),
+        tech_costs=lambda w: resources(
+            f"costs_{config_provider('costs', 'year')(w)}.csv"
+        ),
     output:
-        csv=resources("gb-model/fes_p_nom.csv"),
+        csv=resources("gb-model/fes_powerplants.csv"),
     log:
         logs("create_powerplants_table.log"),
     script:
@@ -359,14 +362,25 @@ rule create_ev_demand_table:
 
 
 rule compose_network:
+    params:
+        countries=config["countries"],
+        costs_config=config["costs"],
+        electricity=config["electricity"],
+        clustering=config["clustering"],
+        renewable=config["renewable"],
+        lines=config["lines"],
+        chp=config["chp"],
     input:
         unpack(input_profile_tech),
         network=resources("networks/base_s_{clusters}.nc"),
-        powerplants=resources("powerplants_s_{clusters}.csv"),
+        powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
         hydro_capacities=ancient("data/hydro_capacities.csv"),
+        hourly_heat_demand_total=resources(
+            "hourly_heat_demand_total_base_s_{clusters}.nc"
+        ),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(
@@ -377,7 +391,7 @@ rule compose_network:
                 business_type=config["entsoe_unavailability"]["business_types"],
             ),
             resources("gb-model/merged_shapes.geojson"),
-            resources("gb-model/fes_p_nom.csv"),
+            resources("gb-model/fes_powerplants.csv"),
             resources("gb-model/interconnectors_p_nom.csv"),
             resources("gb-model/GB_generator_monthly_unavailability.csv"),
             resources("gb-model/fes_hydrogen_demand.csv"),
@@ -389,13 +403,6 @@ rule compose_network:
         ],
     output:
         network=resources("networks/composed_{clusters}.nc"),
-    params:
-        countries=config["countries"],
-        costs_config=config["costs"],
-        electricity=config["electricity"],
-        clustering=config["clustering"],
-        renewable=config["renewable"],
-        lines=config["lines"],
     log:
         logs("compose_network_{clusters}.log"),
     resources:
