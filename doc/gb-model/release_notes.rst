@@ -12,6 +12,7 @@ Release Notes
 Upcoming Release
 ================
 
+* Tabulated regional baseline electricity demand data (#85).
 * Tabulated regional EV demand data (#83).
 * Tabulated hydrogen related data including demand, supply, storage, and generation capacities (#73).
 * Tabulated interconnector capacities between GB regions and neighbouring countries (#10).

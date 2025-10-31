@@ -317,6 +317,11 @@ fes:
         Waste Incineration (including CHP): CHP
         Non-renewable CHP: CHP
         Storage: Store
+
+    demand:
+      Technology Detail:
+        fes_baseline_electricity: ["baseline demand"]
+        fes_ev: ["ev demand 1", "ev demand 2"]
   eur:
     scenario: CT & LW    # "Leading the Way" equivalent in the NESO european supply table
     carrier_mapping:
