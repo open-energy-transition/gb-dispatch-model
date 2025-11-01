@@ -79,3 +79,4 @@ All hydrogen related data such as demand, supply, storage, and generation capaci
 EV demand data
 --------------
 Electric vehicle (EV) demand data is extracted from the FES workbook table BB1.
+EV demand profile shape is prepared based on transport demand profile shape of PyPSA-Eur.

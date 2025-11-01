@@ -358,6 +358,22 @@ rule create_ev_demand_table:
         "../scripts/gb_model/create_ev_demand_table.py"
 
 
+rule process_transport_demand_shape:
+    message:
+        "Process transport demand profile shape into CSV format"
+    input:
+        fes_ev_demand=resources("gb-model/fes_ev_demand.csv"),
+        transport_demand=resources("transport_demand_s_{clusters}.csv"),
+    output:
+        transport_demand_shape=resources(
+            "gb-model/transport_demand_shape_s_{clusters}.csv"
+        ),
+    log:
+        logs("transport_demand_shape_s_{clusters}.log"),
+    script:
+        "../scripts/gb_model/process_transport_demand_shape.py"
+
+
 rule compose_network:
     input:
         unpack(input_profile_tech),
@@ -386,6 +402,7 @@ rule compose_network:
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
             resources("gb-model/fes_ev_demand.csv"),
+            resources("gb-model/transport_demand_shape_s_clustered.csv"),
         ],
     output:
         network=resources("networks/composed_{clusters}.nc"),
