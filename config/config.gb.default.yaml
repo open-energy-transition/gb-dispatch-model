@@ -69,6 +69,7 @@ chp:
   enable: true  # Enable simplified CHP constraints
   heat_to_power_ratio: 1.5  # Heat-to-power ratio (c_b coefficient) - typical for gas CHPs
   min_operation_level: 0.3  # Minimum operation level when running (30% of capacity)
+  shutdown_threshold: 0.1  # Heat demand threshold below which CHPs can shut down completely (fraction of peak demand)
 
 urls:
   gb-etys-boundaries: https://api.neso.energy/dataset/997f4820-1ad4-499b-b1fe-4b8d3d7fbc72/resource/e914fcec-1dc9-4f1f-97e7-59c0d9521bea/download/etys-boundary-gis-data-mar25.zip

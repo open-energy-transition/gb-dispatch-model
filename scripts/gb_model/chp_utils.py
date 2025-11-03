@@ -58,6 +58,7 @@ def calculate_chp_minimum_operation(
     buses: pd.Index,
     heat_to_power_ratio: float,
     min_operation_level: float,
+    shutdown_threshold: float = 0.1,
 ) -> pd.DataFrame:
     """
     Calculate minimum operation profile (p_min_pu) for CHPs based on heat demand.
@@ -80,6 +81,9 @@ def calculate_chp_minimum_operation(
     min_operation_level : float
         Minimum operation level as fraction of capacity (0-1).
         E.g., 0.3 means 30% of capacity.
+    shutdown_threshold : float, optional
+        Heat demand threshold (as fraction of peak demand) below which CHPs can shut down.
+        Default is 0.1 (10% of peak demand).
 
     Returns
     -------
@@ -148,11 +152,11 @@ def calculate_chp_minimum_operation(
 
         # Apply minimum operation level floor
         # CHPs cannot operate below this threshold when they run
-        p_min_pu = p_min_pu.clip(upper=min_operation_level)
+        # Clip to ensure p_min_pu is at least min_operation_level when heat demand exists
+        p_min_pu = p_min_pu.clip(lower=min_operation_level)
 
         # Where heat demand is very low, allow CHP to shut down completely
-        # (e.g., below 10% of peak demand, CHP can be off)
-        shutdown_threshold = 0.1
+        # (e.g., below shutdown_threshold fraction of peak demand, CHP can be off)
         p_min_pu[heat_profile < shutdown_threshold] = 0.0
 
         logger.info(
@@ -177,6 +181,7 @@ def attach_chp_constraints(
     heat_demand_path: str,
     heat_to_power_ratio: float,
     min_operation_level: float,
+    shutdown_threshold: float = 0.1,
 ) -> None:
     """
     Attach simplified CHP constraints to generators in the network.
@@ -187,7 +192,8 @@ def attach_chp_constraints(
     Parameters
     ----------
     n : pypsa.Network
-        The PyPSA network object.
+        The PyPSA network object. Generators must have a 'set' attribute
+        for CHP identification (values: 'CHP', 'PP', 'Store').
     powerplants : pd.DataFrame
         Powerplants dataframe including CHP identification.
     heat_demand_path : str
@@ -196,6 +202,9 @@ def attach_chp_constraints(
         Heat-to-power ratio for CHPs (c_b coefficient).
     min_operation_level : float
         Minimum operation level (0-1) when CHP is running.
+    shutdown_threshold : float, optional
+        Heat demand threshold below which CHPs can shut down.
+        Default is 0.1 (10% of peak demand).
 
     Returns
     -------
@@ -209,9 +218,12 @@ def attach_chp_constraints(
     - Uses p_min_pu to enforce minimum operation following heat demand
     - Does not model heat buses or sector coupling
     - Suitable for electricity-only optimization with CHP constraints
+    - Requires generators to have 'set' attribute for precise CHP identification
 
     Raises
     ------
+    ValueError
+        If generators do not have 'set' attribute
     FileNotFoundError
         If heat demand file is not found
     KeyError
@@ -225,21 +237,22 @@ def attach_chp_constraints(
         return
 
     # Find corresponding generators in the network
-    # CHPs are identified by matching generator names/buses with CHP powerplants
-    chp_generator_buses = chp_plants["bus"].unique()
+    # CHPs are identified using the 'set' attribute
+    if "set" not in n.generators.columns:
+        logger.error(
+            "'set' attribute not found in generators. "
+            "This is required for CHP identification. "
+            "Ensure attach_conventional_generators() properly sets this attribute."
+        )
+        raise ValueError("'set' attribute missing from generators dataframe")
 
-    # Get all generators at buses with CHPs
-    potential_chp_gens = n.generators[n.generators.bus.isin(chp_generator_buses)]
-
-    # Further filter by carrier type (typically CCGT for CHPs)
-    chp_carriers = chp_plants["carrier"].unique()
-    chp_generators = potential_chp_gens[potential_chp_gens.carrier.isin(chp_carriers)]
+    chp_generators = n.generators[n.generators["set"] == "CHP"]
 
     if chp_generators.empty:
-        logger.warning(
-            "No generators found matching CHP powerplants. "
-            f"CHP buses: {list(chp_generator_buses[:5])}... "
-            f"CHP carriers: {list(chp_carriers)}"
+        logger.info(
+            "No CHP generators found in the network. "
+            f"Total generators: {len(n.generators)}, "
+            f"generators by set: {n.generators.groupby('set').size().to_dict()}"
         )
         return
 
@@ -249,12 +262,15 @@ def attach_chp_constraints(
     )
 
     # Calculate minimum operation profile
-    buses = pd.Index(chp_generator_buses)
+    # Get buses from matched CHP generators
+    buses = pd.Index(chp_generators["bus"].unique())
+
     p_min_pu = calculate_chp_minimum_operation(
         heat_demand_path=heat_demand_path,
         buses=buses,
         heat_to_power_ratio=heat_to_power_ratio,
         min_operation_level=min_operation_level,
+        shutdown_threshold=shutdown_threshold,
     )
 
     # Map minimum operation to generators (vectorized)

@@ -423,6 +423,7 @@ def compose_network(
             heat_demand_path=heat_demand_path,
             heat_to_power_ratio=chp_config["heat_to_power_ratio"],
             min_operation_level=chp_config["min_operation_level"],
+            shutdown_threshold=chp_config.get("shutdown_threshold", 0.1),
         )
 
     add_pypsaeur_components(network, electricity_config, context, costs)

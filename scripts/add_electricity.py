@@ -711,21 +711,28 @@ def attach_conventional_generators(
     caps = ppl.groupby("carrier").p_nom.sum().div(1e3).round(2)
     logger.info(f"Adding {len(ppl)} generators with capacities [GW]pp \n{caps}")
 
-    n.add(
-        "Generator",
-        ppl.index,
-        carrier=ppl.carrier,
-        bus=ppl.bus,
-        p_nom_min=ppl.p_nom.where(ppl.carrier.isin(conventional_carriers), 0),
-        p_nom=ppl.p_nom.where(ppl.carrier.isin(conventional_carriers), 0),
-        p_nom_extendable=ppl.carrier.isin(extendable_carriers["Generator"]),
-        efficiency=ppl.efficiency,
-        marginal_cost=marginal_cost,
-        capital_cost=ppl.capital_cost,
-        build_year=ppl.build_year,
-        lifetime=ppl.lifetime,
+    # Prepare generator attributes
+    # Ensure 'set' column exists with default value 'PP' (Power Plant)
+    if "set" not in ppl.columns:
+        logger.warning("'set' column not found in powerplants data. Setting all to 'PP'.")
+        ppl["set"] = "PP"
+
+    gen_attrs = {
+        "carrier": ppl.carrier,
+        "bus": ppl.bus,
+        "p_nom_min": ppl.p_nom.where(ppl.carrier.isin(conventional_carriers), 0),
+        "p_nom": ppl.p_nom.where(ppl.carrier.isin(conventional_carriers), 0),
+        "p_nom_extendable": ppl.carrier.isin(extendable_carriers["Generator"]),
+        "efficiency": ppl.efficiency,
+        "marginal_cost": marginal_cost,
+        "capital_cost": ppl.capital_cost,
+        "build_year": ppl.build_year,
+        "lifetime": ppl.lifetime,
+        "set": ppl["set"],  # Always include 'set' attribute
         **committable_attrs,
-    )
+    }
+
+    n.add("Generator", ppl.index, **gen_attrs)
 
     for carrier in set(conventional_params) & set(carriers):
         # Generators with technology affected
