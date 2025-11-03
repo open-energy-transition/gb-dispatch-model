@@ -714,7 +714,9 @@ def attach_conventional_generators(
     # Prepare generator attributes
     # Ensure 'set' column exists with default value 'PP' (Power Plant)
     if "set" not in ppl.columns:
-        logger.warning("'set' column not found in powerplants data. Setting all to 'PP'.")
+        logger.warning(
+            "'set' column not found in powerplants data. Setting all to 'PP'."
+        )
         ppl["set"] = "PP"
 
     gen_attrs = {

@@ -4,9 +4,6 @@
 
 """Tests for CHP utilities module."""
 
-import tempfile
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import pypsa
@@ -30,7 +27,12 @@ def powerplants_with_chp():
             "set": ["CHP", "PP", "PP", "CHP"],
             "p_nom": [100.0, 150.0, 500.0, 80.0],
         },
-        index=["GB0 CCGT-2030-0", "GB0 CCGT-2030-1", "GB1 nuclear-2030-0", "GB1 CCGT-2030-0"],
+        index=[
+            "GB0 CCGT-2030-0",
+            "GB0 CCGT-2030-1",
+            "GB1 nuclear-2030-0",
+            "GB1 CCGT-2030-0",
+        ],
     )
 
 
@@ -304,7 +306,9 @@ class TestAttachCHPConstraints:
         )
 
         # No constraints should be applied
-        assert n.generators_t.p_min_pu.empty or n.generators_t.p_min_pu.isna().all().all()
+        assert (
+            n.generators_t.p_min_pu.empty or n.generators_t.p_min_pu.isna().all().all()
+        )
 
     def test_no_matching_generators(
         self, simple_network, powerplants_with_chp, heat_demand_netcdf
@@ -324,13 +328,17 @@ class TestAttachCHPConstraints:
         )
 
         # No constraints should be applied
-        assert n.generators_t.p_min_pu.empty or n.generators_t.p_min_pu.isna().all().all()
+        assert (
+            n.generators_t.p_min_pu.empty or n.generators_t.p_min_pu.isna().all().all()
+        )
 
 
 class TestIntegration:
     """Integration tests for the full CHP workflow."""
 
-    def test_full_workflow(self, simple_network, powerplants_with_chp, heat_demand_netcdf):
+    def test_full_workflow(
+        self, simple_network, powerplants_with_chp, heat_demand_netcdf
+    ):
         """Test the complete workflow from powerplants to network constraints."""
         n = simple_network
 
