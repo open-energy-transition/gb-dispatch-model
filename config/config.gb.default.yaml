@@ -356,7 +356,7 @@ fes:
     demand:
       Technology Detail:
         fes_baseline_electricity: ["baseline demand"]
-        fes_ev: ["ev demand 1", "ev demand 2"]
+        fes_transport: ["ev demand 1", "ev demand 2"]
 
     flexibility:
       Technology Detail:

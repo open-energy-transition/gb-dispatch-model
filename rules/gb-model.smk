@@ -435,8 +435,6 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_supply.csv"),
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
-            resources("gb-model/fes_baseline_electricity_demand.csv"),
-            resources("gb-model/fes_transport_demand.csv"),
             resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
             resources("gb-model/transport_demand_shape_s_clustered.csv"),
             expand(
@@ -449,6 +447,10 @@ rule compose_network:
                     "Technology Detail"
                 ].keys(),
             ),
+            expand(
+                resources("gb-model/{demand_sector}_demand_shape_s_clustered.csv"),
+                demand_sector=[x.replace("fes_","") for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()]
+            )
         ],
     output:
         network=resources("networks/composed_{clusters}.nc"),
