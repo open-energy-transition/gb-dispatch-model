@@ -358,20 +358,20 @@ rule create_demand_tables:
         "../scripts/gb_model/create_demand_table.py"
 
 
-rule process_transport_demand_shape:
-    message:
-        "Process transport demand profile shape into CSV format"
-    input:
-        fes_ev_demand=resources("gb-model/fes_ev_demand.csv"),
-        transport_demand=resources("transport_demand_s_{clusters}.csv"),
-    output:
-        transport_demand_shape=resources(
-            "gb-model/transport_demand_shape_s_{clusters}.csv"
-        ),
-    log:
-        logs("transport_demand_shape_s_{clusters}.log"),
-    script:
-        "../scripts/gb_model/process_transport_demand_shape.py"
+#rule process_transport_demand_shape:
+#    message:
+#        "Process transport demand profile shape into CSV format"
+#    input:
+#        fes_ev_demand=resources("gb-model/fes_ev_demand.csv"),
+#        transport_demand=resources("transport_demand_s_{clusters}.csv"),
+#    output:
+#        transport_demand_shape=resources(
+#            "gb-model/transport_demand_shape_s_{clusters}.csv"
+#        ),
+#    log:
+#        logs("transport_demand_shape_s_{clusters}.log"),
+#    script:
+#        "../scripts/gb_model/process_transport_demand_shape.py"
 
 
 rule cluster_baseline_electricity_demand_timeseries:
@@ -390,23 +390,22 @@ rule cluster_baseline_electricity_demand_timeseries:
         "../scripts/gb_model/cluster_baseline_electricity_demand_timeseries.py"
 
 
-#rule process_demand_shape:
-#    message:
-#        "Process {wildcards.demand_sector} demand profile shape into CSV format"
-#    params:
-#        demand_sector=lambda wildcards: wildcards.demand_sector,
-#        demand_type=lambda wildcards: wildcards.demand_type
-#    input:
-#        fes_demand=resources("gb-model/{demand_sector}_demand.csv"),
-#        pypsa_eur_demand_timeseries=resources("{demand_sector}_demand_s_{clusters}.csv"),
-#    output:
-#        demand_shape=resources(
-#            "gb-model/{demand_sector}_demand_shape_s_{clusters}.csv"
-#        )
-#    log:
-#        logs("{demand_sector}_demand_shape_s_{clusters}.log"),
-#    script:
-#        "../scripts/gb_model/process_demand_shape.py"
+rule process_demand_shape:
+    message:
+        "Process {wildcards.demand_sector} demand profile shape into CSV format"
+    params:
+        demand_sector=lambda wildcards: wildcards.demand_sector,
+    input:
+        #fes_demand=resources("gb-model/fes_{demand_sector}_demand.csv"),
+        pypsa_eur_demand_timeseries=resources("{demand_sector}_demand_s_{clusters}.csv"),
+    output:
+        demand_shape=resources(
+            "gb-model/{demand_sector}_demand_shape_s_{clusters}.csv"
+        )
+    log:
+        logs("{demand_sector}_demand_shape_s_{clusters}.log"),
+    script:
+        "../scripts/gb_model/process_demand_shape.py"
 
 rule compose_network:
     input:
@@ -436,7 +435,7 @@ rule compose_network:
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
             resources("gb-model/fes_baseline_electricity_demand.csv"),
-            resources("gb-model/fes_ev_demand.csv"),
+            resources("gb-model/fes_transport_demand.csv"),
             resources("gb-model/transport_demand_shape_s_clustered.csv"),
         ],
     output:
