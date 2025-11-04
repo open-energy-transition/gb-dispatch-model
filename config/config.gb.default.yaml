@@ -40,6 +40,8 @@ atlite:
       # features: [] 
       # sarah_dir: ""
 
+energy:
+  energy_totals_year: 2012 
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
 countries:
