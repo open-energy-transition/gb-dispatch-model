@@ -449,8 +449,11 @@ rule compose_network:
             ),
             expand(
                 resources("gb-model/{demand_sector}_demand_shape_s_clustered.csv"),
-                demand_sector=[x.replace("fes_","") for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()]
-            )
+                demand_sector=[
+                    x.replace("fes_", "")
+                    for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()
+                ],
+            ),
         ],
     output:
         network=resources("networks/composed_{clusters}.nc"),
