@@ -12,10 +12,9 @@ import logging
 from pathlib import Path
 
 import pandas as pd
-
-from scripts._helpers import configure_logging, set_scenario_config, PYPSA_V1
-
 import xarray as xr
+
+from scripts._helpers import PYPSA_V1, configure_logging, set_scenario_config
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +28,11 @@ if __name__ == "__main__":
     set_scenario_config(snakemake)
 
     # Load the files
-    load_fn=snakemake.input.load
-    busmap_fn=snakemake.input.busmap
+    load_fn = snakemake.input.load
+    busmap_fn = snakemake.input.busmap
 
     # Load scaling factor
-    scaling=snakemake.params.scaling_factor
+    scaling = snakemake.params.scaling_factor
 
     # Read the electricity demand base .nc file
     load = (

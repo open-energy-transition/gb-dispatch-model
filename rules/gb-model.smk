@@ -380,14 +380,14 @@ rule cluster_baseline_electricity_demand_timeseries:
     message:
         "Cluster default PyPSA-Eur baseline electricity demand timeseries by bus"
     params:
-        scaling_factor=config_provider("load","scaling_factor"),
+        scaling_factor=config_provider("load", "scaling_factor"),
     input:
         load=resources("electricity_demand_base_s.nc"),
         busmap=resources("busmap_base_s_{clusters}.csv"),
     output:
-        csv_file=resources("baseline_electricity_demand_s_{clusters}.csv")
+        csv_file=resources("baseline_electricity_demand_s_{clusters}.csv"),
     log:
-        logs("baseline_electricity_demand_s_{clusters}.log")
+        logs("baseline_electricity_demand_s_{clusters}.log"),
     script:
         "../scripts/gb_model/cluster_baseline_electricity_demand_timeseries.py"
 
@@ -401,13 +401,12 @@ rule process_demand_shape:
         #fes_demand=resources("gb-model/fes_{demand_sector}_demand.csv"),
         pypsa_eur_demand_timeseries=resources("{demand_sector}_demand_s_{clusters}.csv"),
     output:
-        demand_shape=resources(
-            "gb-model/{demand_sector}_demand_shape_s_{clusters}.csv"
-        )
+        demand_shape=resources("gb-model/{demand_sector}_demand_shape_s_{clusters}.csv"),
     log:
         logs("{demand_sector}_demand_shape_s_{clusters}.log"),
     script:
         "../scripts/gb_model/process_demand_shape.py"
+
 
 rule compose_network:
     input:
