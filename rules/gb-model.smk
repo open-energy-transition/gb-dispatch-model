@@ -150,9 +150,35 @@ rule extract_fes_workbook_sheet:
             int(wildcards.fes_year)
         ][wildcards.fes_sheet],
     log:
-        logs("extract_fes-{fes_year}_{fes_sheet}.log"),
+        logs("extract_fes_workbook_sheet-{fes_year}_{fes_sheet}.log"),
     script:
-        "../scripts/gb_model/extract_fes_sheet.py"
+        "../scripts/gb_model/extract_fes_workbook_sheet.py"
+
+
+rule unzip_fes_costing_workbook:
+    message:
+        "Unzip FES costing workbook"
+    input:
+        "data/gb-model/downloaded/fes-costing-workbook.zip",
+    output:
+        "data/gb-model/fes-costing-workbook.xlsx",
+    shell:
+        "unzip -p {input} 'FES20 Costing Workbook (1).xlsx' > {output}"
+
+
+use rule extract_fes_workbook_sheet as extract_fes_costing_workbook_sheet with:
+    message:
+        "Extract FES costing workbook sheet {wildcards.fes_sheet} and process into machine-readable, 'tidy' dataframe format according to defined configuration."
+    input:
+        workbook="data/gb-model/fes-costing-workbook.xlsx",
+    output:
+        csv=resources("gb-model/fes-costing/{fes_sheet}.csv"),
+    params:
+        sheet_extract_config=lambda wildcards: config["fes-costing-sheet-config"][
+            wildcards.fes_sheet
+        ],
+    log:
+        logs("extract_fes_costing_workbook_sheet-{fes_sheet}.log"),
 
 
 rule process_fes_eur_data:
@@ -422,6 +448,8 @@ rule compose_network:
             resources("gb-model/fes_baseline_electricity_demand.csv"),
             resources("gb-model/fes_ev_demand.csv"),
             resources("gb-model/transport_demand_shape_s_clustered.csv"),
+            resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
+            resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
             expand(
                 resources("gb-model/{demand_type}_demand.csv"),
                 demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),

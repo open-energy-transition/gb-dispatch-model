@@ -12,6 +12,7 @@ Release Notes
 Upcoming Release
 ================
 
+* Prepared FES costing worksheets (#62).
 * Tabulated flexibility data for EV and demand-side management (DSM) for base electricity (#91).
 * Changed base year to 2012 (#92)
 * Enabled overwriting onshore clustering with custom GB shapes (#89).
