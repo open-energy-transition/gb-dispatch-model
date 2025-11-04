@@ -358,22 +358,6 @@ rule create_demand_tables:
         "../scripts/gb_model/create_demand_table.py"
 
 
-#rule process_transport_demand_shape:
-#    message:
-#        "Process transport demand profile shape into CSV format"
-#    input:
-#        fes_ev_demand=resources("gb-model/fes_ev_demand.csv"),
-#        transport_demand=resources("transport_demand_s_{clusters}.csv"),
-#    output:
-#        transport_demand_shape=resources(
-#            "gb-model/transport_demand_shape_s_{clusters}.csv"
-#        ),
-#    log:
-#        logs("transport_demand_shape_s_{clusters}.log"),
-#    script:
-#        "../scripts/gb_model/process_transport_demand_shape.py"
-
-
 rule cluster_baseline_electricity_demand_timeseries:
     message:
         "Cluster default PyPSA-Eur baseline electricity demand timeseries by bus"
@@ -436,6 +420,7 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_storage.csv"),
             resources("gb-model/fes_baseline_electricity_demand.csv"),
             resources("gb-model/fes_transport_demand.csv"),
+            resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
             resources("gb-model/transport_demand_shape_s_clustered.csv"),
         ],
     output:
