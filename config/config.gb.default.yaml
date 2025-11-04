@@ -285,6 +285,15 @@ fes-sheet-config:
         index: year
         columns: scenario
 
+    # Annual flexibility data for 2020-2050
+    FLX1:
+      usecols: "C:AL"
+      skiprows: 9
+      index_col: [0, 1, 2, 3, 4]
+      header: 0
+      rename:
+        columns: year
+
     BB2:
       usecols: "A:E"
       skiprows: 2
@@ -348,6 +357,14 @@ fes:
       Technology Detail:
         fes_baseline_electricity: ["baseline demand"]
         fes_ev: ["ev demand 1", "ev demand 2"]
+
+    flexibility:
+      Technology Detail:
+        fes_ev_dsm: ["smart charging impact at peak"]
+        fes_ev_v2g: ["v2g impact at peak"]
+        fes_residential_dsr: ["residential peak shifting (smart/touts effect)"]
+        fes_services_dsr: ["i&c dsr impact at peak (processes)"]
+
   eur:
     scenario: CT & LW    # "Leading the Way" equivalent in the NESO european supply table
     carrier_mapping:

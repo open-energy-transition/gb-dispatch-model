@@ -342,7 +342,7 @@ rule create_hydrogen_storage_table:
         "../scripts/gb_model/create_hydrogen_storage_table.py"
 
 
-rule create_demand_tables:
+rule create_demand_table:
     message:
         "Process {wildcards.demand_type} demand from FES workbook into CSV format"
     params:
@@ -356,6 +356,24 @@ rule create_demand_tables:
         logs("create_{demand_type}_demand_table.log"),
     script:
         "../scripts/gb_model/create_demand_table.py"
+
+
+rule create_flexibility_table:
+    message:
+        "Process {wildcards.flexibility_type} flexibility from FES workbook into CSV format"
+    params:
+        scenario=config["fes"]["gb"]["scenario"],
+        year_range=config["fes"]["year_range_incl"],
+        flexibility_type=lambda wildcards: wildcards.flexibility_type,
+        technology_detail=config["fes"]["gb"]["flexibility"]["Technology Detail"],
+    input:
+        flexibility_sheet=resources("gb-model/fes/2021/FLX1.csv"),
+    output:
+        flexibility=resources("gb-model/{flexibility_type}_flexibility.csv"),
+    log:
+        logs("create_{flexibility_type}_flexibility_table.log"),
+    script:
+        "../scripts/gb_model/create_flexibility_table.py"
 
 
 rule cluster_baseline_electricity_demand_timeseries:
@@ -422,6 +440,16 @@ rule compose_network:
             resources("gb-model/fes_transport_demand.csv"),
             resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
             resources("gb-model/transport_demand_shape_s_clustered.csv"),
+            expand(
+                resources("gb-model/{demand_type}_demand.csv"),
+                demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),
+            ),
+            expand(
+                resources("gb-model/{flexibility_type}_flexibility.csv"),
+                flexibility_type=config["fes"]["gb"]["flexibility"][
+                    "Technology Detail"
+                ].keys(),
+            ),
         ],
     output:
         network=resources("networks/composed_{clusters}.nc"),
