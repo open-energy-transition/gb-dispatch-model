@@ -12,6 +12,7 @@ Release Notes
 Upcoming Release
 ================
 
+* Rule to generalize creation of load profiles for different demand types (#93)
 * Changed base year to 2012 (#92)
 * Enabled overwriting onshore clustering with custom GB shapes (#89).
 * Prepared transport demand profile shape which will be used for EV demand profile (#84)
