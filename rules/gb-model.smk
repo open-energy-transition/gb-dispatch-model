@@ -398,7 +398,6 @@ rule process_demand_shape:
     params:
         demand_sector=lambda wildcards: wildcards.demand_sector,
     input:
-        #fes_demand=resources("gb-model/fes_{demand_sector}_demand.csv"),
         pypsa_eur_demand_timeseries=resources("{demand_sector}_demand_s_{clusters}.csv"),
     output:
         demand_shape=resources("gb-model/{demand_sector}_demand_shape_s_{clusters}.csv"),
