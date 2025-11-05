@@ -78,4 +78,20 @@ All hydrogen related data such as demand, supply, storage, and generation capaci
 --------------
 EV demand data
 --------------
-Electric vehicle (EV) demand data is extracted from the FES workbook table BB1.
+Electric vehicle (EV) demand data is extracted from the FES-2021 workbook table BB1.
+EV demand profile shape is prepared based on transport demand profile shape of PyPSA-Eur.
+
+--------------------------------
+Baseline electricity demand data
+--------------------------------
+Baseline electricity demand data is extracted from FES-2021 workbook table BB1.
+
+-------------------
+EV flexibility data
+-------------------
+Electric vehicle (EV) flexibility data is extracted from the FES-2021 workbook table FLX1.
+
+-------------------
+DSM flexibility for base electricity
+-------------------
+Demand-side management (DSM) flexibility data for base electricity (residential and I&C) is extracted from the FES-2021 workbook table FLX1.
