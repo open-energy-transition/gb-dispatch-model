@@ -48,12 +48,19 @@ def cluster_demand_timeseries(
     busmap = pd.read_csv(busmap_path, dtype=str)
     index_col = "name" if PYPSA_V1 else "Bus"
     busmap = busmap.set_index(index_col).squeeze()
-    load = load.groupby(busmap).sum().T
+
+    missing_buses=list(set(load.index) - set(busmap.index))
+    if len(missing_buses) > 0:
+        logger.error(
+            f"Busmap missing for buses: {missing_buses}."
+        )
+
+    load_clustered = load.groupby(busmap).sum().T
 
     logger.info(f"Load data scaled by factor {scaling}.")
-    load *= scaling
+    load_clustered *= scaling
 
-    return load
+    return load_clustered
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
