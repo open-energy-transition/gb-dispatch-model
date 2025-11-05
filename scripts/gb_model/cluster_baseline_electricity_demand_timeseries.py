@@ -50,11 +50,9 @@ def cluster_demand_timeseries(
     index_col = "name" if PYPSA_V1 else "Bus"
     busmap = busmap.set_index(index_col).squeeze()
 
-    missing_buses=list(set(load.index) - set(busmap.index))
+    missing_buses = list(set(load.index) - set(busmap.index))
     if len(missing_buses) > 0:
-        logger.error(
-            f"Busmap missing for buses: {missing_buses}."
-        )
+        logger.error(f"Busmap missing for buses: {missing_buses}.")
 
     load_clustered = load.groupby(busmap).sum().T
 
