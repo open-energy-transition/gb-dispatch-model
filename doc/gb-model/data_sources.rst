@@ -37,15 +37,24 @@ Tables from the workbook we use are:
 
 - WS1: Whole System & Gas Supply
 
+------------------------------------------
+The Digest of UK Energy Statistics (DUKES)
+------------------------------------------
+
+From `DUKES <https://www.gov.uk/government/statistics/electricity-chapter-5-digest-of-united-kingdom-energy-statistics-dukes>`_, we access existing capacities (Table 5.11).
+This is used to help distribute unallocated future capacities to GB regions, based on the relative capacity of technologies already existing.
+It replaces the equivalent existing power plant dataset computed in PyPSA-Eur due to being more comprehensive.
+
 -----------------
 GSP coordinates
 -----------------
-The GSP coordinates <https://api.neso.energy/dataset/963525d6-5d83-4448-a99c-663f1c76330a/resource/41fb4ca1-7b59-4fce-b480-b46682f346c9/download/fes2021_regional_breakdown_gsp_info.csv> is obtained from the NESO website. This is used to assign lat, lon to powerplants extracted from the FES workbook
+GB `grid-supply point (GSP) coordinates <https://api.neso.energy/dataset/963525d6-5d83-4448-a99c-663f1c76330a/resource/41fb4ca1-7b59-4fce-b480-b46682f346c9/download/fes2021_regional_breakdown_gsp_info.csv>`_ are obtained from the NESO website.
+This is used to assign lat, lon to powerplants extracted from the FES workbook
 
----------------
-EU Supply data
----------------
-The EU supply data <https://api.neso.energy/dataset/bd83ce0b-7b1e-4ff2-89e8-12d524c34d99/resource/6563801b-6da4-46e7-b147-3d81c0237779/download/fes2023_es2_v001.csv> is used to retrieve powerplant data of neighbouring countries to GB
+-----------------------
+FES EU Supply data
+-----------------------
+The `FES EU supply data <https://api.neso.energy/dataset/bd83ce0b-7b1e-4ff2-89e8-12d524c34d99/resource/6563801b-6da4-46e7-b147-3d81c0237779/download/fes2023_es2_v001.csv>`_ is used to retrieve powerplant data of neighbouring countries to GB.
 
 ---------------
 Interconnectors
@@ -74,3 +83,24 @@ For instance, if there is a 80% availability in the first half of June for only 
 Hydrogen data
 -------------
 All hydrogen related data such as demand, supply, storage, and generation capacities are sourced from the FES workbooks as detailed above.
+
+--------------
+EV demand data
+--------------
+Electric vehicle (EV) demand data is extracted from the FES-2021 workbook table BB1.
+EV demand profile shape is prepared based on transport demand profile shape of PyPSA-Eur.
+
+--------------------------------
+Baseline electricity demand data
+--------------------------------
+Baseline electricity demand data is extracted from FES-2021 workbook table BB1.
+
+-------------------
+EV flexibility data
+-------------------
+Electric vehicle (EV) flexibility data is extracted from the FES-2021 workbook table FLX1.
+
+-------------------
+DSM flexibility for base electricity
+-------------------
+Demand-side management (DSM) flexibility data for base electricity (residential and I&C) is extracted from the FES-2021 workbook table FLX1.

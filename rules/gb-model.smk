@@ -31,6 +31,11 @@ rule create_region_shapes:
         etys_boundary_lines="data/gb-model/downloaded/gb-etys-boundaries.zip",
     output:
         raw_region_shapes=resources("gb-model/raw_region_shapes.geojson"),
+    params:
+        area_loss_tolerance_percent=config["region_operations"][
+            "area_loss_tolerance_percent"
+        ],
+        min_region_area=config["region_operations"]["min_region_area"],
     log:
         logs("raw_region_shapes.log"),
     resources:
@@ -158,12 +163,32 @@ rule process_fes_eur_data:
         "../scripts/gb_model/process_fes_eur_data.py"
 
 
+rule process_dukes_current_capacities:
+    message:
+        "Assign current capacities to GB model regions and PyPSA-Eur carriers"
+    input:
+        regions=resources("gb-model/merged_shapes.geojson"),
+        regions_offshore=resources("regions_offshore_base_s_{clusters}.geojson"),
+        dukes_data="data/gb-model/downloaded/dukes-5.11.xlsx",
+    output:
+        csv=resources("gb-model/dukes-current-capacity-{clusters}.csv"),
+    log:
+        logs("process_dukes_current_capacities_{clusters}.log"),
+    params:
+        sheet_config=config["dukes-5.11"]["sheet-config"],
+        target_crs=config["target_crs"],
+    script:
+        "../scripts/gb_model/process_dukes_current_capacities.py"
+
+
 rule process_fes_gsp_data:
     message:
         "Process FES workbook sheet BB1 together with metadata from sheet BB2."
     params:
         scenario=config["fes"]["gb"]["scenario"],
         year_range=config["fes"]["year_range_incl"],
+        target_crs=config["target_crs"],
+        fill_gsp_lat_lons=config["fill-gsp-lat-lons"],
     input:
         bb1_sheet=resources("gb-model/fes/2021/BB1.csv"),
         bb2_sheet=resources("gb-model/fes/2021/BB2.csv"),
@@ -183,10 +208,12 @@ rule create_powerplants_table:
     params:
         gb_config=config["fes"]["gb"],
         eur_config=config["fes"]["eur"],
+        dukes_config=config["dukes-5.11"],
         default_set=config["fes"]["default_set"],
     input:
         gsp_data=resources("gb-model/regional_gb_data.csv"),
         eur_data=resources("gb-model/national_eur_data.csv"),
+        dukes_data=resources("gb-model/dukes-current-capacity-clustered.csv"),
     output:
         csv=resources("gb-model/fes_p_nom.csv"),
     log:
@@ -203,6 +230,7 @@ rule create_interconnectors_table:
     params:
         interconnector_config=config["interconnectors"],
         year_range=config["fes"]["year_range_incl"],
+        target_crs=config["target_crs"],
     log:
         logs("create_interconnectors_table.log"),
     script:
@@ -328,6 +356,56 @@ rule create_hydrogen_storage_table:
         "../scripts/gb_model/create_hydrogen_storage_table.py"
 
 
+rule create_demand_table:
+    message:
+        "Process {wildcards.demand_type} demand from FES workbook into CSV format"
+    params:
+        demand_type=lambda wildcards: wildcards.demand_type,
+        technology_detail=config["fes"]["gb"]["demand"]["Technology Detail"],
+    input:
+        regional_gb_data=resources("gb-model/regional_gb_data.csv"),
+    output:
+        demand=resources("gb-model/{demand_type}_demand.csv"),
+    log:
+        logs("create_{demand_type}_demand_table.log"),
+    script:
+        "../scripts/gb_model/create_demand_table.py"
+
+
+rule create_flexibility_table:
+    message:
+        "Process {wildcards.flexibility_type} flexibility from FES workbook into CSV format"
+    params:
+        scenario=config["fes"]["gb"]["scenario"],
+        year_range=config["fes"]["year_range_incl"],
+        flexibility_type=lambda wildcards: wildcards.flexibility_type,
+        technology_detail=config["fes"]["gb"]["flexibility"]["Technology Detail"],
+    input:
+        flexibility_sheet=resources("gb-model/fes/2021/FLX1.csv"),
+    output:
+        flexibility=resources("gb-model/{flexibility_type}_flexibility.csv"),
+    log:
+        logs("create_{flexibility_type}_flexibility_table.log"),
+    script:
+        "../scripts/gb_model/create_flexibility_table.py"
+
+
+rule process_transport_demand_shape:
+    message:
+        "Process transport demand profile shape into CSV format"
+    input:
+        fes_ev_demand=resources("gb-model/fes_ev_demand.csv"),
+        transport_demand=resources("transport_demand_s_{clusters}.csv"),
+    output:
+        transport_demand_shape=resources(
+            "gb-model/transport_demand_shape_s_{clusters}.csv"
+        ),
+    log:
+        logs("transport_demand_shape_s_{clusters}.log"),
+    script:
+        "../scripts/gb_model/process_transport_demand_shape.py"
+
+
 rule compose_network:
     input:
         unpack(input_profile_tech),
@@ -355,6 +433,19 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_supply.csv"),
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
+            resources("gb-model/fes_baseline_electricity_demand.csv"),
+            resources("gb-model/fes_ev_demand.csv"),
+            resources("gb-model/transport_demand_shape_s_clustered.csv"),
+            expand(
+                resources("gb-model/{demand_type}_demand.csv"),
+                demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),
+            ),
+            expand(
+                resources("gb-model/{flexibility_type}_flexibility.csv"),
+                flexibility_type=config["fes"]["gb"]["flexibility"][
+                    "Technology Detail"
+                ].keys(),
+            ),
         ],
     output:
         network=resources("networks/composed_{clusters}.nc"),
