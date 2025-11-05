@@ -9,23 +9,21 @@ This script clusters the regional base electricity demand by buses and saves it 
 """
 
 import logging
-
 from pathlib import Path
 
 import pandas as pd
-
 import xarray as xr
 
 from scripts._helpers import PYPSA_V1, configure_logging, set_scenario_config
 
 logger = logging.getLogger(__name__)
 
+
 def cluster_demand_timeseries(
     load_path: str,
     busmap_path: str,
     scaling: float = 1.0,
 ) -> pd.DataFrame:
-
     """
     Cluster the regional gb data to obtain required electricity demand timeseries by bus
 
@@ -40,7 +38,10 @@ def cluster_demand_timeseries(
 
     # Read the electricity demand base .nc file
     load = (
-        xr.open_dataarray(load_path).to_dataframe().squeeze(axis=1).unstack(level="time")
+        xr.open_dataarray(load_path)
+        .to_dataframe()
+        .squeeze(axis=1)
+        .unstack(level="time")
     )
 
     # apply clustering busmap
@@ -54,6 +55,7 @@ def cluster_demand_timeseries(
     load *= scaling
 
     return load
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -70,7 +72,7 @@ if __name__ == "__main__":
     # Load scaling factor
     scaling = snakemake.params.scaling_factor
 
-    load=cluster_demand_timeseries(load_path, busmap_path, scaling)
+    load = cluster_demand_timeseries(load_path, busmap_path, scaling)
 
     # Save the regional base electricity demand profiles
     load.to_csv(snakemake.output.csv_file)
