@@ -91,7 +91,7 @@ def extract_transmission_availability(pdf_path: str) -> pd.DataFrame:
         keys=interconnector_data.keys(),
         names=["geography", "month"],
     )
-    final_df = pd.concat([gb_df, interconnector_df])
+    final_df = pd.concat([gb_df, interconnector_df.to_frame("Total")])
     return final_df
 
 
