@@ -31,7 +31,6 @@ from scripts.add_electricity import (
     sanitize_carriers,
     sanitize_locations,
 )
-from scripts.gb_model.chp_utils import attach_chp_constraints
 from scripts.prepare_sector_network import add_electricity_grid_connection
 
 logger = logging.getLogger(__name__)
@@ -84,6 +83,36 @@ def create_context(
         costs_path=Path(costs_path),
         costs_config=copy.deepcopy(costs_config),
         max_hours=max_hours,
+    )
+
+
+def _add_timeseries_data_to_network(
+    n: pypsa.Network, data: pd.DataFrame, attribute: str
+) -> None:
+    """
+    Add/update timeseries data to a network attribute.
+
+    This is a robust approach to add data to the network when it is not known whether there is already data attached to the attribute.
+    Any existing columns in the network attribute that are also in the incoming data will be overwritten.
+    All other columns will remain as-is.
+
+    Args:
+        n (pypsa.Network): PyPSA network.
+        data (pd.DataFrame): Timeseries data to add.
+        attribute (str): Network timeseries attribute to update.
+    """
+    assert n.generators_t[attribute].index.equals(data.index), (
+        f"Snapshot indices do not match between network attribute {attribute} and data being added."
+    )
+    logger.info(
+        "Updating network timeseries attribute '%s' with %d columns of data.",
+        attribute,
+        len(data.columns),
+    )
+    n.generators_t[attribute] = (
+        n.generators_t[attribute]
+        .loc[:, ~n.generators_t[attribute].columns.isin(data.columns)]
+        .join(data)
     )
 
 
@@ -316,21 +345,67 @@ def finalise_composed_network(
     return n
 
 
+def attach_chp_constraints(n: pypsa.Network, p_min_pu: pd.DataFrame) -> None:
+    """
+    Attach CHP operating constraints to the network.
+
+    Args:
+        n (pypsa.Network): The PyPSA network
+        p_min_pu (pd.DataFrame): Minimum operation profile for CHP generators
+    """
+    chp_generators = n.generators[n.generators["set"] == "CHP"]
+
+    if chp_generators.empty:
+        logger.info(
+            "No CHP generators found in the network. "
+            f"Total generators: {len(n.generators)}, "
+            f"generators by set: {n.generators.groupby('set').size().to_dict()}"
+        )
+        return
+
+    logger.info(
+        f"Applying CHP constraints to {len(chp_generators)} generators "
+        f"with total capacity {chp_generators.p_nom.sum():.1f} MW"
+    )
+
+    # Map minimum operation to generators (vectorized)
+    # Each generator inherits the profile of its bus
+    gen_to_bus = chp_generators["bus"]
+
+    # Filter to only generators with available heat demand data
+    valid_gens = gen_to_bus[gen_to_bus.isin(p_min_pu.columns)]
+    missing_gens = gen_to_bus[~gen_to_bus.isin(p_min_pu.columns)]
+
+    if not missing_gens.empty:
+        logger.warning(
+            f"No heat demand data for {len(missing_gens)} generators at buses: {list(missing_gens.unique())}. "
+            "These generators will have no CHP constraint."
+        )
+
+    # Vectorized assignment: rename p_min_pu columns from bus names to generator indices
+    # Select columns for each generator's bus, then rename to generator index
+    p_min_pu_for_gens = p_min_pu[valid_gens.values].copy()
+    p_min_pu_for_gens.columns = valid_gens.index
+
+    # Assign all generators at once
+    _add_timeseries_data_to_network(n, p_min_pu_for_gens, "p_min_pu")
+
+
 def compose_network(
     network_path: str,
     output_path: str,
     costs_path: str,
     powerplants_path: str,
     hydro_capacities_path: str | None,
+    chp_p_min_pu_path: str,
     renewable_profiles: dict[str, str],
-    heat_demand_path: str,
     countries: list[str],
     costs_config: dict[str, Any],
     electricity_config: dict[str, Any],
     clustering_config: dict[str, Any],
     renewable_config: dict[str, Any],
     lines_config: dict[str, Any],
-    chp_config: dict[str, Any],
+    enable_chp: bool,
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -363,11 +438,8 @@ def compose_network(
         Renewable configuration dictionary
     lines_config : dict
         Lines configuration dictionary
-    chp_config : dict
-        CHP configuration with required keys:
-        - 'enable': bool
-        - 'heat_to_power_ratio': float
-        - 'min_operation_level': float
+    enable_chp : bool
+        Whether to enable CHP constraints
     """
     network = pypsa.Network(network_path)
     max_hours = electricity_config["max_hours"]
@@ -415,16 +487,12 @@ def compose_network(
     )
 
     # Add simplified CHP constraints if enabled
-    if chp_config["enable"]:
+    if enable_chp:
         logger.info("Adding simplified CHP constraints based on heat demand.")
-        attach_chp_constraints(
-            network,
-            ppl,
-            heat_demand_path=heat_demand_path,
-            heat_to_power_ratio=chp_config["heat_to_power_ratio"],
-            min_operation_level=chp_config["min_operation_level"],
-            shutdown_threshold=chp_config.get("shutdown_threshold", 0.1),
+        chp_p_min_pu = pd.read_csv(
+            chp_p_min_pu_path, index_col="snapshot", parse_dates=True
         )
+        attach_chp_constraints(network, chp_p_min_pu)
 
     add_pypsaeur_components(network, electricity_config, context, costs)
     finalise_composed_network(network, context)
@@ -453,12 +521,12 @@ if __name__ == "__main__":
         powerplants_path=snakemake.input.powerplants,
         hydro_capacities_path=snakemake.input.hydro_capacities,
         renewable_profiles=renewable_profiles,
-        heat_demand_path=snakemake.input.hourly_heat_demand_total,
+        chp_p_min_pu_path=snakemake.input.chp_p_min_pu,
         countries=snakemake.params.countries,
         costs_config=snakemake.params.costs_config,
         electricity_config=snakemake.params.electricity,
         clustering_config=snakemake.params.clustering,
         renewable_config=snakemake.params.renewable,
         lines_config=snakemake.params.lines,
-        chp_config=snakemake.params.chp,
+        enable_chp=snakemake.params.enable_chp,
     )

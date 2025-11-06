@@ -395,6 +395,24 @@ rule process_transport_demand_shape:
         "../scripts/gb_model/process_transport_demand_shape.py"
 
 
+rule create_chp_p_min_pu_profile:
+    message:
+        "Create CHP minimum operation profiles linked to heat demand"
+    params:
+        heat_to_power_ratio=config["chp"]["heat_to_power_ratio"],
+        min_operation_level=config["chp"]["min_operation_level"],
+        shutdown_threshold=config["chp"]["shutdown_threshold"],
+    input:
+        regions=resources("gb-model/merged_shapes.geojson"),
+        heat_demand=resources("hourly_heat_demand_total_base_s_{clusters}.nc"),
+    output:
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
+    log:
+        logs("create_chp_p_min_pu_profile_{clusters}.log"),
+    script:
+        "../scripts/gb_model/create_chp_p_min_pu_profile.py"
+
+
 rule compose_network:
     params:
         countries=config["countries"],
@@ -403,7 +421,7 @@ rule compose_network:
         clustering=config["clustering"],
         renewable=config["renewable"],
         lines=config["lines"],
-        chp=config["chp"],
+        enable_chp=config["chp"]["enable"],
     input:
         unpack(input_profile_tech),
         network=resources("networks/base_s_{clusters}.nc"),
@@ -412,9 +430,7 @@ rule compose_network:
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
         hydro_capacities=ancient("data/hydro_capacities.csv"),
-        hourly_heat_demand_total=resources(
-            "hourly_heat_demand_total_base_s_{clusters}.nc"
-        ),
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(

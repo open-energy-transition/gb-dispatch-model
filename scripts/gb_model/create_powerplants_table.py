@@ -22,9 +22,11 @@ def _map_names(
     df: pd.DataFrame, mapping: dict[str, dict[str, str]], default: str | None = None
 ) -> str | None:
     """Map carriers/sets to a standard name."""
-    mapped = pd.Series(default, index=df.index, dtype="object")
+    mapped = pd.Series(float("nan"), index=df.index, dtype="object")
     for col, mappings in mapping.items():
         mapped = mapped.fillna(df[col].map(mappings))
+    if default is not None:
+        mapped = mapped.fillna(default)
     return mapped
 
 
