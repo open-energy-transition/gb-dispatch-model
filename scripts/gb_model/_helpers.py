@@ -15,14 +15,40 @@ logger = logging.getLogger(__name__)
 def map_points_to_regions(
     df: pd.DataFrame,
     gdf_regions: gpd.GeoDataFrame,
-    lat_col: str = "lat",
-    lon_col: str = "lon",
-    crs: str = "EPSG:4326",
+    lat_col: str,
+    lon_col: str,
+    point_crs: str,
+    projected_crs: str,
+    dwithin_distance: float = 100,
 ) -> pd.DataFrame:
+    """
+    Map points from a DataFrame to regions in a GeoDataFrame.
+
+    Args:
+        df (pd.DataFrame): input DataFrame with point coordinates
+        gdf_regions (gpd.GeoDataFrame): GeoDataFrame with region geometries
+        lat_col (str): latitude column name in df
+        lon_col (str): longitude column name in df
+        point_crs (str): CRS of the input points
+        projected_crs (str): CRS to project the points and regions to when performing spatial join
+        dwithin_distance (float, optional): distance (in `projected_crs` units (e.g. metres)) away from region in which points will still be considered as "within" a region . Defaults to 100.
+
+    Returns:
+        pd.DataFrame: DataFrame with the same index as `df`, but containing region information
+    """
     points = gpd.GeoDataFrame(
-        geometry=gpd.points_from_xy(df[lon_col], df[lat_col]), crs=crs
-    ).to_crs(gdf_regions.crs)
-    regions = gpd.sjoin(points, gdf_regions, how="left", predicate="intersects")["name"]
+        geometry=gpd.points_from_xy(df[lon_col], df[lat_col]),
+        crs=point_crs,
+        index=df.index,
+    ).to_crs(projected_crs)
+
+    regions = gpd.sjoin(
+        points,
+        gdf_regions.to_crs(projected_crs),
+        how="left",
+        predicate="dwithin",
+        distance=dwithin_distance,
+    ).drop(columns="geometry")
     return regions
 
 

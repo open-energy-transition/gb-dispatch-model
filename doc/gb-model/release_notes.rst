@@ -12,6 +12,7 @@ Release Notes
 Upcoming Release
 ================
 
+* Rule to generalize creation of load profiles for different demand types (#93)
 * Tabulated flexibility data for EV and demand-side management (DSM) for base electricity (#91).
 * Changed base year to 2012 (#92)
 * Enabled overwriting onshore clustering with custom GB shapes (#89).
@@ -23,7 +24,7 @@ Upcoming Release
 * Tabulated interconnector capacities between GB regions and neighbouring countries (#10).
 * Tabulated monthly GB powerplant fractional availability profiles (#71).
 * Remove unnecessary output in `compose_networks` rule that causes error (#2)
-* Tabulated regional powerplant capacities for GB (#4).
+* Tabulated regional powerplant capacities for GB (#4) with direct transmission-level / unconnected capacities proportionally distributed to GSPs (#66, #77)
 * Tabulated EU country level aggregated powerplant capacities (#33)
 * Add rule 'retrieve_unavailability_data' to Snakemake workflow for fetching unavailability data from ENTSO-E. (#43)
 * Increase number of HTTP download retries to mitigate against Zenodo file retrieval timeouts.

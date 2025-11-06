@@ -37,9 +37,11 @@ atlite:
       dx: 0.3
       dy: 0.3
       time: ['2012', '2012']
-      # features: [] 
+      # features: []
       # sarah_dir: ""
 
+energy:
+  energy_totals_year: 2012
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
 countries:
@@ -99,14 +101,15 @@ urls:
   transmission-availability: https://www.neso.energy/document/211021/download
   fes-2021-workbook: https://www.neso.energy/document/199971/download # FES 2021 workbook
   fes-2023-workbook: https://www.neso.energy/document/283061/download # FES 2023 workbook
+  dukes-5.11: https://assets.publishing.service.gov.uk/media/688cb64ee8ba9507fc1b0953/DUKES_5.11.xlsx
   gsp-coordinates: https://api.neso.energy/dataset/963525d6-5d83-4448-a99c-663f1c76330a/resource/41fb4ca1-7b59-4fce-b480-b46682f346c9/download/fes2021_regional_breakdown_gsp_info.csv
   eur-supply-table: https://api.neso.energy/dataset/bd83ce0b-7b1e-4ff2-89e8-12d524c34d99/resource/6563801b-6da4-46e7-b147-3d81c0237779/download/fes2023_es2_v001.csv
 target_crs: "EPSG:27700"
-area_loss_tolerance_percent: 0.01 # percentage of area loss tolerated when splitting regions
-min_region_area: 1000000 # minimum area of a region in square meters (1 km²) for keeping it after splitting
 
 # Manual region merging configuration
 region_operations:
+  area_loss_tolerance_percent: 0.01 # percentage of area loss tolerated when splitting regions
+  min_region_area: 1000000 # minimum area of a region in square meters (1 km²) for keeping it after splitting
   # Regions to split before merging
   splits:
   - region: 6
@@ -124,25 +127,103 @@ region_operations:
 
   # Groups of regions to merge together
   merge_groups:
-  - [61, 64]
-  - [47, 48, 49]
-  - [54, 55, 56]
-  - [52, 53]
-  - [41, 43, "46s"]
-  - [77, 78, 79]
-  - [40, 44, 45]
-  - [13, 16, 17]
-  - [80, 81, 82, 83]
-  - [18, 19, 20, 21, 22, 23, 24, 31, 32, 33, 34, 94, 95, 96, 97, 98]
-  - [2, 3, 91, 92]
-  - [14, 15, 25, 26, 27, 28, 29, 30, 35, 36, 37, 38]
-  - [62, 63, 86, 87, 88, 89, 90]
-  - [65, 66, 67, 68, 69, 70, 71, 72, 73, 84, 85]
-  - [10, "6wn", 11, 12, "8w"]
-  - ["6e", "6ws", 7, 9]
-  - [39, 99]
-  - [74, 75, 76]
-  - [4, "5w"]
+  - id: 1
+    merge: [1]
+    TO: NGET
+  - id: 2
+    merge: [2, 3, 91, 92]
+    TO: NGET
+  - id: 3
+    merge: [4, "5w"]
+    TO: NGET
+  - id: 4
+    merge: [5e]
+    TO: NGET
+  - id: 5
+    merge: ["6e", "6ws", 7, 9]
+    TO: NGET
+  - id: 6
+    merge: [8e]
+    TO: NGET
+  - id: 7
+    merge: [10, "6wn", 11, 12, "8w"]
+    TO: NGET
+  - id: 8
+    merge: [13, 16, 17]
+    TO: NGET
+  - id: 9
+    merge: [14, 15, 25, 26, 27, 28, 29, 30, 35, 36, 37, 38]
+    TO: NGET
+  - id: 10
+    merge: [18, 19, 20, 21, 22, 23, 24, 31, 32, 33, 34, 94, 95, 96, 97, 98]
+    TO: NGET
+  - id: 11
+    merge: [39, 99]
+    TO: NGET
+  - id: 12
+    merge: [40, 44, 45]
+    TO: NGET
+  - id: 13
+    merge: [42]
+    TO: NGET
+  - id: 14
+    merge: [41, 43, "46s"]
+    TO: NGET
+  - id: 15
+    merge: [46n]
+    TO: NGET
+  - id: 16
+    merge: [47, 48, 49]
+    TO: NGET
+  - id: 17
+    merge: [50]
+    TO: NGET
+  - id: 18
+    merge: [51]
+    TO: NGET
+  - id: 19
+    merge: [52, 53]
+    TO: NGET
+  - id: 20
+    merge: [54, 55, 56]
+    TO: NGET
+  - id: 21
+    merge: [57]
+    TO: NGET
+  - id: 22
+    merge: [77, 78, 79]
+    TO: NGET
+
+  - id: 23
+    merge: [58]
+    TO: SPTL
+  - id: 24
+    merge: [59]
+    TO: SPTL
+
+  - id: 25
+    merge: [60]
+    TO: SHETL
+  - id: 26
+    merge: [61, 64]
+    TO: SHETL
+  - id: 27
+    merge: [62, 63, 86, 87, 88, 89, 90]
+    TO: SHETL
+  - id: 28
+    merge: [65, 66, 67, 68, 69, 70, 71, 72, 73, 84, 85]
+    TO: SHETL
+  - id: 29
+    merge: [74, 75, 76]
+    TO: SHETL
+  - id: 30
+    merge: [93]
+    TO: SHETL
+
+  # TODO: add this to Ireland
+  - id: 31
+    merge: [80, 81, 82, 83]
+    TO: N-IRL
 
 # Note: Set ENTSO_E_API_KEY in your .env file or environment variables
 # Register at https://transparency.entsoe.eu/ to get API key
@@ -209,6 +290,61 @@ entsoe_unavailability:
     # B22: "DC Link"
     # B23: "Substation"
     # B24: "Transformer"
+
+dukes-5.11:
+  # list of major power producers
+  sheet-config:
+    sheet_name: "DUKES 2023" # compromise sheet as it has both coal and pumped hydro data
+    usecols: "A:P"
+    skiprows: 5
+    index_col: [0, 1]
+    header: 0
+  carrier_mapping:
+    Technology:
+      Solar: solar
+      Bioenergy: biomass
+      Nuclear: nuclear
+      Pumped Hydro: PHS
+      Pumped hydro: PHS
+    Type:
+      Onshore: onwind
+      onshore: onwind
+      Offshore: offwind
+      CCGT: CCGT
+      Small Hydro: ror
+      Natural Flow: ror
+      Large Hydro: hydro
+    Primary Fuel:
+      Natural Gas: gas
+      Diesel/Gas Oil: oil
+      Coal: coal
+  set_mapping:
+    CHP:
+      Yes: CHP
+    Technology:
+      Pumped Hydro: Store
+      Pumped hydro: Store
+
+fill-gsp-lat-lons:
+  # Any GSPs defined in `gsp-coordinates` but missing lat/lon coordinates can have their coordinates manually set here.
+  Dunbar A: # Same as Dunbar
+    Latitude: 55.977
+    Longitude: -2.573
+  Dunbar B: # Same as Dunbar
+    Latitude: 55.977
+    Longitude: -2.573
+  Finstown: # From FES2024
+    Latitude: 59.003
+    Longitude: -3.147
+  Lesmahagow: # From FES2024
+    Latitude: 55.618
+    Longitude: -3.867
+  Moffat: # From FES2024
+    Latitude: 55.301
+    Longitude: -3.428
+  Rothienorman: # From FES2024
+    Latitude: 57.404
+    Longitude: -2.518
 
 fes-sheet-config:
   2021:
@@ -346,6 +482,7 @@ fes:
         Marine: marine
         Non-renewable Engines (Diesel) (non CHP): oil
         Non-renewable Engines (Gas) (non CHP): gas
+        Non-renewable CHP: gas
         Nuclear: nuclear
         OCGTs (non CHP): OCGT
         Offshore-Wind (off-Grid): offwind
@@ -353,6 +490,7 @@ fes:
         Solar Generation: solar
         Waste Incineration (including CHP): waste
       Technology Detail:
+        Domestic Batteries (G98): battery
         Batteries: battery
         Pumped Hydro: PHS # FIXME: should this be just "hydro?"
         Offshore Wind: offwind
@@ -369,7 +507,7 @@ fes:
     demand:
       Technology Detail:
         fes_baseline_electricity: ["baseline demand"]
-        fes_ev: ["ev demand 1", "ev demand 2"]
+        fes_transport: ["ev demand 1", "ev demand 2"]
 
     flexibility:
       Technology Detail:
@@ -397,6 +535,7 @@ fes:
         OCGT: OCGT
         Gas Reciprocating Engines: gas
         Hydrogen: hydrogen # hydrogen-fueled turbine
+        Hydrogen CHP: hydrogen # hydrogen-fueled turbine
         Fuel Oil: oil
         Battery: battery
         Pumped Hydro: PHS
@@ -423,6 +562,7 @@ fes:
       SubType:
         Biomass CHP: CHP
         Gas CHP: CHP
+        Hydrogen CHP: CHP
         Battery: Store
         Pumped Hydro: Store
       SubSubType:

@@ -15,7 +15,7 @@ import logging
 import geopandas as gpd
 import pandas as pd
 from shapely.geometry import LineString
-from shapely.ops import split, unary_union
+from shapely.ops import split
 
 from scripts._helpers import configure_logging, set_scenario_config
 
@@ -360,6 +360,25 @@ def cut_regions_before_merge(regions_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return regions_gdf
 
 
+def _get_merge_region(series: pd.Series, merge_groups) -> str | None:
+    """
+    Helper function to get merged region name for a given region
+
+    Args:
+        series: A Series containing region information
+        merge_groups: List of merge groups from configuration
+    Returns:
+        Merged region name if found, else None
+    """
+    raw_region = series["numeric_id"]
+    merge_region = [grp["id"] for grp in merge_groups if raw_region in grp["merge"]]
+    if len(merge_region) > 1:
+        raise ValueError(f"Region {raw_region} found in multiple merge groups!")
+    elif not merge_region:
+        logger.warning(f"Region {raw_region} not found in any merge group")
+    return merge_region[0] if merge_region else None
+
+
 def merge_regions(
     regions_gdf: gpd.GeoDataFrame, merge_groups: list
 ) -> gpd.GeoDataFrame:
@@ -368,7 +387,7 @@ def merge_regions(
 
     Args:
         regions_gdf: GeoDataFrame containing regions
-        merge_groups: List of lists, each containing region IDs to merge
+        merge_groups: List of merge entries, each containing raw regions to merge
 
     Returns:
         GeoDataFrame with merged regions
@@ -377,113 +396,40 @@ def merge_regions(
 
     # Create a copy to work with
     result_gdf = regions_gdf.copy()
-    regions_to_remove = set()
 
-    for i, group in enumerate(merge_groups):
-        logger.debug(f"Processing merge group {i + 1}: regions {group}")
+    result_gdf["merged_region_id"] = result_gdf.apply(
+        _get_merge_region, merge_groups=merge_groups, axis=1
+    )
 
-        # Find regions in this group (handle both numeric and string IDs)
-        group_regions_list = []
-        for region_id in group:
-            if isinstance(region_id, str):
-                # Handle split regions like '6w', '6e', '46n', '46s'
-                mask = regions_gdf["numeric_id"] == region_id
-            else:
-                # Handle numeric IDs
-                mask = regions_gdf["numeric_id"] == region_id
-
-            matching_regions = result_gdf[mask]
-            if len(matching_regions) > 0:
-                group_regions_list.append(matching_regions.iloc[0])
-            else:
-                logger.warning(f"Region {region_id} not found in group {group}")
-
-        if len(group_regions_list) == 0:
-            logger.warning(f"No regions found for group {group}")
-            continue
-
-        # Convert to GeoDataFrame
-        group_regions = gpd.GeoDataFrame(group_regions_list, crs=result_gdf.crs)
-
-        if len(group_regions) < 2:
-            logger.warning(f"Group {group} has less than 2 regions, skipping merge")
-            continue
-
-        # Get the first region as the base (will keep this one)
-        base_region = group_regions.iloc[0]
-        base_region_idx = None
-
-        # Find the index in result_gdf
-        for idx, row in result_gdf.iterrows():
-            if row["region_id"] == base_region["region_id"]:
-                base_region_idx = idx
-                break
-
-        if base_region_idx is None:
-            logger.error(
-                f"Could not find base region index for {base_region['region_id']}"
-            )
-            continue
-
-        # Collect geometries to merge
-        geometries_to_merge = [
-            region.geometry for _, region in group_regions.iterrows()
+    result_gdf_agg = result_gdf.dissolve(
+        ["name", "merged_region_id"],
+        aggfunc={
+            "area_km2": "sum",
+            "numeric_id": lambda x: ", ".join(str(i) for i in filter(None, x)),
+        },
+    ).reset_index()
+    result_gdf_agg["country"] = result_gdf_agg["name"]
+    result_gdf_agg["name"] = (
+        result_gdf_agg["name"] + " " + result_gdf_agg["merged_region_id"].astype(str)
+    )
+    result_gdf_agg["TO_region"] = (
+        pd.DataFrame(merge_groups)
+        .set_index("id")
+        .loc[result_gdf_agg["merged_region_id"].values, "TO"]
+        .values
+    )
+    result_gdf_agg = result_gdf_agg.rename(columns={"numeric_id": "raw_region_ids"})
+    return result_gdf_agg[
+        [
+            "name",
+            "country",
+            "geometry",
+            "area_km2",
+            "raw_region_ids",
+            "merged_region_id",
+            "TO_region",
         ]
-
-        # Merge geometries
-        try:
-            merged_geometry = unary_union(geometries_to_merge)
-            logger.debug(f"Successfully merged {len(geometries_to_merge)} geometries")
-        except Exception as e:
-            logger.error(f"Failed to merge geometries for group {group}: {e}")
-            continue
-
-        # Update the base region with merged geometry
-        result_gdf.loc[base_region_idx, "geometry"] = merged_geometry
-
-        # Update area if column exists
-        if "area_km2" in result_gdf.columns:
-            # Calculate new area (assuming CRS is in meters)
-            new_area_km2 = calculate_area_km2(merged_geometry, regions_gdf.crs)
-            result_gdf.loc[base_region_idx, "area_km2"] = new_area_km2
-            logger.debug(f"Updated area to {new_area_km2:.2f} km²")
-
-        # Track merged region IDs
-        merged_region_ids = ", ".join(map(str, group[1:]))  # All except the first
-        if "merged_regions" in result_gdf.columns:
-            existing_merged = result_gdf.loc[base_region_idx, "merged_regions"]
-            if pd.isna(existing_merged) or existing_merged == "":
-                result_gdf.loc[base_region_idx, "merged_regions"] = merged_region_ids
-            else:
-                result_gdf.loc[base_region_idx, "merged_regions"] = (
-                    f"{existing_merged}, {merged_region_ids}"
-                )
-        else:
-            result_gdf["merged_regions"] = ""
-            result_gdf.loc[base_region_idx, "merged_regions"] = merged_region_ids
-
-        # Mark other regions in group for removal
-        for region_id in group[1:]:  # All except the first
-            if isinstance(region_id, str):
-                region_indices = result_gdf[result_gdf["numeric_id"] == region_id].index
-            else:
-                region_indices = result_gdf[result_gdf["numeric_id"] == region_id].index
-            regions_to_remove.update(region_indices)
-
-        logger.debug(f"Merged regions {group} into region {base_region['region_id']}")
-
-    # Remove merged regions
-    if regions_to_remove:
-        logger.debug(f"Removing {len(regions_to_remove)} merged regions")
-        result_gdf = result_gdf.drop(index=regions_to_remove)
-
-    # Reset index
-    result_gdf = result_gdf.reset_index(drop=True)
-
-    result_gdf["name"] = result_gdf["name"] + " " + result_gdf["numeric_id"].astype(str)
-
-    logger.debug(f"Final result: {len(regions_gdf)} -> {len(result_gdf)} regions")
-    return result_gdf
+    ]
 
 
 def append_country_shapes(
@@ -511,7 +457,6 @@ def append_country_shapes(
         country_shapes_gdf = country_shapes_gdf.to_crs(regions_gdf.crs)
 
     # assign country column
-    regions_gdf["country"] = "GB"
     country_shapes_gdf["country"] = country_shapes_gdf["name"]
 
     # Filter out GB country shape
