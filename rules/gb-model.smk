@@ -23,7 +23,7 @@ rule download_data:
     conda:
         "../envs/gb-model/workflow.yaml"
     shell:
-        "curl -sSLvo {output} {params.url}"
+        "curl -sSLo {output} {params.url}"
 
 
 # Rule to create region shapes using create_region_shapes.py
