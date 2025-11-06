@@ -40,6 +40,8 @@ atlite:
       # features: []
       # sarah_dir: ""
 
+energy:
+  energy_totals_year: 2012
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
 countries:
@@ -490,7 +492,7 @@ fes:
     demand:
       Technology Detail:
         fes_baseline_electricity: ["baseline demand"]
-        fes_ev: ["ev demand 1", "ev demand 2"]
+        fes_transport: ["ev demand 1", "ev demand 2"]
 
     flexibility:
       Technology Detail:

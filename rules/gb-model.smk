@@ -390,20 +390,35 @@ rule create_flexibility_table:
         "../scripts/gb_model/create_flexibility_table.py"
 
 
-rule process_transport_demand_shape:
+rule cluster_baseline_electricity_demand_timeseries:
     message:
-        "Process transport demand profile shape into CSV format"
+        "Cluster default PyPSA-Eur baseline electricity demand timeseries by bus"
+    params:
+        scaling_factor=config_provider("load", "scaling_factor"),
     input:
-        fes_ev_demand=resources("gb-model/fes_ev_demand.csv"),
-        transport_demand=resources("transport_demand_s_{clusters}.csv"),
+        load=resources("electricity_demand_base_s.nc"),
+        busmap=resources("busmap_base_s_{clusters}.csv"),
     output:
-        transport_demand_shape=resources(
-            "gb-model/transport_demand_shape_s_{clusters}.csv"
-        ),
+        csv_file=resources("baseline_electricity_demand_s_{clusters}.csv"),
     log:
-        logs("transport_demand_shape_s_{clusters}.log"),
+        logs("baseline_electricity_demand_s_{clusters}.log"),
     script:
-        "../scripts/gb_model/process_transport_demand_shape.py"
+        "../scripts/gb_model/cluster_baseline_electricity_demand_timeseries.py"
+
+
+rule process_demand_shape:
+    message:
+        "Process {wildcards.demand_sector} demand profile shape into CSV format"
+    params:
+        demand_sector=lambda wildcards: wildcards.demand_sector,
+    input:
+        pypsa_eur_demand_timeseries=resources("{demand_sector}_demand_s_{clusters}.csv"),
+    output:
+        demand_shape=resources("gb-model/{demand_sector}_demand_shape_s_{clusters}.csv"),
+    log:
+        logs("{demand_sector}_demand_shape_s_{clusters}.log"),
+    script:
+        "../scripts/gb_model/process_demand_shape.py"
 
 
 rule compose_network:
@@ -433,8 +448,7 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_supply.csv"),
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
-            resources("gb-model/fes_baseline_electricity_demand.csv"),
-            resources("gb-model/fes_ev_demand.csv"),
+            resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
             resources("gb-model/transport_demand_shape_s_clustered.csv"),
             expand(
                 resources("gb-model/{demand_type}_demand.csv"),
@@ -445,6 +459,13 @@ rule compose_network:
                 flexibility_type=config["fes"]["gb"]["flexibility"][
                     "Technology Detail"
                 ].keys(),
+            ),
+            expand(
+                resources("gb-model/{demand_sector}_demand_shape_s_clustered.csv"),
+                demand_sector=[
+                    x.replace("fes_", "")
+                    for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()
+                ],
             ),
         ],
     output:
