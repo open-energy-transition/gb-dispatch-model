@@ -402,9 +402,7 @@ rule process_regional_flexibility_table:
         flexibility=resources("gb-model/{flexibility_type}_flexibility.csv"),
         regional_gb_data=resources("gb-model/regional_gb_data.csv"),
     output:
-        regional_flexibility=resources(
-            "gb-model/regional_{flexibility_type}_flexibility.csv"
-        ),
+        regional_flexibility=resources("gb-model/regional_{flexibility_type}.csv"),
     log:
         logs("process_regional_{flexibility_type}_flexibility_table.log"),
     script:
@@ -478,7 +476,7 @@ rule compose_network:
             expand(
                 [
                     resources("gb-model/{flexibility_type}_flexibility.csv"),
-                    resources("gb-model/regional_{flexibility_type}_flexibility.csv"),
+                    resources("gb-model/regional_{flexibility_type}.csv"),
                 ],
                 flexibility_type=config["fes"]["gb"]["flexibility"][
                     "Technology Detail"
