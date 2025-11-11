@@ -37,6 +37,8 @@ Tables from the workbook we use are:
 
 - WS1: Whole System & Gas Supply
 
+We also use the same cost assumptions as given by the FES, available in a separate dataset linked to `a 2023 report <https://assets.publishing.service.gov.uk/media/6556027d046ed400148b99fe/electricity-generation-costs-2023.pdf>`_.
+
 ------------------------------------------
 The Digest of UK Energy Statistics (DUKES)
 ------------------------------------------

@@ -352,12 +352,19 @@ def load_and_aggregate_powerplants(
         "Reservoir": "hydro",
         "Pumped Storage": "PHS",
     }
+    # Read raw powerplants and preserve 'set' column through processing
+    ppl_raw = pd.read_csv(ppl_fn, index_col=0, dtype={"bus": "str"})
+    set_column = ppl_raw["Set"].copy() if "Set" in ppl_raw.columns else None
+
     ppl = (
-        pd.read_csv(ppl_fn, index_col=0, dtype={"bus": "str"})
-        .powerplant.to_pypsa_names()
+        ppl_raw.powerplant.to_pypsa_names()
         .rename(columns=str.lower)
         .replace({"carrier": carrier_dict, "technology": tech_dict})
     )
+
+    # Restore 'set' column if it existed in raw data
+    if set_column is not None:
+        ppl["set"] = set_column
 
     # Replace carriers "natural gas" and "hydro" with the respective technology;
     # OCGT or CCGT and hydro, PHS, or ror)
@@ -704,21 +711,30 @@ def attach_conventional_generators(
     caps = ppl.groupby("carrier").p_nom.sum().div(1e3).round(2)
     logger.info(f"Adding {len(ppl)} generators with capacities [GW]pp \n{caps}")
 
-    n.add(
-        "Generator",
-        ppl.index,
-        carrier=ppl.carrier,
-        bus=ppl.bus,
-        p_nom_min=ppl.p_nom.where(ppl.carrier.isin(conventional_carriers), 0),
-        p_nom=ppl.p_nom.where(ppl.carrier.isin(conventional_carriers), 0),
-        p_nom_extendable=ppl.carrier.isin(extendable_carriers["Generator"]),
-        efficiency=ppl.efficiency,
-        marginal_cost=marginal_cost,
-        capital_cost=ppl.capital_cost,
-        build_year=ppl.build_year,
-        lifetime=ppl.lifetime,
+    # Prepare generator attributes
+    # Ensure 'set' column exists with default value 'PP' (Power Plant)
+    if "set" not in ppl.columns:
+        logger.warning(
+            "'set' column not found in powerplants data. Setting all to 'PP'."
+        )
+        ppl["set"] = "PP"
+
+    gen_attrs = {
+        "carrier": ppl.carrier,
+        "bus": ppl.bus,
+        "p_nom_min": ppl.p_nom.where(ppl.carrier.isin(conventional_carriers), 0),
+        "p_nom": ppl.p_nom.where(ppl.carrier.isin(conventional_carriers), 0),
+        "p_nom_extendable": ppl.carrier.isin(extendable_carriers["Generator"]),
+        "efficiency": ppl.efficiency,
+        "marginal_cost": marginal_cost,
+        "capital_cost": ppl.capital_cost,
+        "build_year": ppl.build_year,
+        "lifetime": ppl.lifetime,
+        "set": ppl["set"],  # Always include 'set' attribute
         **committable_attrs,
-    )
+    }
+
+    n.add("Generator", ppl.index, **gen_attrs)
 
     for carrier in set(conventional_params) & set(carriers):
         # Generators with technology affected
