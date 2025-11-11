@@ -22,9 +22,11 @@ def _map_names(
     df: pd.DataFrame, mapping: dict[str, dict[str, str]], default: str | None = None
 ) -> str | None:
     """Map carriers/sets to a standard name."""
-    mapped = pd.Series(default, index=df.index, dtype="object")
+    mapped = pd.Series(float("nan"), index=df.index, dtype="object")
     for col, mappings in mapping.items():
         mapped = mapped.fillna(df[col].map(mappings))
+    if default is not None:
+        mapped = mapped.fillna(default)
     return mapped
 
 
@@ -65,6 +67,82 @@ def capacity_table(
     )
 
     return df_capacity
+
+
+def _ensure_column_with_default(
+    df: pd.DataFrame, col: str, default: float, units: str = ""
+) -> pd.DataFrame:
+    """Helper to ensure column exists and has no NaN values."""
+    unit_str = f" {units}" if units else ""
+
+    if col not in df.columns:
+        logger.warning(f"No {col} column; creating with default {default}{unit_str}")
+        df[col] = default
+    else:
+        missing = df[col].isna().sum()
+        if missing > 0:
+            logger.warning(
+                f"Missing {col} for {missing} rows; using default {default}{unit_str}"
+            )
+            df[col] = df[col].fillna(default)
+
+    return df
+
+
+def assign_technical_and_costs_defaults(
+    df: pd.DataFrame,
+    costs: pd.DataFrame,
+    default_characteristics: dict[str, tuple[float, str]],
+) -> pd.DataFrame:
+    """
+    Enrich powerplants dataframe with cost and technical parameters.
+
+    Adds efficiency, marginal_cost, capital_cost, lifetime, build_year, and unique index.
+
+    Args:
+        df (pd.DataFrame): powerplant data with bus, year, carrier, set, p_nom columns.
+        costs (pd.DataFrame): cost data indexed by carrier.
+        default_characteristics (dict): default values for technical and cost parameters
+
+    Returns:
+        pd.DataFrame: enriched powerplants data ready for PyPSA
+    """
+    df["bus"] = df["bus"].astype(str)
+    df["build_year"] = df["year"].astype(int)
+
+    # Join cost data if available
+    cost_columns = ["VOM", "FOM", "efficiency", "capital_cost", "fuel", "lifetime"]
+    available_cost_cols = [col for col in cost_columns if col in costs.columns]
+
+    if available_cost_cols:
+        df = df.join(costs[available_cost_cols], on="carrier")
+    else:
+        logger.warning("No cost columns found in costs dataframe")
+
+    # Calculate marginal cost if possible
+    if all(col in df.columns for col in ["VOM", "fuel", "efficiency"]):
+        df["marginal_cost"] = (
+            df["carrier"].map(costs["VOM"])
+            + df["carrier"].map(costs["fuel"]) / df["efficiency"]
+        )
+
+    for col in default_characteristics.items():
+        df = _ensure_column_with_default(df, col, col["data"], col["units"])
+
+    # Create unique index: "bus carrier-year-idx"
+    df["idx_counter"] = df.groupby(["bus", "carrier", "year"]).cumcount()
+    df.index = (
+        df["bus"]
+        + " "
+        + df["carrier"]
+        + "-"
+        + df["year"].astype(int).astype(str)
+        + "-"
+        + df["idx_counter"].astype(str)
+    )
+    df = df.drop(columns=["idx_counter"])
+
+    return df
 
 
 def _remaining_to_distribute(
@@ -235,4 +313,14 @@ if __name__ == "__main__":
 
     df_capacity = pd.concat([df_capacity_gb, df_capacity_eur], ignore_index=True)
 
-    df_capacity.to_csv(snakemake.output.csv, index=False)
+    # Load costs data and enrich powerplants with technical/cost parameters
+    costs = pd.read_csv(snakemake.input.tech_costs, index_col=0)
+    logger.info("Loaded technology costs data")
+
+    df_powerplants = assign_technical_and_costs_defaults(
+        df_capacity, costs, snakemake.params.default_characteristics
+    )
+    logger.info("Enriched powerplants with cost and technical parameters")
+
+    # Save with index (contains unique generator IDs)
+    df_powerplants.to_csv(snakemake.output.csv, index=True)

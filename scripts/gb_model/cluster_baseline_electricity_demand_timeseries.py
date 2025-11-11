@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 import xarray as xr
 
-from scripts._helpers import PYPSA_V1, configure_logging, set_scenario_config
+from scripts._helpers import configure_logging, set_scenario_config
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +47,7 @@ def cluster_demand_timeseries(
     # apply clustering busmap
     logger.info("Clustering the base electricity demand using busmap")
     busmap = pd.read_csv(busmap_path, dtype=str)
-    index_col = "name" if PYPSA_V1 else "Bus"
-    busmap = busmap.set_index(index_col).squeeze()
+    busmap = busmap.set_index("Index").squeeze()
 
     missing_buses = list(set(load.index) - set(busmap.index))
     if len(missing_buses) > 0:
