@@ -86,6 +86,7 @@ urls:
   transmission-availability: https://www.neso.energy/document/211021/download
   fes-2021-workbook: https://www.neso.energy/document/199971/download # FES 2021 workbook
   fes-2023-workbook: https://www.neso.energy/document/283061/download # FES 2023 workbook
+  fes-costing-workbook: https://www.nationalgrideso.com/document/181961/download
   dukes-5.11: https://assets.publishing.service.gov.uk/media/688cb64ee8ba9507fc1b0953/DUKES_5.11.xlsx
   gsp-coordinates: https://api.neso.energy/dataset/963525d6-5d83-4448-a99c-663f1c76330a/resource/41fb4ca1-7b59-4fce-b480-b46682f346c9/download/fes2021_regional_breakdown_gsp_info.csv
   eur-supply-table: https://api.neso.energy/dataset/bd83ce0b-7b1e-4ff2-89e8-12d524c34d99/resource/6563801b-6da4-46e7-b147-3d81c0237779/download/fes2023_es2_v001.csv
@@ -444,6 +445,24 @@ fes-sheet-config:
       header: 0
       rename:
         columns: year
+
+fes-costing-sheet-config:
+
+  AS.7 (Carbon Cost):
+    usecols: "A:AG"
+    skiprows: 6
+    index_col: [0, 1]
+    header: 0
+    rename:
+      columns: year
+
+  AS.1 (Power Gen):
+    usecols: "A:AK"
+    skiprows: 6
+    index_col: [0, 1, 2, 3, 4, 5]
+    header: 0
+    rename:
+      columns: year
 
 fes:
   year_range_incl: [2022, 2041] # 20-year period over which we will run the simulation
