@@ -132,15 +132,35 @@ rule generator_monthly_unavailability:
 
 rule extract_transmission_availability:
     input:
-        pdf_report="data/gb-model/downloaded/transmission-availability.pdf",
+        pdf_report="data/gb-model/downloaded/transmission-availability-{report_year}.pdf",
     output:
-        csv=resources("gb-model/transmission_availability.csv"),
+        csv=resources("gb-model/transmission-availability-{report_year}.csv"),
     log:
-        logs("extract_transmission_availability.log"),
+        logs("extract_transmission_availability_{report_year}.log"),
     conda:
         "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/extract_transmission_availability.py"
+
+
+rule process_transmission_availability:
+    input:
+        unavailability=expand(
+            resources("gb-model/{report}.csv"),
+            report=[
+                i for i in config["urls"] if i.startswith("transmission-availability-")
+            ],
+        ),
+    output:
+        csv=resources("gb-model/transmission_availability.csv"),
+    params:
+        random_seeds=config["transmission_availability"]["random_seeds"],
+    log:
+        logs("process_transmission_availability.log"),
+    conda:
+        "../envs/gb-model/workflow.yaml"
+    script:
+        "../scripts/gb_model/process_transmission_availability.py"
 
 
 rule extract_fes_workbook_sheet:

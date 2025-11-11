@@ -65,17 +65,14 @@ def extract_transmission_availability(pdf_path: str) -> pd.DataFrame:
                     )
                     project = table[1][1]
                     name = f"{geography} | {project}"
-                    try:
-                        df = (
-                            pd.DataFrame(table[2:-2])
-                            .set_index(0)
-                            .rename_axis(index="month", columns=name)
-                            .squeeze()
-                            .replace("N/A", float("nan"))
-                            .astype(float)
-                        )
-                    except ValueError:
-                        breakpoint()
+                    df = (
+                        pd.DataFrame(table[2:-2])
+                        .set_index(0)
+                        .rename_axis(index="month", columns=name)
+                        .squeeze()
+                        .replace("N/A", float("nan"))
+                        .astype(float)
+                    )
                     df.index = pd.to_datetime(df.index, format="%B").month
                     interconnector_data[name] = df
                     logger.info(
