@@ -428,6 +428,15 @@ fes-sheet-config:
       rename:
         columns: year
 
+    # Annual storage data for 2030 and 2050
+    FL.14:
+      usecols: "P,R,U,X"
+      skiprows: 58
+      index_col: 0
+      header: 0
+      rename:
+        columns: year
+
     BB2:
       usecols: "A:E"
       skiprows: 2

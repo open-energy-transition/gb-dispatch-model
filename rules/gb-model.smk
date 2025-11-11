@@ -428,11 +428,10 @@ rule create_ev_storage_table:
         scenario=config["fes"]["gb"]["scenario"],
         year_range=config["fes"]["year_range_incl"],
     input:
-        regional_gb_data=resources("gb-model/regional_gb_data.csv"),
-        flexibility=resources("gb-model/fes_ev_v2g_flexibility.csv"),
         storage_sheet=resources("gb-model/fes/2021/FL.14.csv"),
+        flexibility_sheet=resources("gb-model/fes/2021/FLX1.csv"),
     output:
-        demand=resources("gb-model/regional_fes_ev_storage.csv"),
+        storage_table=resources("gb-model/fes_ev_storage.csv"),
     log:
         logs("create_ev_storage_table.log"),
     script:
