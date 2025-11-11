@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: Contributors to PyPSA-Eur <https://github.com/pypsa/pypsa-eur>
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
 #
 # SPDX-License-Identifier: CC0-1.0
 
@@ -65,8 +66,15 @@ dependencies:
 - ruff
 - pylint
 
+# gb-model extra dependencies
+- curl
+- python-dotenv
+
 - pip:
   - gurobipy
   - highspy
   - tsam>=2.3.1
   - entsoe-py
+
+  # gb-model extra dependencies
+  - pdfplumber==0.9.0 # technically noarch but imagemagick dependency not available on Windows

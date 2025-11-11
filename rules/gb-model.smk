@@ -20,8 +20,6 @@ rule download_data:
     log:
         logs("download_{gb_data}.log"),
     localrule: True
-    conda:
-        "../envs/gb-model/workflow.yaml"
     shell:
         "curl -sSLvo {output} {params.url}"
 
@@ -33,12 +31,15 @@ rule create_region_shapes:
         etys_boundary_lines="data/gb-model/downloaded/gb-etys-boundaries.zip",
     output:
         raw_region_shapes=resources("gb-model/raw_region_shapes.geojson"),
+    params:
+        area_loss_tolerance_percent=config["region_operations"][
+            "area_loss_tolerance_percent"
+        ],
+        min_region_area=config["region_operations"]["min_region_area"],
     log:
         logs("raw_region_shapes.log"),
     resources:
         mem_mb=1000,
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/create_region_shapes.py"
 
@@ -54,8 +55,6 @@ rule manual_region_merger:
         logs("manual_region_merger.log"),
     resources:
         mem_mb=1000,
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/manual_region_merger.py"
 
@@ -77,8 +76,6 @@ rule retrieve_entsoe_unavailability_data:
         logs("retrieve_entsoe_unavailability_data_{zone}_{business_type}.log"),
     resources:
         mem_mb=1000,
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/retrieve_entsoe_unavailability_data.py"
 
@@ -98,8 +95,6 @@ rule process_entsoe_unavailability_data:
         ],
     resources:
         mem_mb=1000,
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/process_entsoe_unavailability_data.py"
 
@@ -119,8 +114,6 @@ rule generator_monthly_unavailability:
         csv=resources("gb-model/{zone}_generator_monthly_unavailability.csv"),
     log:
         logs("{zone}_generator_monthly_unavailability.log"),
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/generator_monthly_unavailability.py"
 
@@ -132,8 +125,6 @@ rule extract_transmission_availability:
         csv=resources("gb-model/transmission_availability.csv"),
     log:
         logs("extract_transmission_availability.log"),
-    conda:
-        "../envs/gb-model/workflow.yaml"
     script:
         "../scripts/gb_model/extract_transmission_availability.py"
 
@@ -198,12 +189,32 @@ rule process_fes_eur_data:
         "../scripts/gb_model/process_fes_eur_data.py"
 
 
+rule process_dukes_current_capacities:
+    message:
+        "Assign current capacities to GB model regions and PyPSA-Eur carriers"
+    input:
+        regions=resources("gb-model/merged_shapes.geojson"),
+        regions_offshore=resources("regions_offshore_base_s_{clusters}.geojson"),
+        dukes_data="data/gb-model/downloaded/dukes-5.11.xlsx",
+    output:
+        csv=resources("gb-model/dukes-current-capacity-{clusters}.csv"),
+    log:
+        logs("process_dukes_current_capacities_{clusters}.log"),
+    params:
+        sheet_config=config["dukes-5.11"]["sheet-config"],
+        target_crs=config["target_crs"],
+    script:
+        "../scripts/gb_model/process_dukes_current_capacities.py"
+
+
 rule process_fes_gsp_data:
     message:
         "Process FES workbook sheet BB1 together with metadata from sheet BB2."
     params:
         scenario=config["fes"]["gb"]["scenario"],
         year_range=config["fes"]["year_range_incl"],
+        target_crs=config["target_crs"],
+        fill_gsp_lat_lons=config["fill-gsp-lat-lons"],
     input:
         bb1_sheet=resources("gb-model/fes/2021/BB1.csv"),
         bb2_sheet=resources("gb-model/fes/2021/BB2.csv"),
@@ -223,10 +234,12 @@ rule create_powerplants_table:
     params:
         gb_config=config["fes"]["gb"],
         eur_config=config["fes"]["eur"],
+        dukes_config=config["dukes-5.11"],
         default_set=config["fes"]["default_set"],
     input:
         gsp_data=resources("gb-model/regional_gb_data.csv"),
         eur_data=resources("gb-model/national_eur_data.csv"),
+        dukes_data=resources("gb-model/dukes-current-capacity-clustered.csv"),
     output:
         csv=resources("gb-model/fes_p_nom.csv"),
     log:
@@ -243,6 +256,7 @@ rule create_interconnectors_table:
     params:
         interconnector_config=config["interconnectors"],
         year_range=config["fes"]["year_range_incl"],
+        target_crs=config["target_crs"],
     log:
         logs("create_interconnectors_table.log"),
     script:
@@ -402,20 +416,35 @@ rule create_flexibility_table:
         "../scripts/gb_model/create_flexibility_table.py"
 
 
-rule process_transport_demand_shape:
+rule cluster_baseline_electricity_demand_timeseries:
     message:
-        "Process transport demand profile shape into CSV format"
+        "Cluster default PyPSA-Eur baseline electricity demand timeseries by bus"
+    params:
+        scaling_factor=config_provider("load", "scaling_factor"),
     input:
-        fes_ev_demand=resources("gb-model/fes_ev_demand.csv"),
-        transport_demand=resources("transport_demand_s_{clusters}.csv"),
+        load=resources("electricity_demand_base_s.nc"),
+        busmap=resources("busmap_base_s_{clusters}.csv"),
     output:
-        transport_demand_shape=resources(
-            "gb-model/transport_demand_shape_s_{clusters}.csv"
-        ),
+        csv_file=resources("baseline_electricity_demand_s_{clusters}.csv"),
     log:
-        logs("transport_demand_shape_s_{clusters}.log"),
+        logs("baseline_electricity_demand_s_{clusters}.log"),
     script:
-        "../scripts/gb_model/process_transport_demand_shape.py"
+        "../scripts/gb_model/cluster_baseline_electricity_demand_timeseries.py"
+
+
+rule process_demand_shape:
+    message:
+        "Process {wildcards.demand_sector} demand profile shape into CSV format"
+    params:
+        demand_sector=lambda wildcards: wildcards.demand_sector,
+    input:
+        pypsa_eur_demand_timeseries=resources("{demand_sector}_demand_s_{clusters}.csv"),
+    output:
+        demand_shape=resources("gb-model/{demand_sector}_demand_shape_s_{clusters}.csv"),
+    log:
+        logs("{demand_sector}_demand_shape_s_{clusters}.log"),
+    script:
+        "../scripts/gb_model/process_demand_shape.py"
 
 
 rule compose_network:
@@ -445,8 +474,7 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_supply.csv"),
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
-            resources("gb-model/fes_baseline_electricity_demand.csv"),
-            resources("gb-model/fes_ev_demand.csv"),
+            resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
             resources("gb-model/transport_demand_shape_s_clustered.csv"),
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
@@ -459,6 +487,13 @@ rule compose_network:
                 flexibility_type=config["fes"]["gb"]["flexibility"][
                     "Technology Detail"
                 ].keys(),
+            ),
+            expand(
+                resources("gb-model/{demand_sector}_demand_shape_s_clustered.csv"),
+                demand_sector=[
+                    x.replace("fes_", "")
+                    for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()
+                ],
             ),
         ],
     output:
@@ -474,8 +509,6 @@ rule compose_network:
         logs("compose_network_{clusters}.log"),
     resources:
         mem_mb=4000,
-    conda:
-        "../envs/environment.yaml"
     script:
         "../scripts/gb_model/compose_network.py"
 

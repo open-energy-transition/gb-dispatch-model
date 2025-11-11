@@ -25,6 +25,7 @@ def parse_inputs(
     bb1_path: str,
     bb2_path: str,
     gsp_coordinates_path: str,
+    extra_gsp_coordinates: dict,
     fes_scenario: str,
     year_range: list,
 ) -> pd.DataFrame:
@@ -64,13 +65,23 @@ def parse_inputs(
         (df_bb1["FES Scenario"].str.lower() == fes_scenario)
         & (df_bb1["year"].isin(range(year_range[0], year_range[1] + 1)))
     ]
+    non_data_cols = df_bb1_scenario.columns.drop("data")
+    if (duplicates := df_bb1_scenario[non_data_cols].duplicated()).any():
+        # Manual inspection suggests these are true duplicates that should be summed
+        logger.warning(
+            f"There are {duplicates.sum()} duplicate rows in BB1. These will be summed."
+        )
+    df_bb1_scenario_no_dups = df_bb1_scenario.groupby(
+        non_data_cols.tolist(), as_index=False
+    )["data"].sum()
+
     df_bb1_bb2_scenario = pd.merge(
-        df_bb1_scenario,
+        df_bb1_scenario_no_dups,
         df_bb2_pivoted,
         left_on="Building Block ID Number",
         right_index=True,
     )
-    assert len(df_bb1_bb2_scenario) == len(df_bb1_scenario), (
+    assert len(df_bb1_bb2_scenario) == len(df_bb1_scenario_no_dups), (
         "Some Building Blocks in BB1 are not present in BB2"
     )
 
@@ -79,7 +90,7 @@ def parse_inputs(
         lambda x: x.Units.startswith(x.Unit), axis=1
     )
     assert (units_match).all(), (
-        "Mapping of building blocks between BB1 and BB2 may be incorrect as some units do not match: "
+        "Mapping of building blocks between BB1 and BB2 may be incorrect as some units do not match:\n"
         f"{df_bb1_bb2_scenario[~units_match][['Unit', 'Units']]}"
     )
 
@@ -89,11 +100,21 @@ def parse_inputs(
 
     df_gsp_coordinates = pd.read_csv(gsp_coordinates_path)
     df_gsp_coordinates = df_gsp_coordinates.apply(strip_srt)
+    extra_gsp_coordinates_df = pd.DataFrame.from_dict(
+        extra_gsp_coordinates, orient="index"
+    ).rename_axis(index="Name")
+    df_gsp_coordinates = (
+        # There are cases of duplicate GSPs where the lat and lon information is the same but the GSP ID and GSP group are slightly different
+        df_gsp_coordinates.drop_duplicates(subset=["Name", "Latitude", "Longitude"])
+        .set_index("Name")
+        .fillna(extra_gsp_coordinates_df)
+        .reset_index()
+    )
+    if (dups := df_gsp_coordinates.Name.duplicated()).any():
+        logger.error(
+            f"There are duplicate GSP names with different lat/lons in the GSP coordinates file:\n{df_gsp_coordinates[dups]}"
+        )
 
-    # Note
-    # The GSP's "East Claydon" and "Ferrybridge B" have duplicates
-    # the lat and lon information is the same but the GSP ID and GSP group are slightly different
-    df_gsp_coordinates = df_gsp_coordinates.drop_duplicates(subset=["Name"])
     df_bb1_bb2_with_lat_lon = pd.merge(
         df_bb1_bb2_scenario, df_gsp_coordinates, left_on="GSP", right_on="Name"
     )
@@ -104,14 +125,16 @@ def parse_inputs(
         df_bb1_bb2_with_lat_lon[["Latitude", "Longitude"]].isnull().any(axis=1)
     ].GSP.unique()
     if len(missing_lat_lon) > 0:
-        logger.error(
-            f"The following GSPs are missing latitude and/or longitude information: {missing_lat_lon}"
+        raise ValueError(
+            f"The following GSPs are missing latitude and/or longitude information: {missing_lat_lon}.\n"
+            "Please update the GSP coordinates file or provide extra coordinates via the `fill-gsp-lat-lons` configuration option."
         )
 
     missing_gsps = set(df_bb1_bb2_scenario.GSP).difference(df_bb1_bb2_with_lat_lon.GSP)
     if missing_gsps:
-        logger.error(
-            f"The following GSPs are missing from the GSP coordinates file: {missing_gsps}"
+        logger.warning(
+            f"The following GSPs are missing from the GSP coordinates file: {missing_gsps}."
+            "Their data will be distributed later across other GSPs in the same TO region or across the whole country."
         )
     df_final = pd.concat(
         [df_bb1_bb2_scenario.query("GSP in @missing_gsps"), df_bb1_bb2_with_lat_lon]
@@ -136,11 +159,38 @@ if __name__ == "__main__":
     # Load all the params
     fes_scenario = snakemake.params.scenario
     year_range = snakemake.params.year_range
-
+    extra_gsp_coordinates = snakemake.params.fill_gsp_lat_lons
     df = parse_inputs(
-        bb1_path, bb2_path, gsp_coordinates_path, fes_scenario, year_range
+        bb1_path,
+        bb2_path,
+        gsp_coordinates_path,
+        extra_gsp_coordinates,
+        fes_scenario,
+        year_range,
     )
-    df["bus"] = map_points_to_regions(df, gdf_regions, "Latitude", "Longitude")
+
+    region_data = map_points_to_regions(
+        df,
+        gdf_regions,
+        "Latitude",
+        "Longitude",
+        "EPSG:4326",
+        snakemake.params.target_crs,
+    )[["name", "TO_region"]]
+    df_with_regions = pd.concat(
+        [df, region_data.rename(columns={"name": "bus"})], axis=1
+    )
+    for TO_region in gdf_regions["TO_region"].unique():
+        df_with_regions.loc[
+            df_with_regions.GSP == f"Direct({TO_region})", "TO_region"
+        ] = TO_region
+    if (null_bus := df_with_regions.bus.isnull()).any():
+        warning_data = df_with_regions[null_bus][
+            ["GSP", "Latitude", "Longitude", "TO_region"]
+        ].drop_duplicates()
+        logger.warning(
+            f"There are GSPs with missing bus/region information after mapping lat/lon to regions:\n{warning_data}"
+        )
     logger.info(f"Extracted the {fes_scenario} relevant data")
 
-    df.to_csv(snakemake.output.csv, index=False)
+    df_with_regions.to_csv(snakemake.output.csv, index=False)
