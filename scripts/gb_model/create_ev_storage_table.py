@@ -179,5 +179,5 @@ if __name__ == "__main__":
     )
 
     # Write storage dataframe to csv file
-    df_storage_interp.to_csv(snakemake.output.storage_table)
+    df_storage_interp.to_csv(snakemake.output.storage_table, index=False)
     logger.info(f"EV storage data saved to {snakemake.output.storage_table}")

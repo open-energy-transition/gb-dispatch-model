@@ -438,6 +438,20 @@ rule create_ev_storage_table:
         "../scripts/gb_model/create_ev_storage_table.py"
 
 
+rule process_regional_ev_storage:
+    message:
+        "Process regional EV storage data into CSV format"
+    input:
+        storage=resources("gb-model/fes_ev_storage.csv"),
+        flexibility=resources("gb-model/regional_fes_ev_v2g.csv"),
+    output:
+        regional_ev_storage=resources("gb-model/regional_fes_ev_storage.csv"),
+    log:
+        logs("process_regional_ev_storage.log"),
+    script:
+        "../scripts/gb_model/process_regional_ev_storage.py"
+
+
 rule compose_network:
     input:
         unpack(input_profile_tech),
@@ -484,6 +498,7 @@ rule compose_network:
                     for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()
                 ],
             ),
+            resources("gb-model/regional_fes_ev_storage.csv"),
         ],
     output:
         network=resources("networks/composed_{clusters}.nc"),
