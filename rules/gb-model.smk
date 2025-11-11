@@ -445,7 +445,7 @@ rule process_regional_ev_storage:
         storage=resources("gb-model/fes_ev_storage.csv"),
         flexibility=resources("gb-model/regional_fes_ev_v2g.csv"),
     output:
-        regional_ev_storage=resources("gb-model/regional_fes_ev_storage.csv"),
+        regional_storage=resources("gb-model/regional_fes_ev_storage.csv"),
     log:
         logs("process_regional_ev_storage.log"),
     script:
