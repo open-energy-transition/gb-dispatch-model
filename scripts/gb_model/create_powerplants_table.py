@@ -92,6 +92,7 @@ def _ensure_column_with_default(
 def assign_technical_and_costs_defaults(
     df: pd.DataFrame,
     costs: pd.DataFrame,
+    default_characteristics: dict[str, tuple[float, str]],
 ) -> pd.DataFrame:
     """
     Enrich powerplants dataframe with cost and technical parameters.
@@ -99,8 +100,9 @@ def assign_technical_and_costs_defaults(
     Adds efficiency, marginal_cost, capital_cost, lifetime, build_year, and unique index.
 
     Args:
-        df (pd.DataFrame): powerplant data with bus, year, carrier, set, p_nom columns
-        costs (pd.DataFrame): cost data indexed by carrier
+        df (pd.DataFrame): powerplant data with bus, year, carrier, set, p_nom columns.
+        costs (pd.DataFrame): cost data indexed by carrier.
+        default_characteristics (dict): default values for technical and cost parameters
 
     Returns:
         pd.DataFrame: enriched powerplants data ready for PyPSA
@@ -124,16 +126,8 @@ def assign_technical_and_costs_defaults(
             + df["carrier"].map(costs["fuel"]) / df["efficiency"]
         )
 
-    # Ensure all required columns exist with defaults
-    defaults = {
-        "efficiency": (0.4, ""),
-        "capital_cost": (0.0, ""),
-        "lifetime": (25.0, "years"),
-        "marginal_cost": (0.0, ""),
-    }
-
-    for col, (default, units) in defaults.items():
-        df = _ensure_column_with_default(df, col, default, units)
+    for col in default_characteristics.items():
+        df = _ensure_column_with_default(df, col, col["data"], col["units"])
 
     # Create unique index: "bus carrier-year-idx"
     df["idx_counter"] = df.groupby(["bus", "carrier", "year"]).cumcount()
@@ -323,7 +317,9 @@ if __name__ == "__main__":
     costs = pd.read_csv(snakemake.input.tech_costs, index_col=0)
     logger.info("Loaded technology costs data")
 
-    df_powerplants = assign_technical_and_costs_defaults(df_capacity, costs)
+    df_powerplants = assign_technical_and_costs_defaults(
+        df_capacity, costs, snakemake.params.default_characteristics
+    )
     logger.info("Enriched powerplants with cost and technical parameters")
 
     # Save with index (contains unique generator IDs)

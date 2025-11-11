@@ -463,6 +463,20 @@ fes-sheet-config:
 fes:
   year_range_incl: [2022, 2041] # 20-year period over which we will run the simulation
   default_set: PP
+  default_characteristics:
+    # Ensure all required columns exist with defaults
+    efficiency:
+      data: 0.4
+      unit: ""
+    capital_cost:
+      data: 0.0
+      unit: ""
+    lifetime:
+      data: 25.0
+      unit: "years"
+    marginal_cost:
+      data: 0.0
+      unit: ""
   gb:
     scenario: leading the way   # fes workbook
     scenario_abbreviations:
