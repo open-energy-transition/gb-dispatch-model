@@ -78,6 +78,7 @@ install-pinned-macos: _conda_check
 # Run default tests
 gb-test:
 	snakemake compose_networks -n
+	snakemake compose_networks -n --configfile config/config.gb.etys-subset.yaml
 	echo "All GB tests completed successfully."
 
 test:

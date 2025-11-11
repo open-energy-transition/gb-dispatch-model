@@ -12,6 +12,8 @@ Release Notes
 Upcoming Release
 ================
 
+* Added ETYS report boundary capabilities extractor (#9).
+* Added config version for updating the system boundaries to the subset defined in the ETYS report.
 * Rule to generalize creation of load profiles for different demand types (#93)
 * Tabulated flexibility data for EV and demand-side management (DSM) for base electricity (#91).
 * Changed base year to 2012 (#92)

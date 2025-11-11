@@ -24,14 +24,32 @@ rule download_data:
         "curl -sSLvo {output} {params.url}"
 
 
+rule extract_etys_boundary_capabilities:
+    message:
+        "Extract boundary capability data from ETYS PDF report"
+    input:
+        pdf_report="data/gb-model/downloaded/etys.pdf",
+        boundaries="data/gb-model/downloaded/gb-etys-boundaries.zip",
+    output:
+        csv=resources("gb-model/etys_boundary_capabilities.csv"),
+    log:
+        logs("extract_etys_boundary_capabilities.log"),
+    script:
+        "../scripts/gb_model/extract_etys_boundary_capabilities.py"
+
+
 # Rule to create region shapes using create_region_shapes.py
 rule create_region_shapes:
     input:
         country_shapes=resources("country_shapes.geojson"),
         etys_boundary_lines="data/gb-model/downloaded/gb-etys-boundaries.zip",
+        etys_focus_boundary_lines=resources("gb-model/etys_boundary_capabilities.csv"),
     output:
         raw_region_shapes=resources("gb-model/raw_region_shapes.geojson"),
     params:
+        pre_filter_boundaries=config["region_operations"][
+            "filter_boundaries_using_capabilities"
+        ],
         area_loss_tolerance_percent=config["region_operations"][
             "area_loss_tolerance_percent"
         ],
@@ -51,6 +69,9 @@ rule manual_region_merger:
         country_shapes=resources("country_shapes.geojson"),
     output:
         merged_shapes=resources("gb-model/merged_shapes.geojson"),
+    params:
+        splits=config["region_operations"]["splits"],
+        merge_groups=config["region_operations"]["merge_groups"],
     log:
         logs("manual_region_merger.log"),
     resources:

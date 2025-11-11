@@ -40,10 +40,19 @@ Tables from the workbook we use are:
 ------------------------------------------
 The Digest of UK Energy Statistics (DUKES)
 ------------------------------------------
-
 From `DUKES <https://www.gov.uk/government/statistics/electricity-chapter-5-digest-of-united-kingdom-energy-statistics-dukes>`_, we access existing capacities (Table 5.11).
 This is used to help distribute unallocated future capacities to GB regions, based on the relative capacity of technologies already existing.
 It replaces the equivalent existing power plant dataset computed in PyPSA-Eur due to being more comprehensive.
+
+-----------------------------------------
+The ELectricity Ten Year Statement (ETYS)
+-----------------------------------------
+The `ETYS <https://www.neso.energy/publications/electricity-ten-year-statement-etys>`_ is a GB annual report which identifies bottlenecks in the transmission network, defined across network system boundaries.
+We use the report to:
+
+- Define our model regions, combining the cuts made by the system boundaries to create regions.
+  As boundaries often intersect, these regions are usually a combination of several boundaries.
+- Define the "current" boundary capabilities (grid transfer capacities - GTCs) with which we will scale PyPSA line limits.
 
 -----------------
 GSP coordinates

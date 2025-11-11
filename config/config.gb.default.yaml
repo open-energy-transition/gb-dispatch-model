@@ -89,6 +89,7 @@ urls:
   dukes-5.11: https://assets.publishing.service.gov.uk/media/688cb64ee8ba9507fc1b0953/DUKES_5.11.xlsx
   gsp-coordinates: https://api.neso.energy/dataset/963525d6-5d83-4448-a99c-663f1c76330a/resource/41fb4ca1-7b59-4fce-b480-b46682f346c9/download/fes2021_regional_breakdown_gsp_info.csv
   eur-supply-table: https://api.neso.energy/dataset/bd83ce0b-7b1e-4ff2-89e8-12d524c34d99/resource/6563801b-6da4-46e7-b147-3d81c0237779/download/fes2023_es2_v001.csv
+  etys: https://www.neso.energy/document/223046/download # ETYS November 2021
 target_crs: "EPSG:27700"
 
 # Manual region merging configuration
@@ -96,6 +97,7 @@ region_operations:
   area_loss_tolerance_percent: 0.01 # percentage of area loss tolerated when splitting regions
   min_region_area: 1000000 # minimum area of a region in square meters (1 km²) for keeping it after splitting
   # Regions to split before merging
+  filter_boundaries_using_capabilities: false # if True, use only boundaries explicitly mentioned in the ETYS report.
   splits:
   - region: 6
     type: "vertical"

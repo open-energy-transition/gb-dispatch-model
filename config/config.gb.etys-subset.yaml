@@ -1,0 +1,104 @@
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
+#
+# SPDX-License-Identifier: CC0-1.0
+
+# New boundary definition, filtering using boundary capabilities defined in the ETYS 2021 report.
+
+run:
+  name: "GB-ETYS-subset"
+
+urls:
+  gb-etys-boundaries: https://api.neso.energy/dataset/997f4820-1ad4-499b-b1fe-4b8d3d7fbc72/resource/e914fcec-1dc9-4f1f-97e7-59c0d9521bea/download/etys-boundary-gis-data-mar25.zip
+  etys: https://www.neso.energy/document/223046/download # ETYS November 2021
+
+# Manual region merging configuration
+region_operations:
+  filter_boundaries_using_capabilities: true
+  splits:
+  - region: 2
+    type: "vertical"
+    coordinate: -2.325
+  - region: 8
+    type: "horizontal"
+    coordinate: 53.1
+  # Groups of regions to merge together
+  merge_groups:
+  - id: B13-SC1
+    merge: [0]
+    TO: NGET
+  - id: SC1-B13
+    merge: [1]
+    TO: NGET
+  - id: B9-SW1-EC5-B13-LE1-SC1.5
+    merge: [2ws, 2e, 3]
+    TO: NGET
+  - id: SW1-B9
+    merge: [2wn, 4, 5, 6]
+    TO: NGET
+  - id: B9-B8-NW3
+    merge: [7, 8s]
+    TO: NGET
+  - id: B8-NW3-B7a
+    merge: [8n]
+    TO: NGET
+  - id: NW3-NW2
+    merge: [9]
+    TO: NGET
+  - id: NW2-NW1
+    merge: [10, 45]
+    TO: NGET
+  - id: NW1
+    merge: [44]
+    TO: NGET
+  - id: SC1.5-B13-LE1
+    merge: [39, 40, 56, 57]
+    TO: NGET
+  - id: LE1-SC2-SC3
+    merge: [37, 38]
+    TO: NGET
+  - id: SC3-SC2
+    merge: [36]
+    TO: NGET
+  - id: SC2-SC3
+    merge: [32, 33, 34, 35, 42, 59, 60]
+    TO: NGET
+  - id: LE1-B14-SC3-SC1.5
+    merge: [30, 41, 43, 61, 62]
+    TO: NGET
+  - id: B14
+    merge: [31]
+    TO: NGET
+  - id: EC5
+    merge: [29, 63]
+    TO: NGET
+  - id: B7a-B6
+    merge: [11]
+    TO: NGET
+
+  - id: B6-B5
+    merge: [12]
+    TO: SPTL
+  - id: B5-B4
+    merge: [13]
+    TO: SPTL
+
+  - id: B3b
+    merge: [15, 16, 17, 18, 19, 20, 21, 22, 23, 49, 50]
+    TO: SHETL
+  - id: B4-B2
+    merge: [14]
+    TO: SHETL
+  - id: B2-B1a
+    merge: [24]
+    TO: SHETL
+  - id: B1a-B0
+    merge: [25, 28, 51, 52, 53, 54, 55]
+    TO: SHETL
+  - id: B0
+    merge: [26, 27, 58]
+    TO: SHETL
+
+  # TODO: add this to Ireland
+  - id: NI
+    merge: [46, 47, 48]
+    TO: N-IRL
