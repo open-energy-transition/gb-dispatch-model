@@ -394,7 +394,6 @@ rule process_regional_flexibility_table:
     message:
         "Process regional {wildcards.flexibility_type} flexibility from FES workbook into CSV format"
     params:
-        flexibility_type=lambda wildcards: wildcards.flexibility_type,
         regional_distribution_reference=config["fes"]["gb"]["flexibility"][
             "regional_distribution_reference"
         ],

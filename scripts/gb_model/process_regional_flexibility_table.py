@@ -61,11 +61,8 @@ def parse_regional_flexibility_data(
     # Group by bus and year
     regional_reference = regional_reference.groupby(["bus", "year"])["data"].sum()
 
-    # Get regional distribution
-    regional_dist = get_regional_distribution(regional_reference)
-
-    # Fill backward for NaN values (there are 0 instances in early years for regional data, but not in annual data)
-    regional_dist = regional_dist.bfill()
+    # Get regional distribution (1e-9 was added to avoid division by zero)
+    regional_dist = get_regional_distribution(regional_reference + 1e-9)
 
     # Distribute flexibility data regionally
     flexibility_regional = regional_dist * flexibility_data["p_nom"]
@@ -89,7 +86,7 @@ if __name__ == "__main__":
     regional_gb_data_path = snakemake.input.regional_gb_data
 
     # Parse input data
-    flexibility_type = snakemake.params.flexibility_type
+    flexibility_type = snakemake.wildcards.flexibility_type
     regional_distribution_reference = snakemake.params.regional_distribution_reference[
         flexibility_type
     ]
