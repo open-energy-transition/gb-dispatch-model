@@ -141,6 +141,14 @@ def interpolate_storage_data(
         df_storage_interp["year"].between(year_range[0], year_range[-1])
     ]
 
+    # Convert GWh to MWh
+    df_storage_interp["data"] = df_storage_interp["data"] * 1000
+
+    # Set name as MWh
+    df_storage_interp = df_storage_interp.rename(columns={"data": "MWh"}).set_index(
+        "year"
+    )
+
     return df_storage_interp
 
 
@@ -179,5 +187,5 @@ if __name__ == "__main__":
     )
 
     # Write storage dataframe to csv file
-    df_storage_interp.to_csv(snakemake.output.storage_table, index=False)
+    df_storage_interp.to_csv(snakemake.output.storage_table)
     logger.info(f"EV storage data saved to {snakemake.output.storage_table}")

@@ -52,7 +52,10 @@ def prepare_regional_ev_storage(
     regional_dist = get_regional_distribution(df_flexibility)
 
     # Disaggregate storage data regionally
-    regional_storage = regional_dist["p_nom"] * df_storage["data"]
+    regional_storage = regional_dist["p_nom"] * df_storage["MWh"]
+
+    # Rename series as MWh
+    regional_storage = regional_storage.rename("MWh")
 
     return regional_storage
 
