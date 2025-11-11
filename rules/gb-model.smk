@@ -421,6 +421,24 @@ rule process_demand_shape:
         "../scripts/gb_model/process_demand_shape.py"
 
 
+rule create_ev_storage_table:
+    message:
+        "Process EV storage data from FES workbook into CSV format"
+    params:
+        scenario=config["fes"]["gb"]["scenario"],
+        year_range=config["fes"]["year_range_incl"],
+    input:
+        regional_gb_data=resources("gb-model/regional_gb_data.csv"),
+        flexibility=resources("gb-model/fes_ev_v2g_flexibility.csv"),
+        storage_sheet=resources("gb-model/fes/2021/FL.14.csv"),
+    output:
+        demand=resources("gb-model/regional_fes_ev_storage.csv"),
+    log:
+        logs("create_ev_storage_table.log"),
+    script:
+        "../scripts/gb_model/create_ev_storage_table.py"
+
+
 rule compose_network:
     input:
         unpack(input_profile_tech),
