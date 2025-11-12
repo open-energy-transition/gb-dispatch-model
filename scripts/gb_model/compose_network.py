@@ -319,9 +319,9 @@ def add_pypsaeur_components(
 
 
 def process_demand_data(
-    demand_list: list(str),
-    clustered_demand_profile_list: list(str),
-    demand_type: list(str),
+    demand_list: list[str],
+    clustered_demand_profile_list: list[str],
+    demand_type: list[str],
     year: int,
 ) -> pd.DataFrame:
     """
@@ -331,9 +331,9 @@ def process_demand_data(
     ----------
     n : pypsa.Network
         Network to finalize
-    demand_list: list(str)
+    demand_list: list[str]
         CSV paths for demand data for each demand type
-    clustered_demand_profile_list: list(str)
+    clustered_demand_profile_list: list[str]
         CSV paths for demand shape for each demand type
     demand_type:
         demand type for which data is to be processed
@@ -372,7 +372,7 @@ def add_load(
     clustered_demand_profile_list: list,
     demand_types: list,
     year: int,
-) -> pypsa.Network:
+):
     """
     Add load as a timeseries to PyPSA network
 
@@ -380,9 +380,9 @@ def add_load(
     ----------
     n : pypsa.Network
         Network to finalize
-    demand_list: list(str)
+    demand_list: list[str]
         CSV paths for demand data for each demand type
-    clustered_demand_profile_list: list(str)
+    clustered_demand_profile_list: list[str]
         CSV paths for demand shape for each demand type
     demand_types:
         Keywords to map the demand files to each demand type
