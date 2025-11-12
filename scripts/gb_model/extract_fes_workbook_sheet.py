@@ -10,6 +10,7 @@ This is a generalised script to extract tables based on their manually configure
 """
 
 import logging
+from pathlib import Path
 
 import pandas as pd
 
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
 
-        snakemake = mock_snakemake("extract_fes_sheet")
+        snakemake = mock_snakemake(Path(__file__).stem)
     configure_logging(snakemake)
     set_scenario_config(snakemake)
 
