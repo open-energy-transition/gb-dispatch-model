@@ -557,6 +557,11 @@ fes:
         fes_ev_v2g: ["v2g impact at peak"]
         fes_residential_dsr: ["residential peak shifting (smart/touts effect)"]
         fes_services_dsr: ["i&c dsr impact at peak (processes)"]
+      regional_distribution_reference:
+        fes_ev_dsm: ["v2g"]
+        fes_ev_v2g: ["v2g"]
+        fes_residential_dsr: ["baseline demand"]
+        fes_services_dsr: ["i&c flexibility (tout)"]
 
   eur:
     scenario: CT & LW    # "Leading the Way" equivalent in the NESO european supply table

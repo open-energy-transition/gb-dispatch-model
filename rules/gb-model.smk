@@ -232,7 +232,7 @@ rule create_powerplants_table:
     message:
         "Tabulate powerplant data GSP-wise from FES workbook sheet BB1 and EU supply data"
     params:
-        default_characteristics["fes"]["default_characteristics"],
+        default_characteristics=config["fes"]["default_characteristics"],
         gb_config=config["fes"]["gb"],
         eur_config=config["fes"]["eur"],
         dukes_config=config["dukes-5.11"],
@@ -420,6 +420,24 @@ rule create_flexibility_table:
         "../scripts/gb_model/create_flexibility_table.py"
 
 
+rule process_regional_flexibility_table:
+    message:
+        "Process regional {wildcards.flexibility_type} flexibility from FES workbook into CSV format"
+    params:
+        regional_distribution_reference=config["fes"]["gb"]["flexibility"][
+            "regional_distribution_reference"
+        ],
+    input:
+        flexibility=resources("gb-model/{flexibility_type}_flexibility.csv"),
+        regional_gb_data=resources("gb-model/regional_gb_data.csv"),
+    output:
+        regional_flexibility=resources("gb-model/regional_{flexibility_type}.csv"),
+    log:
+        logs("process_regional_{flexibility_type}_flexibility_table.log"),
+    script:
+        "../scripts/gb_model/process_regional_flexibility_table.py"
+
+
 rule cluster_baseline_electricity_demand_timeseries:
     message:
         "Cluster default PyPSA-Eur baseline electricity demand timeseries by bus"
@@ -545,7 +563,10 @@ rule compose_network:
                 demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),
             ),
             expand(
-                resources("gb-model/{flexibility_type}_flexibility.csv"),
+                [
+                    resources("gb-model/{flexibility_type}_flexibility.csv"),
+                    resources("gb-model/regional_{flexibility_type}.csv"),
+                ],
                 flexibility_type=config["fes"]["gb"]["flexibility"][
                     "Technology Detail"
                 ].keys(),
