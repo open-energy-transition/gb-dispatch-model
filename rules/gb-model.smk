@@ -469,6 +469,25 @@ rule process_demand_shape:
         "../scripts/gb_model/process_demand_shape.py"
 
 
+rule process_ev_demand_shape:
+    message:
+        "Process EV demand profile shape into CSV format"
+    params:
+        snapshots=config_provider("snapshots"),
+        drop_leap_day=config_provider("enable", "drop_leap_day"),
+        plug_in_offset=config["ev"]["plug_in_offset"],
+        charging_duration=config["ev"]["charging_duration"],
+    input:
+        clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
+        traffic_data_KFZ="data/bundle/emobility/KFZ__count",
+    output:
+        demand_shape=resources("gb-model/ev_demand_shape_s_{clusters}.csv"),
+    log:
+        logs("ev_demand_shape_s_{clusters}.log"),
+    script:
+        "../scripts/gb_model/process_ev_demand_shape.py"
+
+
 rule create_chp_p_min_pu_profile:
     message:
         "Create CHP minimum operation profiles linked to heat demand"
