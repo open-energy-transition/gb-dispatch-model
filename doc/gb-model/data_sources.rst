@@ -37,6 +37,8 @@ Tables from the workbook we use are:
 
 - WS1: Whole System & Gas Supply
 
+We also use the same cost assumptions as given by the FES, available in a separate dataset linked to `a 2023 report <https://assets.publishing.service.gov.uk/media/6556027d046ed400148b99fe/electricity-generation-costs-2023.pdf>`_.
+
 ------------------------------------------
 The Digest of UK Energy Statistics (DUKES)
 ------------------------------------------
@@ -99,8 +101,11 @@ Baseline electricity demand data is extracted from FES-2021 workbook table BB1.
 EV flexibility data
 -------------------
 Electric vehicle (EV) flexibility data is extracted from the FES-2021 workbook table FLX1.
+Regional distribution of V2G and smart charging flexibility is based on V2G distribution provided in BB1 sheet of FES-2021.
 
 -------------------
 DSM flexibility for base electricity
 -------------------
 Demand-side management (DSM) flexibility data for base electricity (residential and I&C) is extracted from the FES-2021 workbook table FLX1.
+Regional distribution of residential demand side response (DSR) flexibility is based on Baseline demand distribution provided in BB1 sheet of FES-2021,
+while regional distribution of services DSR flexibility is based on I&C Flexibility (TouT) distribution provided in BB1 sheet of FES-2021.

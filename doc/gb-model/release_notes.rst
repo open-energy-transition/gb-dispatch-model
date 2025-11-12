@@ -13,6 +13,8 @@ Upcoming Release
 ================
 
 * Add demands to pypsa Network (#102)
+* Prepared regional flexibility data for EV and demand-side management (DSM) for base electricity (#97).
+* Prepared FES costing worksheets (#62).
 * Rule to generalize creation of load profiles for different demand types (#93)
 * Tabulated flexibility data for EV and demand-side management (DSM) for base electricity (#91).
 * Changed base year to 2012 (#92)
