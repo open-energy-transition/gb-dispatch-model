@@ -317,12 +317,12 @@ def process_demand_data(demand_list, clustered_demand_profile_list, demand_type,
 def add_load(
     n: pypsa.Network,
     demand_list: list,
-    clustered_demand_profile_list: list
+    clustered_demand_profile_list: list,
+    demand_types: list
 ) -> pypsa.Network:
 
-    demand_types=["baseline_electricity","transport"]
-
     year = 2022
+    breakpoint()
 
     # Iterate through each demand type
     for demand_type in demand_types:
@@ -377,8 +377,8 @@ def compose_network(
     renewable_config: dict[str, Any],
     lines_config: dict[str, Any],
     demand: list[str],
-    flexibility: list[str],
-    clustered_demand_profile: list[str]
+    clustered_demand_profile: list[str],
+    demand_types: list[str]
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -411,11 +411,10 @@ def compose_network(
         Lines configuration dictionary
     demand: list[str]
         List of paths to the demand data for each demand type
-    flexibility: list[str]
-        List of paths to the flexibility potential for each demand type
     clustered_demand_profile: list[str]
         List of paths to the clustered shape profile for each demand type
-
+    demand_types: list[str]
+        List of str for demand types
     """
     network = pypsa.Network(network_path)
     max_hours = electricity_config.get("max_hours")
@@ -450,7 +449,7 @@ def compose_network(
 
     add_pypsaeur_components(network, electricity_config, context, costs)
 
-    add_load(network, demand, clustered_demand_profile)
+    add_load(network, demand, clustered_demand_profile, demand_types)
 
     finalise_composed_network(network, context)
 
@@ -485,6 +484,6 @@ if __name__ == "__main__":
         renewable_config=snakemake.params.renewable,
         lines_config=snakemake.params.lines,
         demand=snakemake.input.demand,
-        flexibility=snakemake.input.flexibility,
         clustered_demand_profile=snakemake.input.clustered_demand_profile,
+        demand_types=snakemake.params.demand_types
     )

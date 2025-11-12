@@ -421,6 +421,7 @@ rule process_demand_shape:
         "../scripts/gb_model/process_demand_shape.py"
 
 
+demand_types=list(config["fes"]["gb"]["demand"]["Technology Detail"].keys())
 rule compose_network:
     input:
         unpack(input_profile_tech),
@@ -451,7 +452,7 @@ rule compose_network:
         ],
         demand=expand(
             resources("gb-model/{demand_type}_demand.csv"),
-            demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),
+            demand_type=demand_types,
         ),
         flexibility=expand(
                 resources("gb-model/{flexibility_type}_flexibility.csv"),
@@ -463,7 +464,7 @@ rule compose_network:
             resources("gb-model/{demand_sector}_demand_shape_s_clustered.csv"),
             demand_sector=[
                 x.replace("fes_", "")
-                for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()
+                for x in demand_types
             ],
         ),
     output:
@@ -475,6 +476,7 @@ rule compose_network:
         clustering=config["clustering"],
         renewable=config["renewable"],
         lines=config["lines"],
+        demand_types=[x.replace("fes_", "") for x in demand_types],
     log:
         logs("compose_network_{clusters}.log"),
     resources:
