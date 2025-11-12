@@ -48,8 +48,11 @@ def prepare_regional_ev_storage(
     # Load flexibility data
     df_flexibility = pd.read_csv(flexibility_path, index_col=[0, 1])
 
-    # Get regional distribution (1e-9 was added to avoid division by zero)
-    regional_dist = get_regional_distribution(df_flexibility + 1e-9)
+    # Get regional distribution
+    regional_dist = get_regional_distribution(df_flexibility)
+
+    # Fillna values with 0
+    regional_dist = regional_dist.fillna(0)
 
     # Disaggregate storage data regionally
     regional_storage = regional_dist["p_nom"] * df_storage["MWh"]

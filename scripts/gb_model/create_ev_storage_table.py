@@ -44,13 +44,11 @@ def parse_ev_storage_data(
     # Load storage data
     df_storage = pd.read_csv(storage_sheet_path, index_col=[0, 1])
 
-    # Keep the first occurrence related to Leading the Way scenario
-    if fes_scenario == "leading the way":
-        df_storage = df_storage[~df_storage.index.duplicated(keep="first")]
-    else:
-        raise ValueError(
-            "EV storage data is only available for 'Leading the Way' scenario"
-        )
+    # Filter out Leading the Way scenario in a hard coded way
+    df_storage = df_storage.iloc[:18, :]
+    logger.warning(
+        "EV storage data is extracted directly for 'Leading the Way' scenario."
+    )
 
     # Select EV storage
     df_storage = df_storage.loc["V2G"]
