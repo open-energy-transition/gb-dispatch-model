@@ -81,6 +81,12 @@ We derive total capacity from the base PyPSA-Eur powerplant dataset.
 We finally collapse this multi-year, daily availability profile into a single monthly profile by calculating a monthly grouped average availability.
 For instance, if there is a 80% availability in the first half of June for only one of the five assessed historical years, the final June availability will be 98%.
 
+---------------------------------
+Transmission availability profile
+---------------------------------
+Transmission unavailability, as a percentage of hours in a month, is taken from the NESO `System Performance Reports <https://www.neso.energy/industry-information/industry-data-and-reports/system-performance-reports>`.
+This covers unavailability for both internal GB transmission (split by transmission operator) and interconnectors (per interconnector).
+
 -------------
 Hydrogen data
 -------------
