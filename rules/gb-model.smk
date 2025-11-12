@@ -487,7 +487,10 @@ rule create_chp_p_min_pu_profile:
     script:
         "../scripts/gb_model/create_chp_p_min_pu_profile.py"
 
-demand_types=list(config["fes"]["gb"]["demand"]["Technology Detail"].keys())
+
+demand_types = list(config["fes"]["gb"]["demand"]["Technology Detail"].keys())
+
+
 rule compose_network:
     params:
         countries=config["countries"],
@@ -535,17 +538,14 @@ rule compose_network:
             demand_type=demand_types,
         ),
         flexibility=expand(
-                resources("gb-model/{flexibility_type}_flexibility.csv"),
+            resources("gb-model/{flexibility_type}_flexibility.csv"),
             flexibility_type=config["fes"]["gb"]["flexibility"][
                 "Technology Detail"
             ].keys(),
         ),
         clustered_demand_profile=expand(
             resources("gb-model/{demand_sector}_demand_shape_s_clustered.csv"),
-            demand_sector=[
-                x.replace("fes_", "")
-                for x in demand_types
-            ],
+            demand_sector=[x.replace("fes_", "") for x in demand_types],
         ),
     output:
         network=resources("networks/composed_{clusters}_{year}.nc"),
@@ -557,12 +557,14 @@ rule compose_network:
         "../scripts/gb_model/compose_network.py"
 
 
-year_range=config["fes"]["year_range_incl"]
+year_range = config["fes"]["year_range_incl"]
+
+
 rule compose_networks:
     input:
         expand(
             resources("networks/composed_{clusters}_{year}.nc"),
             **config["scenario"],
             run=config["run"]["name"],
-            year=list(np.arange(year_range[0],year_range[1]))
+            year=list(np.arange(year_range[0], year_range[1])),
         ),
