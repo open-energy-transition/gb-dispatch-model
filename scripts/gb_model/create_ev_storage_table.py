@@ -19,15 +19,14 @@ from scripts.gb_model._helpers import pre_format
 logger = logging.getLogger(__name__)
 
 
-def parse_ev_storage_data(
-    storage_sheet_path: str,
-) -> pd.DataFrame:
+def parse_ev_storage_data(storage_sheet_path: str, scenario: str) -> pd.DataFrame:
     """
     Parse the EV storage data from FES workbook to obtain storage capacity in the required format.
 
     Args:
         storage_sheet_path (str): Filepath to the storage data CSV file containing
                                  EV storage capacity data by technology and year
+        scenario (str): FES scenario name to filter the data for
 
     Returns:
         pd.DataFrame: DataFrame containing EV storage capacity data indexed by year
@@ -42,16 +41,13 @@ def parse_ev_storage_data(
     """
 
     # Load storage data
-    df_storage = pd.read_csv(storage_sheet_path, index_col=[0, 1])
-
-    # Filter out Leading the Way scenario in a hard coded way
-    df_storage = df_storage.iloc[:18, :]
-    logger.warning(
-        "EV storage data is extracted directly for 'Leading the Way' scenario."
-    )
+    df_storage = pd.read_csv(storage_sheet_path, index_col=[0, 1, 2, 3])
 
     # Select EV storage
-    df_storage = df_storage.loc["V2G"]
+    df_storage = df_storage.xs(
+        (scenario, "V2G", "Storage Capacity (GWh)"),
+        level=("scenario", "name", "parameter"),
+    )
 
     # Pre-format dataframe
     df_storage = pre_format(df_storage.reset_index()).set_index("year")
@@ -167,9 +163,7 @@ if __name__ == "__main__":
     year_range = snakemake.params.year_range
 
     # Parse storage data
-    df_storage = parse_ev_storage_data(
-        storage_sheet_path,
-    )
+    df_storage = parse_ev_storage_data(storage_sheet_path, fes_scenario)
 
     # Parse flexibility data
     df_flexibility = parse_ev_flexibility_data(

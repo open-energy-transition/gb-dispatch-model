@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def extract_fes_worksheet(
-    excel_path: str, sheet_name: str, sheet_config: dict
+    excel_path: str, sheet_name: str, sheet_config: dict | list[dict]
 ) -> pd.DataFrame:
     """
     Extract FES worksheet data from an Excel file.
@@ -33,13 +33,32 @@ def extract_fes_worksheet(
     Returns:
         pd.DataFrame: A DataFrame containing the extracted FES worksheet data.
     """
+    if isinstance(sheet_config, list):
+        fes_data_list = []
+        for config in sheet_config:
+            fes_data_list.append(extract_fes_worksheet(excel_path, sheet_name, config))
+        return pd.concat(fes_data_list)
+
     renamers = sheet_config.pop("rename", {})
+    new_idx = sheet_config.pop("add_index", {})
+    header = sheet_config.get("header", None)
+    if isinstance(header, list):
+        # We cannot use both "usecols" and "header" as list in pd.read_excel,
+        # so set header to 0 here and dealt with later
+        sheet_config["header"] = 0
     fes_data = pd.read_excel(excel_path, sheet_name=sheet_name, **sheet_config)
+
+    if isinstance(header, list):
+        for _ in header[1:]:
+            fes_data = fes_data.T.set_index(fes_data.index[0], append=True).T
 
     fes_data = fes_data.rename_axis(**renamers)
 
-    if pd.notnull(sheet_config["header"]):
-        fes_data = fes_data.stack(sheet_config["header"])
+    if header is not None:
+        fes_data = fes_data.stack(header)
+
+    for idx_name, idx_value in new_idx.items():
+        fes_data = pd.concat([fes_data], keys=[idx_value], names=[idx_name])
 
     if not (unnamed_data := fes_data.filter(regex="Unnamed")).empty:
         logger.error(
