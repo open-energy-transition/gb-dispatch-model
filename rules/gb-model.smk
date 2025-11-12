@@ -7,6 +7,7 @@ import os
 import subprocess
 from zipfile import ZipFile
 from pathlib import Path
+import numpy as np
 
 
 # Rule to download and extract ETYS boundary data
@@ -468,7 +469,7 @@ rule compose_network:
             ],
         ),
     output:
-        network=resources("networks/composed_{clusters}.nc"),
+        network=resources("networks/composed_{clusters}_{year}.nc"),
     params:
         countries=config["countries"],
         costs_config=config["costs"],
@@ -478,17 +479,19 @@ rule compose_network:
         lines=config["lines"],
         demand_types=[x.replace("fes_", "") for x in demand_types],
     log:
-        logs("compose_network_{clusters}.log"),
+        logs("compose_network_{clusters}_{year}.log"),
     resources:
         mem_mb=4000,
     script:
         "../scripts/gb_model/compose_network.py"
 
 
+year_range=config["fes"]["year_range_incl"]
 rule compose_networks:
     input:
         expand(
-            resources("networks/composed_{clusters}.nc"),
+            resources("networks/composed_{clusters}_{year}.nc"),
             **config["scenario"],
             run=config["run"]["name"],
+            year=list(np.arange(year_range[0],year_range[1]))
         ),

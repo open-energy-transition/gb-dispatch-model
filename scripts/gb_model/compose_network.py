@@ -318,10 +318,10 @@ def add_load(
     n: pypsa.Network,
     demand_list: list,
     clustered_demand_profile_list: list,
-    demand_types: list
+    demand_types: list, 
+    year
 ) -> pypsa.Network:
 
-    year = 2022
     breakpoint()
 
     # Iterate through each demand type
@@ -378,7 +378,8 @@ def compose_network(
     lines_config: dict[str, Any],
     demand: list[str],
     clustered_demand_profile: list[str],
-    demand_types: list[str]
+    demand_types: list[str],
+    year: int
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -415,6 +416,8 @@ def compose_network(
         List of paths to the clustered shape profile for each demand type
     demand_types: list[str]
         List of str for demand types
+    year: int
+        Modelling year
     """
     network = pypsa.Network(network_path)
     max_hours = electricity_config.get("max_hours")
@@ -449,7 +452,7 @@ def compose_network(
 
     add_pypsaeur_components(network, electricity_config, context, costs)
 
-    add_load(network, demand, clustered_demand_profile, demand_types)
+    add_load(network, demand, clustered_demand_profile, demand_types, year)
 
     finalise_composed_network(network, context)
 
@@ -485,5 +488,6 @@ if __name__ == "__main__":
         lines_config=snakemake.params.lines,
         demand=snakemake.input.demand,
         clustered_demand_profile=snakemake.input.clustered_demand_profile,
-        demand_types=snakemake.params.demand_types
+        demand_types=snakemake.params.demand_types,
+        year=int(snakemake.wildcards.year)
     )
