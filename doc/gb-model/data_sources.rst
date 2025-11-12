@@ -91,6 +91,7 @@ EV demand data
 --------------
 Electric vehicle (EV) demand data is extracted from the FES-2021 workbook table BB1.
 EV demand profile shape is prepared based on transport demand profile shape of PyPSA-Eur.
+EV charging demand shape is computed by shifting traffic rate data with plug-in offset and applying charging duration.
 
 --------------------------------
 Baseline electricity demand data

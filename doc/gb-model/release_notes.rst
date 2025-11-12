@@ -12,6 +12,7 @@ Release Notes
 Upcoming Release
 ================
 
+* Prepared unmanaged EV charging demand profile shape based on traffic data (#104).
 * Prepared regional flexibility data for EV and demand-side management (DSM) for base electricity (#97).
 * Prepared FES costing worksheets (#62).
 * Rule to generalize creation of load profiles for different demand types (#93)
