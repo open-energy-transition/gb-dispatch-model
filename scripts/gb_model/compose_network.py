@@ -319,12 +319,11 @@ def add_pypsaeur_components(
 
 
 def process_demand_data(
-    demand_list: list(str), 
-    clustered_demand_profile_list: list(str), 
-    demand_type: list(str), 
-    year: int
-    ) -> pd.DataFrame :
-
+    demand_list: list(str),
+    clustered_demand_profile_list: list(str),
+    demand_type: list(str),
+    year: int,
+) -> pd.DataFrame:
     """
     Process the demand data for a particular demand type
 
@@ -344,34 +343,36 @@ def process_demand_data(
 
     # Filter file path for demand type
     demand_path = [x for x in demand_list if demand_type in x][0]
-    demand_profile_path = [x for x in clustered_demand_profile_list if demand_type in x][0]
+    demand_profile_path = [
+        x for x in clustered_demand_profile_list if demand_type in x
+    ][0]
 
-    # Read the files    
-    demand=pd.read_csv(demand_path)
-    demand_profile=pd.read_csv(demand_profile_path,index_col=[0])
+    # Read the files
+    demand = pd.read_csv(demand_path)
+    demand_profile = pd.read_csv(demand_profile_path, index_col=[0])
 
     # Group demand data by year and bus and filter the data for required year
-    demand_grouped=demand.groupby(['year','bus']).sum().loc[year]
+    demand_grouped = demand.groupby(["year", "bus"]).sum().loc[year]
 
     # Filtering those buses that are present in both the dataframes
-    list_of_buses=list(set(demand['bus']) & set(demand_profile.columns))
+    list_of_buses = list(set(demand["bus"]) & set(demand_profile.columns))
 
     # Scale the profile by the annual demand from FES
-    load = demand_profile[list_of_buses].mul(demand_grouped['p_set'])
+    load = demand_profile[list_of_buses].mul(demand_grouped["p_set"])
 
     # Convert load index to datetime dtype to avoid flagging an assertion error from pypsa
-    load.index=pd.to_datetime(load.index)
+    load.index = pd.to_datetime(load.index)
 
     return load
+
 
 def add_load(
     n: pypsa.Network,
     demand_list: list,
     clustered_demand_profile_list: list,
-    demand_types: list, 
-    year: int
+    demand_types: list,
+    year: int,
 ) -> pypsa.Network:
-
     """
     Add load as a timeseries to PyPSA network
 
@@ -391,13 +392,14 @@ def add_load(
 
     # Iterate through each demand type
     for demand_type in demand_types:
-        
         # Process data for the demand type
-        load = process_demand_data(demand_list, clustered_demand_profile_list, demand_type, year)
+        load = process_demand_data(
+            demand_list, clustered_demand_profile_list, demand_type, year
+        )
 
         # Add the load to pypsa Network
-        suffix=f" {demand_type}"
-        n.add("Load", load.columns+suffix, bus=load.columns)
+        suffix = f" {demand_type}"
+        n.add("Load", load.columns + suffix, bus=load.columns)
         n.loads_t.p_set = pd.concat([n.loads_t.p_set, load.add_suffix(suffix)], axis=1)
 
 
@@ -491,7 +493,7 @@ def compose_network(
     demand: list[str],
     clustered_demand_profile: list[str],
     demand_types: list[str],
-    year: int
+    year: int,
     enable_chp: bool,
 ) -> None:
     """
@@ -629,6 +631,6 @@ if __name__ == "__main__":
         demand=snakemake.input.demand,
         clustered_demand_profile=snakemake.input.clustered_demand_profile,
         demand_types=snakemake.params.demand_types,
-        year=int(snakemake.wildcards.year)
+        year=int(snakemake.wildcards.year),
         enable_chp=snakemake.params.enable_chp,
     )
