@@ -12,6 +12,7 @@ Release Notes
 Upcoming Release
 ================
 
+* Add demands to pypsa Network (#102)
 * Rule to generalize creation of load profiles for different demand types (#93)
 * Tabulated flexibility data for EV and demand-side management (DSM) for base electricity (#91).
 * Changed base year to 2012 (#92)
