@@ -101,8 +101,11 @@ Baseline electricity demand data is extracted from FES-2021 workbook table BB1.
 EV flexibility data
 -------------------
 Electric vehicle (EV) flexibility data is extracted from the FES-2021 workbook table FLX1.
+Regional distribution of V2G and smart charging flexibility is based on V2G distribution provided in BB1 sheet of FES-2021.
 
 -------------------
 DSM flexibility for base electricity
 -------------------
 Demand-side management (DSM) flexibility data for base electricity (residential and I&C) is extracted from the FES-2021 workbook table FLX1.
+Regional distribution of residential demand side response (DSR) flexibility is based on Baseline demand distribution provided in BB1 sheet of FES-2021,
+while regional distribution of services DSR flexibility is based on I&C Flexibility (TouT) distribution provided in BB1 sheet of FES-2021.
