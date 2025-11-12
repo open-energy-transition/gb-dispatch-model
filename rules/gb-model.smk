@@ -232,7 +232,7 @@ rule create_powerplants_table:
     message:
         "Tabulate powerplant data GSP-wise from FES workbook sheet BB1 and EU supply data"
     params:
-        default_characteristics["fes"]["default_characteristics"],
+        default_characteristics=config["fes"]["default_characteristics"],
         gb_config=config["fes"]["gb"],
         eur_config=config["fes"]["eur"],
         dukes_config=config["dukes-5.11"],
