@@ -12,6 +12,7 @@ Release Notes
 Upcoming Release
 ================
 
+* Tabulated regional EV storage data (#101).
 * Extract transmission unavailability from NESO system performance report PDF (internal and interconnectors) (#40, #38).
 * Prepared regional flexibility data for EV and demand-side management (DSM) for base electricity (#97).
 * Prepared FES costing worksheets (#62).

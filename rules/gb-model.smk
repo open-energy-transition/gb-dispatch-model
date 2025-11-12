@@ -487,6 +487,37 @@ rule process_demand_shape:
         "../scripts/gb_model/process_demand_shape.py"
 
 
+rule create_ev_storage_table:
+    message:
+        "Process EV storage data from FES workbook into CSV format"
+    params:
+        scenario=config["fes"]["gb"]["scenario"],
+        year_range=config["fes"]["year_range_incl"],
+    input:
+        storage_sheet=resources("gb-model/fes/2021/FL.14.csv"),
+        flexibility_sheet=resources("gb-model/fes/2021/FLX1.csv"),
+    output:
+        storage_table=resources("gb-model/fes_ev_storage.csv"),
+    log:
+        logs("create_ev_storage_table.log"),
+    script:
+        "../scripts/gb_model/create_ev_storage_table.py"
+
+
+rule process_regional_ev_storage:
+    message:
+        "Process regional EV storage data into CSV format"
+    input:
+        storage=resources("gb-model/fes_ev_storage.csv"),
+        flexibility=resources("gb-model/regional_fes_ev_v2g.csv"),
+    output:
+        regional_storage=resources("gb-model/regional_fes_ev_storage.csv"),
+    log:
+        logs("process_regional_ev_storage.log"),
+    script:
+        "../scripts/gb_model/process_regional_ev_storage.py"
+
+
 rule create_chp_p_min_pu_profile:
     message:
         "Create CHP minimum operation profiles linked to heat demand"
@@ -565,6 +596,7 @@ rule compose_network:
                     for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()
                 ],
             ),
+            resources("gb-model/regional_fes_ev_storage.csv"),
         ],
     output:
         network=resources("networks/composed_{clusters}.nc"),

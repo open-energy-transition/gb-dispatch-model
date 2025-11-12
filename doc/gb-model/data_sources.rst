@@ -107,6 +107,8 @@ Baseline electricity demand data is extracted from FES-2021 workbook table BB1.
 EV flexibility data
 -------------------
 Electric vehicle (EV) flexibility data is extracted from the FES-2021 workbook table FLX1.
+Energy storage capacity of EVs are obtained by interpolating EV storage data from FL.14 sheet of FES-2021 workbook with V2G peak capacity from FLX1 sheet.
+Storage data is regionally disaggregated based on EV flexibility data.
 Regional distribution of V2G and smart charging flexibility is based on V2G distribution provided in BB1 sheet of FES-2021.
 
 -------------------

@@ -453,6 +453,20 @@ fes-sheet-config:
       rename:
         columns: year
 
+    # Annual storage data for 2030 and 2050
+    # SHeet contains multiple tables, one for each scenario
+    FL.14:
+    - usecols: "P,R,U,X"
+      skiprows: 58
+      nrows: 6
+      index_col: 0
+      header: [0, 1]
+      rename:
+        columns: [year, parameter]
+        index: name
+      add_index:
+        scenario: leading the way
+
     BB2:
       usecols: "A:E"
       skiprows: 2
