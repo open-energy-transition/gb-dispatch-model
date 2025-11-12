@@ -322,8 +322,6 @@ def add_load(
     year
 ) -> pypsa.Network:
 
-    breakpoint()
-
     # Iterate through each demand type
     for demand_type in demand_types:
         
