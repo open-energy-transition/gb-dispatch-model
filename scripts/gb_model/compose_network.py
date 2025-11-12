@@ -291,6 +291,51 @@ def add_pypsaeur_components(
     return n
 
 
+def process_demand_data(demand_list, clustered_demand_profile_list, demand_type, year):
+    # Filter file path for demand type
+    demand_path = [x for x in demand_list if demand_type in x][0]
+    demand_profile_path = [x for x in clustered_demand_profile_list if demand_type in x][0]
+
+    # Read the files    
+    demand=pd.read_csv(demand_path)
+    demand_profile=pd.read_csv(demand_profile_path,index_col=[0])
+
+    # Group demand data by year and bus and filter the data for required year
+    demand_grouped=demand.groupby(['year','bus']).sum().loc[year]
+
+    # Filtering those buses that are present in both the dataframes
+    list_of_buses=list(set(demand['bus']) & set(demand_profile.columns))
+
+    # Scale the profile by the annual demand from FES
+    load = demand_profile[list_of_buses].mul(demand_grouped['p_set'])
+
+    # Convert load index to datetime dtype to avoid flagging an assertion error from pypsa
+    load.index=pd.to_datetime(load.index)
+
+    return load
+
+def add_load(
+    n: pypsa.Network,
+    demand_list: list,
+    clustered_demand_profile_list: list
+) -> pypsa.Network:
+
+    demand_types=["baseline_electricity","transport"]
+
+    year = 2022
+
+    # Iterate through each demand type
+    for demand_type in demand_types:
+        
+        # Process data for the demand type
+        load = process_demand_data(demand_list, clustered_demand_profile_list, demand_type, year)
+
+        # Add the load to pypsa Network
+        suffix=f" {demand_type}"
+        n.add("Load", load.columns+suffix, bus=load.columns)
+        n.loads_t.p_set = pd.concat([n.loads_t.p_set, load.add_suffix(suffix)], axis=1)
+
+
 def finalise_composed_network(
     n: pypsa.Network,
     context: CompositionContext,
@@ -331,6 +376,9 @@ def compose_network(
     clustering_config: dict[str, Any],
     renewable_config: dict[str, Any],
     lines_config: dict[str, Any],
+    demand: list[str],
+    flexibility: list[str],
+    clustered_demand_profile: list[str]
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -361,6 +409,13 @@ def compose_network(
         Renewable configuration dictionary
     lines_config : dict
         Lines configuration dictionary
+    demand: list[str]
+        List of paths to the demand data for each demand type
+    flexibility: list[str]
+        List of paths to the flexibility potential for each demand type
+    clustered_demand_profile: list[str]
+        List of paths to the clustered shape profile for each demand type
+
     """
     network = pypsa.Network(network_path)
     max_hours = electricity_config.get("max_hours")
@@ -394,6 +449,9 @@ def compose_network(
     )
 
     add_pypsaeur_components(network, electricity_config, context, costs)
+
+    add_load(network, demand, clustered_demand_profile)
+
     finalise_composed_network(network, context)
 
     network.export_to_netcdf(output_path)
@@ -426,4 +484,7 @@ if __name__ == "__main__":
         clustering_config=snakemake.params.clustering,
         renewable_config=snakemake.params.renewable,
         lines_config=snakemake.params.lines,
+        demand=snakemake.input.demand,
+        flexibility=snakemake.input.flexibility,
+        clustered_demand_profile=snakemake.input.clustered_demand_profile,
     )

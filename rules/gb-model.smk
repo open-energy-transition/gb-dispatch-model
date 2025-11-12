@@ -447,27 +447,25 @@ rule compose_network:
             resources("gb-model/fes_grid_electrolysis_capacities.csv"),
             resources("gb-model/fes_hydrogen_supply.csv"),
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
-            resources("gb-model/fes_hydrogen_storage.csv"),
-            resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
-            resources("gb-model/transport_demand_shape_s_clustered.csv"),
-            expand(
-                resources("gb-model/{demand_type}_demand.csv"),
-                demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),
-            ),
-            expand(
-                resources("gb-model/{flexibility_type}_flexibility.csv"),
-                flexibility_type=config["fes"]["gb"]["flexibility"][
-                    "Technology Detail"
-                ].keys(),
-            ),
-            expand(
-                resources("gb-model/{demand_sector}_demand_shape_s_clustered.csv"),
-                demand_sector=[
-                    x.replace("fes_", "")
-                    for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()
-                ],
-            ),
+            resources("gb-model/fes_hydrogen_storage.csv"),         
         ],
+        demand=expand(
+            resources("gb-model/{demand_type}_demand.csv"),
+            demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),
+        ),
+        flexibility=expand(
+                resources("gb-model/{flexibility_type}_flexibility.csv"),
+            flexibility_type=config["fes"]["gb"]["flexibility"][
+                "Technology Detail"
+            ].keys(),
+        ),
+        clustered_demand_profile=expand(
+            resources("gb-model/{demand_sector}_demand_shape_s_clustered.csv"),
+            demand_sector=[
+                x.replace("fes_", "")
+                for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()
+            ],
+        ),
     output:
         network=resources("networks/composed_{clusters}.nc"),
     params:
