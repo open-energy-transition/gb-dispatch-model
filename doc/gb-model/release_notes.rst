@@ -12,6 +12,7 @@ Release Notes
 Upcoming Release
 ================
 
+* Extract transmission unavailability from NESO system performance report PDF (internal and interconnectors) (#40, #38).
 * Prepared regional flexibility data for EV and demand-side management (DSM) for base electricity (#97).
 * Prepared FES costing worksheets (#62).
 * Rule to generalize creation of load profiles for different demand types (#93)

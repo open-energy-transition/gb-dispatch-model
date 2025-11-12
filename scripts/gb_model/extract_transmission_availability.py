@@ -27,7 +27,8 @@ def extract_transmission_availability(pdf_path: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame containing the extracted transmission availability data.
     """
-    availability_data = {}
+    transmission_data = {}
+    interconnector_data = {}
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             tables = page.extract_tables(
@@ -53,15 +54,41 @@ def extract_transmission_availability(pdf_path: str) -> pd.DataFrame:
                         .astype(float)
                     )
                     geography = page.extract_text_lines(layout=True)[0]["text"]
-                    availability_data[geography] = df
+                    df.index = pd.to_datetime(df.index, format="%b").month
+                    transmission_data[geography] = df
                     logger.info(
                         f"Found monthly availability table for {geography} transmission system with average annual unavailability of {df.Total.mean():.2f}%."
                     )
-    final_df = pd.concat(
-        availability_data.values(),
-        keys=availability_data.keys(),
+                elif "% monthly unavailability" in title:
+                    geography = title.removesuffix("% monthly unavailability").rstrip(
+                        " \n"
+                    )
+                    project = table[1][1]
+                    name = f"{geography} | {project}"
+                    df = (
+                        pd.DataFrame(table[2:-2])
+                        .set_index(0)
+                        .rename_axis(index="month", columns=name)
+                        .squeeze()
+                        .replace("N/A", float("nan"))
+                        .astype(float)
+                    )
+                    df.index = pd.to_datetime(df.index, format="%B").month
+                    interconnector_data[name] = df
+                    logger.info(
+                        f"Found interconnector monthly unavailability table for {name} with average monthly unavailability of {df.mean():.2f}%."
+                    )
+    gb_df = pd.concat(
+        transmission_data.values(),
+        keys=transmission_data.keys(),
         names=["geography", "month"],
     )
+    interconnector_df = pd.concat(
+        interconnector_data.values(),
+        keys=interconnector_data.keys(),
+        names=["geography", "month"],
+    )
+    final_df = pd.concat([gb_df, interconnector_df.to_frame("Total")])
     return final_df
 
 
