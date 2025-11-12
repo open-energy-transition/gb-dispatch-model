@@ -61,8 +61,11 @@ def parse_regional_flexibility_data(
     # Group by bus and year
     regional_reference = regional_reference.groupby(["bus", "year"])["data"].sum()
 
-    # Get regional distribution (1e-9 was added to avoid division by zero)
-    regional_dist = get_regional_distribution(regional_reference + 1e-9)
+    # Get regional distribution
+    regional_dist = get_regional_distribution(regional_reference)
+
+    # Fillna values with 0
+    regional_dist = regional_dist.fillna(0)
 
     # Distribute flexibility data regionally
     flexibility_regional = regional_dist * flexibility_data["p_nom"]
