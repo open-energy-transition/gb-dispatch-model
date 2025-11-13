@@ -662,6 +662,10 @@ fes:
           storage_capacity: FL.6
       interpolation_method: linear  # Options: linear, s_curve, step. Interpolation method for hydrogen storage capacity between FES years
 
+ev:
+  plug_in_offset: 2 # hours after the traffic/activity peak when most EVs are expected to plug in for charging
+  charging_duration: 4 # duration of active charging period in hours
+
 interconnectors:
   # lat/lon values are approximate.
   # Some are based on the proposed connecting substation from the UK interconnector register.
