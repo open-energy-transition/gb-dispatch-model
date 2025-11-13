@@ -577,6 +577,27 @@ rule create_chp_p_min_pu_profile:
         "../scripts/gb_model/create_chp_p_min_pu_profile.py"
 
 
+rule distribute_eur_demands:
+    message:
+        "Distribute total European neighbour annual demands into base electricity, heating, and transport"
+    input:
+        eur_data=resources("gb-model/national_eur_data.csv"),
+        energy_totals=resources("energy_totals.csv"),
+        demands=[
+            resources("gb-model/fes_baseline_electricity_demand.csv"),
+            resources("gb-model/fes_transport_demand.csv"),
+        ],
+    params:
+        totals_to_demands=config["fes"]["eur"]["totals_to_demand_groups"],
+        base_year=config["energy"]["energy_totals_year"],
+    output:
+        csv=resources("gb-model/eur_annual_demand.csv"),
+    log:
+        logs("distribute_eur_demands.log"),
+    script:
+        "../scripts/gb_model/distribute_eur_demands.py"
+
+
 def demands(w):
     """Collate annual demands and their profiles into individual inputs for `compose_network`"""
     return {
@@ -602,6 +623,7 @@ rule compose_network:
     input:
         unpack(input_profile_tech),
         unpack(demands),
+        eur_demand=resources("gb-model/eur_annual_demand.csv"),
         network=resources("networks/base_s_{clusters}.nc"),
         powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(

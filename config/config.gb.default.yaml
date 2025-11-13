@@ -634,6 +634,10 @@ fes:
         Peat CHP: CHP
         Reservoir Hydro with pumping: Store
 
+    totals_to_demand_groups:
+      transport: [total road]
+      baseline_electricity: [electricity residential, electricity services, electricity rail]
+
   hydrogen:
     demand:
       annual_demand_sheets:
