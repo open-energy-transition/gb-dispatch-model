@@ -87,7 +87,7 @@ def create_context(
 
 
 def _add_timeseries_data_to_network(
-    n: pypsa.Network, data: pd.DataFrame, attribute: str
+    pypsa_t_dict: dict, data: pd.DataFrame, attribute: str
 ) -> None:
     """
     Add/update timeseries data to a network attribute.
@@ -97,11 +97,11 @@ def _add_timeseries_data_to_network(
     All other columns will remain as-is.
 
     Args:
-        n (pypsa.Network): PyPSA network.
+        pypsa_t_dict (dict): PyPSA network timeseries component dictionary (e.g., n.loads_t).
         data (pd.DataFrame): Timeseries data to add.
         attribute (str): Network timeseries attribute to update.
     """
-    assert n.generators_t[attribute].index.equals(data.index), (
+    assert pypsa_t_dict[attribute].index.equals(data.index), (
         f"Snapshot indices do not match between network attribute {attribute} and data being added."
     )
     logger.info(
@@ -109,9 +109,9 @@ def _add_timeseries_data_to_network(
         attribute,
         len(data.columns),
     )
-    n.generators_t[attribute] = (
-        n.generators_t[attribute]
-        .loc[:, ~n.generators_t[attribute].columns.isin(data.columns)]
+    pypsa_t_dict[attribute] = (
+        pypsa_t_dict[attribute]
+        .loc[:, ~pypsa_t_dict[attribute].columns.isin(data.columns)]
         .join(data)
     )
 
@@ -319,9 +319,8 @@ def add_pypsaeur_components(
 
 
 def process_demand_data(
-    demand_list: list[str],
-    clustered_demand_profile_list: list[str],
-    demand_type: list[str],
+    annual_demand: str,
+    clustered_demand_profile: str,
     year: int,
 ) -> pd.DataFrame:
     """
@@ -341,15 +340,9 @@ def process_demand_data(
         Year used in the modelling
     """
 
-    # Filter file path for demand type
-    demand_path = [x for x in demand_list if demand_type in x][0]
-    demand_profile_path = [
-        x for x in clustered_demand_profile_list if demand_type in x
-    ][0]
-
     # Read the files
-    demand = pd.read_csv(demand_path)
-    demand_profile = pd.read_csv(demand_profile_path, index_col=[0])
+    demand = pd.read_csv(annual_demand)
+    demand_profile = pd.read_csv(clustered_demand_profile, index_col=[0])
 
     # Group demand data by year and bus and filter the data for required year
     demand_grouped = demand.groupby(["year", "bus"]).sum().loc[year]
@@ -368,9 +361,7 @@ def process_demand_data(
 
 def add_load(
     n: pypsa.Network,
-    demand_list: list,
-    clustered_demand_profile_list: list,
-    demand_types: list,
+    demands: dict[str, list[str]],
     year: int,
 ):
     """
@@ -391,16 +382,14 @@ def add_load(
     """
 
     # Iterate through each demand type
-    for demand_type in demand_types:
+    for demand_type, (annual_demand, clustered_demand_profile) in demands.items():
         # Process data for the demand type
-        load = process_demand_data(
-            demand_list, clustered_demand_profile_list, demand_type, year
-        )
+        load = process_demand_data(annual_demand, clustered_demand_profile, year)
 
         # Add the load to pypsa Network
         suffix = f" {demand_type}"
         n.add("Load", load.columns + suffix, bus=load.columns)
-        n.loads_t.p_set = pd.concat([n.loads_t.p_set, load.add_suffix(suffix)], axis=1)
+        _add_timeseries_data_to_network(n.loads_t, load.add_suffix(suffix), "p_set")
 
 
 def finalise_composed_network(
@@ -473,7 +462,7 @@ def attach_chp_constraints(n: pypsa.Network, p_min_pu: pd.DataFrame) -> None:
     p_min_pu_for_gens.columns = valid_gens.index
 
     # Assign all generators at once
-    _add_timeseries_data_to_network(n, p_min_pu_for_gens, "p_min_pu")
+    _add_timeseries_data_to_network(n.generators_t, p_min_pu_for_gens, "p_min_pu")
 
 
 def compose_network(
@@ -490,9 +479,7 @@ def compose_network(
     clustering_config: dict[str, Any],
     renewable_config: dict[str, Any],
     lines_config: dict[str, Any],
-    demand: list[str],
-    clustered_demand_profile: list[str],
-    demand_types: list[str],
+    demands: dict[str, list[str]],
     year: int,
     enable_chp: bool,
 ) -> None:
@@ -593,7 +580,7 @@ def compose_network(
 
     add_pypsaeur_components(network, electricity_config, context, costs)
 
-    add_load(network, demand, clustered_demand_profile, demand_types, year)
+    add_load(network, demands, year)
 
     finalise_composed_network(network, context)
 
@@ -613,7 +600,11 @@ if __name__ == "__main__":
     renewable_carriers = snakemake.params.electricity["renewable_carriers"]
     renewable_profile_keys = [f"profile_{carrier}" for carrier in renewable_carriers]
     renewable_profiles = {key: snakemake.input[key] for key in renewable_profile_keys}
-
+    demands = {
+        k.replace("demand_", ""): v
+        for k, v in snakemake.input.items()
+        if k.startswith("demand_")
+    }
     compose_network(
         network_path=snakemake.input.network,
         output_path=snakemake.output.network,
@@ -628,9 +619,7 @@ if __name__ == "__main__":
         clustering_config=snakemake.params.clustering,
         renewable_config=snakemake.params.renewable,
         lines_config=snakemake.params.lines,
-        demand=snakemake.input.demand,
-        clustered_demand_profile=snakemake.input.clustered_demand_profile,
-        demand_types=snakemake.params.demand_types,
+        demands=demands,
         year=int(snakemake.wildcards.year),
         enable_chp=snakemake.params.enable_chp,
     )

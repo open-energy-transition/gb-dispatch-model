@@ -488,7 +488,17 @@ rule create_chp_p_min_pu_profile:
         "../scripts/gb_model/create_chp_p_min_pu_profile.py"
 
 
-demand_types = list(config["fes"]["gb"]["demand"]["Technology Detail"].keys())
+def demands(w):
+    """Collate annual demands and their profiles into individual inputs for `compose_network`"""
+    return {
+        f"demand_{demand_type}": [
+            resources(f"gb-model/{demand_type}_demand.csv"),
+            resources(
+                f"gb-model/{demand_type.replace('fes_', '')}_demand_shape_s_clustered.csv"
+            ),
+        ]
+        for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"]
+    }
 
 
 rule compose_network:
@@ -500,9 +510,9 @@ rule compose_network:
         renewable=config["renewable"],
         lines=config["lines"],
         enable_chp=config["chp"]["enable"],
-        demand_types=[x.replace("fes_", "") for x in demand_types],
     input:
         unpack(input_profile_tech),
+        unpack(demands),
         network=resources("networks/base_s_{clusters}.nc"),
         powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(
@@ -533,19 +543,11 @@ rule compose_network:
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
         ],
-        demand=expand(
-            resources("gb-model/{demand_type}_demand.csv"),
-            demand_type=demand_types,
-        ),
         flexibility=expand(
             resources("gb-model/{flexibility_type}_flexibility.csv"),
             flexibility_type=config["fes"]["gb"]["flexibility"][
                 "Technology Detail"
             ].keys(),
-        ),
-        clustered_demand_profile=expand(
-            resources("gb-model/{demand_sector}_demand_shape_s_clustered.csv"),
-            demand_sector=[x.replace("fes_", "") for x in demand_types],
         ),
     output:
         network=resources("networks/composed_{clusters}_{year}.nc"),
