@@ -9,6 +9,11 @@ from zipfile import ZipFile
 from pathlib import Path
 
 
+wildcard_constraints:
+    flexibility_type="fes_ev_dsm|fes_ev_v2g|fes_residential_dsr|fes_services_dsr",
+    data_type="storage|unmanaged_charging",
+
+
 # Rule to download and extract ETYS boundary data
 rule download_data:
     message:
@@ -544,18 +549,18 @@ rule create_ev_storage_table:
         "../scripts/gb_model/create_ev_storage_table.py"
 
 
-rule process_regional_ev_storage:
+rule process_regional_ev_data:
     message:
-        "Process regional EV storage data into CSV format"
+        "Process regional EV {wildcards.data_type} data into CSV format"
     input:
-        storage=resources("gb-model/fes_ev_storage.csv"),
+        input_csv=resources("gb-model/fes_ev_{data_type}.csv"),
         flexibility=resources("gb-model/regional_fes_ev_v2g.csv"),
     output:
-        regional_storage=resources("gb-model/regional_fes_ev_storage.csv"),
+        regional_output=resources("gb-model/regional_fes_ev_{data_type}.csv"),
     log:
-        logs("process_regional_ev_storage.log"),
+        logs("process_regional_ev_{data_type}.log"),
     script:
-        "../scripts/gb_model/process_regional_ev_storage.py"
+        "../scripts/gb_model/process_regional_ev_data.py"
 
 
 rule create_ev_unmanaged_charging_table:
@@ -653,6 +658,7 @@ rule compose_network:
                 ],
             ),
             resources("gb-model/regional_fes_ev_storage.csv"),
+            resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
         ],
     output:
         network=resources("networks/composed_{clusters}.nc"),

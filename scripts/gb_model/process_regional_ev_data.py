@@ -19,15 +19,13 @@ from scripts.gb_model._helpers import get_regional_distribution
 logger = logging.getLogger(__name__)
 
 
-def prepare_regional_ev_storage(
-    storage_path: str, flexibility_path: str
-) -> pd.DataFrame:
+def prepare_regional_ev_data(input_path: str, flexibility_path: str) -> pd.DataFrame:
     """
-    Prepare regional disaggregation of EV storage data using flexibility distribution patterns.
+    Prepare regional disaggregation of EV data using flexibility distribution patterns.
 
     Args:
-        storage_path (str): Filepath to the EV storage data CSV file containing
-                           annual storage capacity data indexed by year
+        input_path (str): Filepath to the EV data CSV file containing
+                           annual aggregated data indexed by year
         flexibility_path (str): Filepath to the flexibility data CSV file containing
                                regional flexibility data with MultiIndex [bus, year]
 
@@ -42,8 +40,8 @@ def prepare_regional_ev_storage(
         3. Apply regional distribution to annual storage capacity
     """
 
-    # Load storage data
-    df_storage = pd.read_csv(storage_path, index_col=0)
+    # Load EV data
+    df_ev = pd.read_csv(input_path, index_col=0)
 
     # Load flexibility data
     df_flexibility = pd.read_csv(flexibility_path, index_col=[0, 1])
@@ -54,35 +52,33 @@ def prepare_regional_ev_storage(
     # Fillna values with 0
     regional_dist = regional_dist.fillna(0)
 
-    # Disaggregate storage data regionally
-    regional_storage = regional_dist["p_nom"] * df_storage["MWh"]
+    # Disaggregate EV data regionally
+    regional_ev = regional_dist["p_nom"] * df_ev.squeeze()
 
-    # Rename series as MWh
-    regional_storage = regional_storage.rename("MWh")
+    # Keep original column name
+    regional_ev = regional_ev.rename(df_ev.columns[0])
 
-    return regional_storage
+    return regional_ev
 
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
 
-        snakemake = mock_snakemake(Path(__file__).stem)
+        snakemake = mock_snakemake(Path(__file__).stem, data_type="unmanaged_charging")
     configure_logging(snakemake)
     set_scenario_config(snakemake)
 
-    # Load the regional gb data file path
-    storage_path = snakemake.input.storage
+    # Load input paths
+    input_path = snakemake.input.input_csv
     flexibility_path = snakemake.input.flexibility
 
-    # Prepare regional storage data
-    df_regional_storage = prepare_regional_ev_storage(
-        storage_path,
+    # Prepare regional EV data
+    df_regional_ev = prepare_regional_ev_data(
+        input_path,
         flexibility_path,
     )
 
-    # Write storage dataframe to csv file
-    df_regional_storage.to_csv(snakemake.output.regional_storage)
-    logger.info(
-        f"Regional EV storage data saved to {snakemake.output.regional_storage}"
-    )
+    # Write EV dataframe to csv file
+    df_regional_ev.to_csv(snakemake.output.regional_output)
+    logger.info(f"Regional EV data saved to {snakemake.output.regional_output}")
