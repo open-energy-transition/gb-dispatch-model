@@ -120,19 +120,14 @@ def compute_ev_demand_shape(df: pd.DataFrame, charging_duration: int) -> pd.Data
         3. Handle wrap-around effects for circular convolution
     """
     # Define charging profile kernel
-    charging_profile_kernel = np.ones(charging_duration)
-    n = len(df)
-
-    convoluted_df = pd.DataFrame(index=df.index, columns=df.columns)
-
-    for col in df.columns:
-        full_conv = np.convolve(df[col], charging_profile_kernel, mode="full")
-        result = full_conv[:n].copy()
-        result[: charging_duration - 1] += full_conv[n:]  # wrap overflow
-        convoluted_df[col] = result
+    # To wrap the year, we have to mock data at the start of the timeseries and then strip it out later.
+    # Otherwise we get NaN data in the first hours of the year.
+    temp_df = df.iloc[-charging_duration:]
+    temp_df.index = temp_df.index - pd.DateOffset(years=1)
+    rolling_sum_df =  pd.concat([temp_df, df]).rolling(charging_duration).sum().iloc[charging_duration:]
 
     # Normalize the convoluted profiles
-    convoluted_df = convoluted_df / convoluted_df.sum()
+    rolling_sum_df = rolling_sum_df / rolling_sum_df.sum()
 
     return convoluted_df
 
