@@ -13,6 +13,8 @@ Upcoming Release
 ================
 
 * Limit GB model to ``clustered`` clusters.
+* Added ETYS report boundary capabilities extractor (#9).
+* Added config version for updating the system boundaries to the subset defined in the ETYS report.
 * Prepared unmanaged EV charging demand profile shape based on traffic data (#104).
 * Tabulated regional EV storage data (#101).
 * Extract transmission unavailability from NESO system performance report PDF (internal and interconnectors) (#40, #38).

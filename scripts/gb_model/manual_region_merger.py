@@ -44,7 +44,7 @@ def split_region_vertical(
     Returns:
         Updated GeoDataFrame with split regions
     """
-    logger.debug(f"Splitting region {region_num} vertically at longitude {longitude}")
+    logger.info(f"Splitting region {region_num} vertically at longitude {longitude}")
 
     # Find the target region
     target_region_mask = regions_gdf["numeric_id"] == region_num
@@ -66,14 +66,14 @@ def split_region_vertical(
     split_result = split(target_region.geometry, splitting_line)
 
     if hasattr(split_result, "geoms") and len(split_result.geoms) >= 2:
-        logger.debug(
+        logger.info(
             f"Successfully split region {region_num} into {len(split_result.geoms)} parts"
         )
 
         # For region 6, handle special case with 3 parts, because it is a concave shaped region.
         # When split by vertical line, it can produce 3 parts: west-north, west-south, east regions.
         # This is an exception case, because west-south part needs to be joined with east part.
-        if region_num == 6 and len(split_result.geoms) >= 3:
+        if len(split_result.geoms) >= 3:
             # Sort all parts by longitude first
             parts_with_centroids = []
             for geom in split_result.geoms:
@@ -124,7 +124,7 @@ def split_region_vertical(
                         new_region["area_km2"] = new_area_km2
 
                     new_regions.append(new_region)
-                    logger.debug(
+                    logger.info(
                         f"Created region {new_region['region_id']} ({suffixes[i]})"
                     )
 
@@ -141,7 +141,7 @@ def split_region_vertical(
                     new_region["area_km2"] = new_area_km2
 
                 new_regions.append(new_region)
-                logger.debug(f"Created region {new_region['region_id']} (w)")
+                logger.info(f"Created region {new_region['region_id']} (w)")
 
             # Handle east part
             if east_part is not None:
@@ -156,7 +156,7 @@ def split_region_vertical(
                     new_region["area_km2"] = new_area_km2
 
                 new_regions.append(new_region)
-                logger.debug(f"Created region {new_region['region_id']} (e)")
+                logger.info(f"Created region {new_region['region_id']} (e)")
 
         else:
             # Standard 2-part split (for other regions or if region 6 only splits into 2)
@@ -184,7 +184,7 @@ def split_region_vertical(
                         new_region["area_km2"] = new_area_km2
 
                     new_regions.append(new_region)
-                    logger.debug(
+                    logger.info(
                         f"Created region {new_region['region_id']} ({suffixes[i]})"
                     )
 
@@ -220,7 +220,7 @@ def split_region_horizontal(
     Returns:
         Updated GeoDataFrame with split regions
     """
-    logger.debug(f"Splitting region {region_num} horizontally at latitude {latitude}")
+    logger.info(f"Splitting region {region_num} horizontally at latitude {latitude}")
 
     # Find the target region
     target_region_mask = regions_gdf["numeric_id"] == region_num
@@ -242,7 +242,7 @@ def split_region_horizontal(
     split_result = split(target_region.geometry, splitting_line)
 
     if hasattr(split_result, "geoms") and len(split_result.geoms) >= 2:
-        logger.debug(
+        logger.info(
             f"Successfully split region {region_num} into {len(split_result.geoms)} parts"
         )
 
@@ -270,9 +270,7 @@ def split_region_horizontal(
                     new_region["area_km2"] = new_area_km2
 
                 new_regions.append(new_region)
-                logger.debug(
-                    f"Created region {new_region['region_id']} ({suffixes[i]})"
-                )
+                logger.info(f"Created region {new_region['region_id']} ({suffixes[i]})")
 
         # Remove original region and add new ones
         result_gdf = regions_gdf.drop(index=target_idx)
@@ -294,15 +292,15 @@ def split_region_horizontal(
 
 def load_regions(input_file: str) -> gpd.GeoDataFrame:
     """Load regions from GeoJSON file"""
-    logger.debug(f"Loading regions from: {input_file}")
+    logger.info(f"Loading regions from: {input_file}")
     regions_gdf = gpd.read_file(input_file)
-    logger.debug(f"Loaded {len(regions_gdf)} regions")
+    logger.info(f"Loaded {len(regions_gdf)} regions")
 
     # Show available region IDs for reference
     if "region_id" in regions_gdf.columns:
         region_ids = regions_gdf["region_id"].tolist()
-        logger.debug(f"Sample region IDs: {region_ids[:10]}")
-        logger.debug(f"Region ID type: {type(region_ids[0])}")
+        logger.info(f"Sample region IDs: {region_ids[:10]}")
+        logger.info(f"Region ID type: {type(region_ids[0])}")
 
         # Extract numeric parts from region IDs for matching
         numeric_ids = []
@@ -318,23 +316,24 @@ def load_regions(input_file: str) -> gpd.GeoDataFrame:
 
         # Add numeric ID column for easier matching
         regions_gdf["numeric_id"] = numeric_ids
-        logger.debug(
+        logger.info(
             f"Extracted numeric IDs: {sorted([x for x in numeric_ids if x is not None])}"
         )
 
     else:
-        logger.debug("No 'region_id' column found, using index as region ID")
+        logger.info("No 'region_id' column found, using index as region ID")
         regions_gdf["region_id"] = regions_gdf.index + 1
         regions_gdf["numeric_id"] = regions_gdf.index + 1
 
     return regions_gdf
 
 
-def cut_regions_before_merge(regions_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def cut_regions_before_merge(
+    regions_gdf: gpd.GeoDataFrame, splits: list[dict]
+) -> gpd.GeoDataFrame:
     """
     Cut regions before merging based on configuration
     """
-    splits = snakemake.config["region_operations"]["splits"]
 
     for split_config in splits:
         region = split_config["region"]
@@ -353,9 +352,9 @@ def cut_regions_before_merge(regions_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         regions_gdf["region_id"].str.contains("w|e|n|s", na=False)
     ]
     if len(split_regions) > 0:
-        logger.debug("Split regions created:")
+        logger.info("Split regions created:")
         for _, region in split_regions.iterrows():
-            logger.debug(f"  - {region['region_id']} (numeric: {region['numeric_id']})")
+            logger.info(f"  - {region['region_id']} (numeric: {region['numeric_id']})")
 
     return regions_gdf
 
@@ -392,7 +391,7 @@ def merge_regions(
     Returns:
         GeoDataFrame with merged regions
     """
-    logger.debug(f"Processing {len(merge_groups)} merge groups")
+    logger.info(f"Processing {len(merge_groups)} merge groups")
 
     # Create a copy to work with
     result_gdf = regions_gdf.copy()
@@ -445,13 +444,13 @@ def append_country_shapes(
     Returns:
         GeoDataFrame with country shapes appended
     """
-    logger.debug(f"Loading country shapes from: {country_shapes_file}")
+    logger.info(f"Loading country shapes from: {country_shapes_file}")
     country_shapes_gdf = gpd.read_file(country_shapes_file)
-    logger.debug(f"Loaded {len(country_shapes_gdf)} country shapes")
+    logger.info(f"Loaded {len(country_shapes_gdf)} country shapes")
 
     # Ensure CRS compatibility
     if country_shapes_gdf.crs != regions_gdf.crs:
-        logger.debug(
+        logger.info(
             f"Converting country shapes CRS from {country_shapes_gdf.crs} to {regions_gdf.crs}"
         )
         country_shapes_gdf = country_shapes_gdf.to_crs(regions_gdf.crs)
@@ -464,7 +463,7 @@ def append_country_shapes(
 
     # Concatenate the GeoDataFrames
     result_gdf = pd.concat([regions_gdf, country_shapes_gdf], ignore_index=True)
-    logger.debug(
+    logger.info(
         f"Appended country shapes: {len(regions_gdf)} regions + {len(country_shapes_gdf)} country shapes = {len(result_gdf)} total"
     )
 
@@ -473,9 +472,9 @@ def append_country_shapes(
 
 def save_regions(regions_gdf: gpd.GeoDataFrame, output_file: str) -> None:
     """Save regions to GeoJSON file"""
-    logger.debug(f"Saving {len(regions_gdf)} regions to: {output_file}")
+    logger.info(f"Saving {len(regions_gdf)} regions to: {output_file}")
     regions_gdf.to_file(output_file, driver="GeoJSON")
-    logger.debug("Save completed successfully")
+    logger.info("Save completed successfully")
 
 
 if __name__ == "__main__":
@@ -492,13 +491,10 @@ if __name__ == "__main__":
     regions_gdf = load_regions(snakemake.input.raw_region_shapes)
 
     # Perform splitting operations first
-    regions_gdf = cut_regions_before_merge(regions_gdf)
-
-    # Get merge groups from config
-    merge_groups = snakemake.config["region_operations"]["merge_groups"]
+    regions_gdf = cut_regions_before_merge(regions_gdf, snakemake.params.splits)
 
     # Perform merging operations
-    merged_regions = merge_regions(regions_gdf, merge_groups)
+    merged_regions = merge_regions(regions_gdf, snakemake.params.merge_groups)
     logger.info(
         f"Merging completed. Total regions after merging: {len(merged_regions)}"
     )
