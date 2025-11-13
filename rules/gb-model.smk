@@ -21,7 +21,7 @@ rule download_data:
         logs("download_{gb_data}.log"),
     localrule: True
     shell:
-        "curl -sSLvo {output} {params.url}"
+        "curl -sSLo {output} {params.url}"
 
 
 rule extract_etys_boundary_capabilities:
@@ -141,13 +141,31 @@ rule generator_monthly_unavailability:
 
 rule extract_transmission_availability:
     input:
-        pdf_report="data/gb-model/downloaded/transmission-availability.pdf",
+        pdf_report="data/gb-model/downloaded/transmission-availability-{report_year}.pdf",
     output:
-        csv=resources("gb-model/transmission_availability.csv"),
+        csv=resources("gb-model/transmission-availability-{report_year}.csv"),
     log:
-        logs("extract_transmission_availability.log"),
+        logs("extract_transmission_availability_{report_year}.log"),
     script:
         "../scripts/gb_model/extract_transmission_availability.py"
+
+
+rule process_transmission_availability:
+    input:
+        unavailability=expand(
+            resources("gb-model/{report}.csv"),
+            report=[
+                i for i in config["urls"] if i.startswith("transmission-availability-")
+            ],
+        ),
+    output:
+        csv=resources("gb-model/transmission_availability.csv"),
+    params:
+        random_seeds=config["transmission_availability"]["random_seeds"],
+    log:
+        logs("process_transmission_availability.log"),
+    script:
+        "../scripts/gb_model/process_transmission_availability.py"
 
 
 rule extract_fes_workbook_sheet:
@@ -162,9 +180,35 @@ rule extract_fes_workbook_sheet:
             int(wildcards.fes_year)
         ][wildcards.fes_sheet],
     log:
-        logs("extract_fes-{fes_year}_{fes_sheet}.log"),
+        logs("extract_fes_workbook_sheet-{fes_year}_{fes_sheet}.log"),
     script:
-        "../scripts/gb_model/extract_fes_sheet.py"
+        "../scripts/gb_model/extract_fes_workbook_sheet.py"
+
+
+rule unzip_fes_costing_workbook:
+    message:
+        "Unzip FES costing workbook"
+    input:
+        "data/gb-model/downloaded/fes-costing-workbook.zip",
+    output:
+        "data/gb-model/fes-costing-workbook.xlsx",
+    shell:
+        "unzip -p {input} 'FES20 Costing Workbook (1).xlsx' > {output}"
+
+
+use rule extract_fes_workbook_sheet as extract_fes_costing_workbook_sheet with:
+    message:
+        "Extract FES costing workbook sheet {wildcards.fes_sheet} and process into machine-readable, 'tidy' dataframe format according to defined configuration."
+    input:
+        workbook="data/gb-model/fes-costing-workbook.xlsx",
+    output:
+        csv=resources("gb-model/fes-costing/{fes_sheet}.csv"),
+    params:
+        sheet_extract_config=lambda wildcards: config["fes-costing-sheet-config"][
+            wildcards.fes_sheet
+        ],
+    log:
+        logs("extract_fes_costing_workbook_sheet-{fes_sheet}.log"),
 
 
 rule process_fes_eur_data:
@@ -227,6 +271,7 @@ rule create_powerplants_table:
     message:
         "Tabulate powerplant data GSP-wise from FES workbook sheet BB1 and EU supply data"
     params:
+        default_characteristics=config["fes"]["default_characteristics"],
         gb_config=config["fes"]["gb"],
         eur_config=config["fes"]["eur"],
         dukes_config=config["dukes-5.11"],
@@ -234,9 +279,12 @@ rule create_powerplants_table:
     input:
         gsp_data=resources("gb-model/regional_gb_data.csv"),
         eur_data=resources("gb-model/national_eur_data.csv"),
+        tech_costs=lambda w: resources(
+            f"costs_{config_provider('costs', 'year')(w)}.csv"
+        ),
         dukes_data=resources("gb-model/dukes-current-capacity-clustered.csv"),
     output:
-        csv=resources("gb-model/fes_p_nom.csv"),
+        csv=resources("gb-model/fes_powerplants.csv"),
     log:
         logs("create_powerplants_table.log"),
     script:
@@ -411,6 +459,24 @@ rule create_flexibility_table:
         "../scripts/gb_model/create_flexibility_table.py"
 
 
+rule process_regional_flexibility_table:
+    message:
+        "Process regional {wildcards.flexibility_type} flexibility from FES workbook into CSV format"
+    params:
+        regional_distribution_reference=config["fes"]["gb"]["flexibility"][
+            "regional_distribution_reference"
+        ],
+    input:
+        flexibility=resources("gb-model/{flexibility_type}_flexibility.csv"),
+        regional_gb_data=resources("gb-model/regional_gb_data.csv"),
+    output:
+        regional_flexibility=resources("gb-model/regional_{flexibility_type}.csv"),
+    log:
+        logs("process_regional_{flexibility_type}_flexibility_table.log"),
+    script:
+        "../scripts/gb_model/process_regional_flexibility_table.py"
+
+
 rule cluster_baseline_electricity_demand_timeseries:
     message:
         "Cluster default PyPSA-Eur baseline electricity demand timeseries by bus"
@@ -442,15 +508,92 @@ rule process_demand_shape:
         "../scripts/gb_model/process_demand_shape.py"
 
 
+rule process_ev_demand_shape:
+    message:
+        "Process EV demand profile shape into CSV format"
+    params:
+        snapshots=config_provider("snapshots"),
+        drop_leap_day=config_provider("enable", "drop_leap_day"),
+        plug_in_offset=config["ev"]["plug_in_offset"],
+        charging_duration=config["ev"]["charging_duration"],
+    input:
+        clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
+        traffic_data_KFZ="data/bundle/emobility/KFZ__count",
+    output:
+        demand_shape=resources("gb-model/ev_demand_shape_s_{clusters}.csv"),
+    log:
+        logs("ev_demand_shape_s_{clusters}.log"),
+    script:
+        "../scripts/gb_model/process_ev_demand_shape.py"
+
+
+rule create_ev_storage_table:
+    message:
+        "Process EV storage data from FES workbook into CSV format"
+    params:
+        scenario=config["fes"]["gb"]["scenario"],
+        year_range=config["fes"]["year_range_incl"],
+    input:
+        storage_sheet=resources("gb-model/fes/2021/FL.14.csv"),
+        flexibility_sheet=resources("gb-model/fes/2021/FLX1.csv"),
+    output:
+        storage_table=resources("gb-model/fes_ev_storage.csv"),
+    log:
+        logs("create_ev_storage_table.log"),
+    script:
+        "../scripts/gb_model/create_ev_storage_table.py"
+
+
+rule process_regional_ev_storage:
+    message:
+        "Process regional EV storage data into CSV format"
+    input:
+        storage=resources("gb-model/fes_ev_storage.csv"),
+        flexibility=resources("gb-model/regional_fes_ev_v2g.csv"),
+    output:
+        regional_storage=resources("gb-model/regional_fes_ev_storage.csv"),
+    log:
+        logs("process_regional_ev_storage.log"),
+    script:
+        "../scripts/gb_model/process_regional_ev_storage.py"
+
+
+rule create_chp_p_min_pu_profile:
+    message:
+        "Create CHP minimum operation profiles linked to heat demand"
+    params:
+        heat_to_power_ratio=config["chp"]["heat_to_power_ratio"],
+        min_operation_level=config["chp"]["min_operation_level"],
+        shutdown_threshold=config["chp"]["shutdown_threshold"],
+    input:
+        regions=resources("gb-model/merged_shapes.geojson"),
+        heat_demand=resources("hourly_heat_demand_total_base_s_{clusters}.nc"),
+    output:
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
+    log:
+        logs("create_chp_p_min_pu_profile_{clusters}.log"),
+    script:
+        "../scripts/gb_model/create_chp_p_min_pu_profile.py"
+
+
 rule compose_network:
+    params:
+        countries=config["countries"],
+        costs_config=config["costs"],
+        electricity=config["electricity"],
+        clustering=config["clustering"],
+        renewable=config["renewable"],
+        lines=config["lines"],
+        enable_chp=config["chp"]["enable"],
     input:
         unpack(input_profile_tech),
         network=resources("networks/base_s_{clusters}.nc"),
-        powerplants=resources("powerplants_s_{clusters}.csv"),
+        powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
         hydro_capacities=ancient("data/hydro_capacities.csv"),
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(
@@ -461,7 +604,7 @@ rule compose_network:
                 business_type=config["entsoe_unavailability"]["business_types"],
             ),
             resources("gb-model/merged_shapes.geojson"),
-            resources("gb-model/fes_p_nom.csv"),
+            resources("gb-model/fes_powerplants.csv"),
             resources("gb-model/interconnectors_p_nom.csv"),
             resources("gb-model/GB_generator_monthly_unavailability.csv"),
             resources("gb-model/fes_hydrogen_demand.csv"),
@@ -471,12 +614,17 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_storage.csv"),
             resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
             resources("gb-model/transport_demand_shape_s_clustered.csv"),
+            resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
+            resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
             expand(
                 resources("gb-model/{demand_type}_demand.csv"),
                 demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),
             ),
             expand(
-                resources("gb-model/{flexibility_type}_flexibility.csv"),
+                [
+                    resources("gb-model/{flexibility_type}_flexibility.csv"),
+                    resources("gb-model/regional_{flexibility_type}.csv"),
+                ],
                 flexibility_type=config["fes"]["gb"]["flexibility"][
                     "Technology Detail"
                 ].keys(),
@@ -488,16 +636,10 @@ rule compose_network:
                     for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()
                 ],
             ),
+            resources("gb-model/regional_fes_ev_storage.csv"),
         ],
     output:
         network=resources("networks/composed_{clusters}.nc"),
-    params:
-        countries=config["countries"],
-        costs_config=config["costs"],
-        electricity=config["electricity"],
-        clustering=config["clustering"],
-        renewable=config["renewable"],
-        lines=config["lines"],
     log:
         logs("compose_network_{clusters}.log"),
     resources:

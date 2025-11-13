@@ -65,6 +65,13 @@ enable:
 clustering:
   focus_weights: {NL: 0.01, "NO": 0.01, BE: 0.01, DK: 0.01, IE: 0.02, FR: 0.03, GB: 0.91}
   mode: gb_shapes
+  consider_efficiency_classes: false
+  aggregation_strategies:
+    generators:
+      committable: any  # From default config
+      ramp_limit_up: max  # From default config
+      ramp_limit_down: max  # From default config
+      set: first  # Preserve 'set' column (CHP, PP, Store) during aggregation
   overwrite_custom_onshore_clusters: true
   simplify_network:
     remove_stubs: false
@@ -81,11 +88,22 @@ solving:
 electricity:
   powerplants_filter: (DateOut >= 2020 or DateOut != DateOut) and not (Country == 'Germany' and Fueltype == 'Nuclear')
 
+# Simplified CHP configuration for GB model (electricity-only)
+# CHPs are modeled as generators with minimum operation constraints based on heat demand
+chp:
+  enable: true  # Enable simplified CHP constraints
+  heat_to_power_ratio: 1.5  # Heat-to-power ratio (c_b coefficient) - typical for gas CHPs
+  min_operation_level: 0.3  # Minimum operation level when running (30% of capacity)
+  shutdown_threshold: 0.1  # Heat demand threshold below which CHPs can shut down completely (fraction of peak demand)
+
 urls:
   gb-etys-boundaries: https://api.neso.energy/dataset/997f4820-1ad4-499b-b1fe-4b8d3d7fbc72/resource/e914fcec-1dc9-4f1f-97e7-59c0d9521bea/download/etys-boundary-gis-data-mar25.zip
-  transmission-availability: https://www.neso.energy/document/211021/download
+  transmission-availability-2020: https://www.neso.energy/document/177156/download
+  transmission-availability-2021: https://www.neso.energy/document/211021/download
+  transmission-availability-2022: https://www.neso.energy/document/267701/download
   fes-2021-workbook: https://www.neso.energy/document/199971/download # FES 2021 workbook
   fes-2023-workbook: https://www.neso.energy/document/283061/download # FES 2023 workbook
+  fes-costing-workbook: https://www.nationalgrideso.com/document/181961/download
   dukes-5.11: https://assets.publishing.service.gov.uk/media/688cb64ee8ba9507fc1b0953/DUKES_5.11.xlsx
   gsp-coordinates: https://api.neso.energy/dataset/963525d6-5d83-4448-a99c-663f1c76330a/resource/41fb4ca1-7b59-4fce-b480-b46682f346c9/download/fes2021_regional_breakdown_gsp_info.csv
   eur-supply-table: https://api.neso.energy/dataset/bd83ce0b-7b1e-4ff2-89e8-12d524c34d99/resource/6563801b-6da4-46e7-b147-3d81c0237779/download/fes2023_es2_v001.csv
@@ -278,6 +296,13 @@ entsoe_unavailability:
     # B23: "Substation"
     # B24: "Transformer"
 
+transmission_availability:
+  random_seeds:
+    NGET: 11
+    SPTL: 22
+    SHETL: 33
+    INTERCONNECTORS: 44
+
 dukes-5.11:
   # list of major power producers
   sheet-config:
@@ -430,6 +455,20 @@ fes-sheet-config:
       rename:
         columns: year
 
+    # Annual storage data for 2030 and 2050
+    # SHeet contains multiple tables, one for each scenario
+    FL.14:
+    - usecols: "P,R,U,X"
+      skiprows: 58
+      nrows: 6
+      index_col: 0
+      header: [0, 1]
+      rename:
+        columns: [year, parameter]
+        index: name
+      add_index:
+        scenario: leading the way
+
     BB2:
       usecols: "A:E"
       skiprows: 2
@@ -447,9 +486,41 @@ fes-sheet-config:
       rename:
         columns: year
 
+fes-costing-sheet-config:
+
+  AS.7 (Carbon Cost):
+    usecols: "A:AG"
+    skiprows: 6
+    index_col: [0, 1]
+    header: 0
+    rename:
+      columns: year
+
+  AS.1 (Power Gen):
+    usecols: "A:AK"
+    skiprows: 6
+    index_col: [0, 1, 2, 3, 4, 5]
+    header: 0
+    rename:
+      columns: year
+
 fes:
   year_range_incl: [2022, 2041] # 20-year period over which we will run the simulation
   default_set: PP
+  default_characteristics:
+    # Ensure all required columns exist with defaults
+    efficiency:
+      data: 0.4
+      unit: ""
+    capital_cost:
+      data: 0.0
+      unit: ""
+    lifetime:
+      data: 25.0
+      unit: "years"
+    marginal_cost:
+      data: 0.0
+      unit: ""
   gb:
     scenario: leading the way   # fes workbook
     scenario_abbreviations:
@@ -502,6 +573,11 @@ fes:
         fes_ev_v2g: ["v2g impact at peak"]
         fes_residential_dsr: ["residential peak shifting (smart/touts effect)"]
         fes_services_dsr: ["i&c dsr impact at peak (processes)"]
+      regional_distribution_reference:
+        fes_ev_dsm: ["v2g"]
+        fes_ev_v2g: ["v2g"]
+        fes_residential_dsr: ["baseline demand"]
+        fes_services_dsr: ["i&c flexibility (tout)"]
 
   eur:
     scenario: CT & LW    # "Leading the Way" equivalent in the NESO european supply table
@@ -587,6 +663,10 @@ fes:
         2021:
           storage_capacity: FL.6
       interpolation_method: linear  # Options: linear, s_curve, step. Interpolation method for hydrogen storage capacity between FES years
+
+ev:
+  plug_in_offset: 2 # hours after the traffic/activity peak when most EVs are expected to plug in for charging
+  charging_duration: 4 # duration of active charging period in hours
 
 interconnectors:
   # lat/lon values are approximate.
