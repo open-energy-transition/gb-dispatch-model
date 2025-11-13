@@ -342,27 +342,27 @@ def process_demand_data(
     """
 
     # Read the files
-    demand = pd.read_csv(annual_demand)
+    demand = pd.read_csv(annual_demand, index_col=["bus", "year"])
     demand_all = pd.concat([demand, eur_demand])
-    demand_profile = pd.read_csv(clustered_demand_profile, index_col=[0])
+    demand_profile = pd.read_csv(
+        clustered_demand_profile, index_col=[0], parse_dates=True
+    )
 
     # Group demand data by year and bus and filter the data for required year
-    demand_grouped = demand_all.groupby(["year", "bus"]).sum().loc[year]
+    demand_this_year = demand_all.xs(year, level="year")
 
     # Filtering those buses that are present in both the dataframes
-    if diff_bus := set(demand_all["bus"]).symmetric_difference(
-        set(demand_profile.columns)
-    ):
+    if diff_bus := set(
+        demand_this_year.index.get_level_values("bus")
+    ).symmetric_difference(set(demand_profile.columns)):
         logger.warning(
             "The following buses are missing demand profile or annual demand data and will be ignored: %s",
             diff_bus,
         )
+
     # Scale the profile by the annual demand from FES
-    load = demand_profile.drop(columns=diff_bus).mul(demand_grouped["p_set"])
-
-    # Convert load index to datetime dtype to avoid flagging an assertion error from pypsa
-    load.index = pd.to_datetime(load.index)
-
+    load = demand_profile.drop(columns=diff_bus).mul(demand_this_year["p_set"])
+    assert not load.isnull().values.any(), "NaN values found in processed load data"
     return load
 
 
@@ -386,7 +386,7 @@ def add_load(
     year:
         Year used in the modelling
     """
-    eur_demand_df = pd.read_csv(eur_demand, index_col=[0, 1, 2])
+    eur_demand_df = pd.read_csv(eur_demand, index_col=["load_type", "bus", "year"])
     # Iterate through each demand type
     for demand_type, (annual_demand, clustered_demand_profile) in demands.items():
         # Process data for the demand type
@@ -622,6 +622,7 @@ if __name__ == "__main__":
         hydro_capacities_path=snakemake.input.hydro_capacities,
         renewable_profiles=renewable_profiles,
         chp_p_min_pu_path=snakemake.input.chp_p_min_pu,
+        eur_demand=snakemake.input.eur_demand,
         countries=snakemake.params.countries,
         costs_config=snakemake.params.costs_config,
         electricity_config=snakemake.params.electricity,
@@ -629,7 +630,6 @@ if __name__ == "__main__":
         renewable_config=snakemake.params.renewable,
         lines_config=snakemake.params.lines,
         demands=demands,
-        eur_demand=snakemake.params.eur_demand,
         year=int(snakemake.wildcards.year),
         enable_chp=snakemake.params.enable_chp,
     )

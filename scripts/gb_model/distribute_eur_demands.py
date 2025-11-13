@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     df_eur = pd.read_csv(snakemake.input.eur_data).query("Variable == 'Demand (TWh)'")
     demands = {
-        Path(file).stem.removeprefix("fes_").removesuffix("_demand"): pd.read_csv(file)
+        Path(file).stem.removesuffix("_demand"): pd.read_csv(file)
         .groupby("year")
         .p_set.sum()
         for file in snakemake.input.demands
@@ -95,5 +95,5 @@ if __name__ == "__main__":
     )
 
     df_distributed = distribute_demands(df_eur, df_demand, df_totals_by_type)
-
-    df_distributed.to_csv(snakemake.output.csv)
+    df_distributed_mwh = df_distributed * 1e6  # Convert from TWh to MWh
+    df_distributed_mwh.to_csv(snakemake.output.csv)

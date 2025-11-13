@@ -635,8 +635,8 @@ fes:
         Reservoir Hydro with pumping: Store
 
     totals_to_demand_groups:
-      transport: [total road]
-      baseline_electricity: [electricity residential, electricity services, electricity rail]
+      fes_transport: [total road]
+      fes_baseline_electricity: [electricity residential, electricity services, electricity rail]
 
   hydrogen:
     demand:
