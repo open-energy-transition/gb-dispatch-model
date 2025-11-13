@@ -98,7 +98,9 @@ chp:
 
 urls:
   gb-etys-boundaries: https://api.neso.energy/dataset/997f4820-1ad4-499b-b1fe-4b8d3d7fbc72/resource/e914fcec-1dc9-4f1f-97e7-59c0d9521bea/download/etys-boundary-gis-data-mar25.zip
-  transmission-availability: https://www.neso.energy/document/211021/download
+  transmission-availability-2020: https://www.neso.energy/document/177156/download
+  transmission-availability-2021: https://www.neso.energy/document/211021/download
+  transmission-availability-2022: https://www.neso.energy/document/267701/download
   fes-2021-workbook: https://www.neso.energy/document/199971/download # FES 2021 workbook
   fes-2023-workbook: https://www.neso.energy/document/283061/download # FES 2023 workbook
   fes-costing-workbook: https://www.nationalgrideso.com/document/181961/download
@@ -292,6 +294,13 @@ entsoe_unavailability:
     # B23: "Substation"
     # B24: "Transformer"
 
+transmission_availability:
+  random_seeds:
+    NGET: 11
+    SPTL: 22
+    SHETL: 33
+    INTERCONNECTORS: 44
+
 dukes-5.11:
   # list of major power producers
   sheet-config:
@@ -443,6 +452,20 @@ fes-sheet-config:
       header: 0
       rename:
         columns: year
+
+    # Annual storage data for 2030 and 2050
+    # SHeet contains multiple tables, one for each scenario
+    FL.14:
+    - usecols: "P,R,U,X"
+      skiprows: 58
+      nrows: 6
+      index_col: 0
+      header: [0, 1]
+      rename:
+        columns: [year, parameter]
+        index: name
+      add_index:
+        scenario: leading the way
 
     BB2:
       usecols: "A:E"
