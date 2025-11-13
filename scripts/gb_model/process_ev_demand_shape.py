@@ -11,7 +11,6 @@ This script processes EV demand shape data from PyPSA-Eur.
 import logging
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from scripts._helpers import (
@@ -115,21 +114,24 @@ def compute_ev_demand_shape(df: pd.DataFrame, charging_duration: int) -> pd.Data
                      the charging load at each time period.
 
     Processing steps:
-        1. Create flat charging kernel based on charging duration
-        2. Convolve each node's plug-in profile with the charging kernel
-        3. Handle wrap-around effects for circular convolution
+        1. Create temporary data at year start to handle wrap-around effects
+        2. Apply rolling sum over charging duration to simulate continuous charging
+        3. Normalize the resulting profiles so total sum equals 1
     """
-    # Define charging profile kernel
     # To wrap the year, we have to mock data at the start of the timeseries and then strip it out later.
-    # Otherwise we get NaN data in the first hours of the year.
     temp_df = df.iloc[-charging_duration:]
     temp_df.index = temp_df.index - pd.DateOffset(years=1)
-    rolling_sum_df =  pd.concat([temp_df, df]).rolling(charging_duration).sum().iloc[charging_duration:]
+    rolling_sum_df = (
+        pd.concat([temp_df, df])
+        .rolling(charging_duration)
+        .sum()
+        .iloc[charging_duration:]
+    )
 
     # Normalize the convoluted profiles
     rolling_sum_df = rolling_sum_df / rolling_sum_df.sum()
 
-    return convoluted_df
+    return rolling_sum_df
 
 
 if __name__ == "__main__":
