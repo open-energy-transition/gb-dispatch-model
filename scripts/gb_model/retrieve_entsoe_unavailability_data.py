@@ -43,7 +43,9 @@ class ENTSOEUnavailabilityAPI:
             api_key: ENTSO-E API key for authentication
         """
         self.api_key = api_key
-        self.base_url = "https://web-api.tp.entsoe.eu/api"
+        self.base_url = os.getenv(
+            "ENTSOE_API_BASE_URL", "https://web-api.tp.entsoe.eu/api"
+        )
         self.session = requests.Session()
         self.rate_limit_delay = 2.0  # Seconds between requests
 
