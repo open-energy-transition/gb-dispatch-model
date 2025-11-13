@@ -469,6 +469,20 @@ fes-sheet-config:
       add_index:
         scenario: leading the way
 
+    # Annual unmanaged EV charging demand profile shape for 2015-2050
+    # Sheet contains multiple tables, one for each scenario
+    FL.11:
+      usecols: "L:AV"
+      skiprows: 32
+      nrows: 3
+      index_col: 0
+      header: 0
+      rename:
+        columns: year
+        index: demand type
+      add_index:
+        scenario: leading the way
+
     BB2:
       usecols: "A:E"
       skiprows: 2

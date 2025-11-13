@@ -558,6 +558,22 @@ rule process_regional_ev_storage:
         "../scripts/gb_model/process_regional_ev_storage.py"
 
 
+rule create_ev_unmanaged_charging_table:
+    message:
+        "Process EV unmanaged charging demand from FES workbook into CSV format"
+    params:
+        scenario=config["fes"]["gb"]["scenario"],
+        year_range=config["fes"]["year_range_incl"],
+    input:
+        unmanaged_charging_sheet=resources("gb-model/fes/2021/FL.11.csv"),
+    output:
+        unmanaged_charging=resources("gb-model/fes_ev_unmanaged_charging.csv"),
+    log:
+        logs("create_ev_unmanaged_charging_table.log"),
+    script:
+        "../scripts/gb_model/create_ev_unmanaged_charging_table.py"
+
+
 rule create_chp_p_min_pu_profile:
     message:
         "Create CHP minimum operation profiles linked to heat demand"
