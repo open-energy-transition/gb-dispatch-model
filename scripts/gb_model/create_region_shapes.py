@@ -37,18 +37,32 @@ def load_country_shapes(filepath: str) -> gpd.GeoDataFrame:
     return country_gdf
 
 
-def load_boundary_lines(filepath: str) -> gpd.GeoDataFrame:
+def load_boundary_lines(
+    filepath: str, focus_filepath: str, pre_filter_boundaries: bool
+) -> gpd.GeoDataFrame:
     """
     Load boundary lines from shapefile or GeoJSON.
 
     Args:
         filepath (str): Path to the boundary lines file
+        focus_filepath (str): Path to the focus boundary lines file
+        pre_filter_boundaries (bool): Whether to pre-filter boundaries
 
     Returns:
         geopandas.GeoDataFrame: Boundary lines data
     """
+
     logger.debug(f"Loading boundary lines from: {filepath}")
     boundary_gdf = gpd.read_file(filepath)
+
+    if pre_filter_boundaries:
+        focus_gdf = gpd.read_file(focus_filepath)
+        boundaries_to_keep = boundary_gdf.Boundary_n.isin(focus_gdf.boundary_name)
+        logger.debug(
+            f"Pre-filtering boundaries: {len(boundary_gdf)} -> {boundaries_to_keep.sum()}"
+        )
+        boundary_gdf = boundary_gdf[boundaries_to_keep]
+
     logger.debug(f"Loaded {len(boundary_gdf)} boundary features")
     return boundary_gdf
 
@@ -72,6 +86,7 @@ def align_crs(gdf1: gpd.GeoDataFrame, gdf2: gpd.GeoDataFrame) -> tuple:
 def create_regions_from_boundaries(
     country_shapes: gpd.GeoDataFrame,
     boundary_lines: gpd.GeoDataFrame,
+    min_area_threshold: float,
     area_loss_tolerance_percent: float,
 ) -> gpd.GeoDataFrame:
     """
@@ -105,107 +120,46 @@ def create_regions_from_boundaries(
 
     logger.debug(f"Using {len(boundary_lines)} boundary lines for splitting")
 
-    regions = []
-    region_id = 1
-
     for idx, country in country_shapes.iterrows():
         logger.debug(f"Processing country/region {idx + 1}/{len(country_shapes)}")
-
-        # Start with the original country geometry
-        current_polygons = [country.geometry]
-        split_count = 0
-
-        # Process each boundary line
-        for boundary_idx, boundary in boundary_lines.iterrows():
-            boundary_geom = boundary.geometry
-            new_polygons = []
-
-            for polygon in current_polygons:
-                # Check if boundary intersects this polygon
-                if polygon.intersects(boundary_geom):
-                    try:
-                        # Attempt to split the polygon
-                        split_result = split(polygon, boundary_geom)
-
-                        # Check if splitting actually occurred
-                        if hasattr(split_result, "geoms"):
-                            split_geoms = list(split_result.geoms)
-                            logger.debug(
-                                f"Split produced {len(split_geoms)} geometries"
-                            )
-                            if len(split_geoms) > 1:
-                                # Successfully split - add all valid pieces
-                                valid_pieces = 0
-                                for geom in split_geoms:
-                                    if (
-                                        geom.is_valid
-                                        and not geom.is_empty
-                                        and geom.geom_type
-                                        in ["Polygon", "MultiPolygon"]
-                                        and geom.area > 1000000
-                                    ):  # 1 km² minimum (1,000,000 sq meters in projected CRS)
-                                        new_polygons.append(geom)
-                                        valid_pieces += 1
-                                    else:
-                                        logger.debug(
-                                            f"Filtered out small geometry: area={geom.area:.0f} sq meters"
-                                        )
-
-                                if valid_pieces > 0:
-                                    split_count += 1
-                                    logger.debug(
-                                        f"Split polygon into {valid_pieces} valid pieces (from {len(split_geoms)} total)"
-                                    )
-                                else:
-                                    logger.warning(
-                                        f"All {len(split_geoms)} split pieces were too small - keeping original"
-                                    )
-                                    new_polygons.append(polygon)
-                            else:
-                                # No actual split occurred
-                                new_polygons.append(polygon)
-                        else:
-                            # Single geometry result - no split
-                            new_polygons.append(polygon)
-
-                    except Exception as split_error:
-                        logger.warning(
-                            f"Split failed for boundary {boundary_idx}: {split_error}"
-                        )
-                        new_polygons.append(polygon)
-                else:
-                    # No intersection - keep original polygon
-                    new_polygons.append(polygon)
-
-            # Update current polygons for next iteration
-            current_polygons = new_polygons
-
+        overlapping_lines = gpd.sjoin(
+            boundary_lines,
+            gpd.GeoDataFrame(geometry=[country.geometry], crs=target_crs),
+            predicate="intersects",
+            how="left",
+        )
+        if overlapping_lines.empty:
+            logger.debug(
+                f"No overlapping boundary lines found for {country['name']}; skipping splitting"
+            )
+            continue
+        boundary_lines_agg = overlapping_lines.dissolve()
+        regions = (
+            gpd.GeoSeries(
+                split(country.geometry, boundary_lines_agg.geometry.item()),
+                crs=target_crs,
+            )
+            .explode()
+            .to_frame("geometry")
+            .reset_index(drop=True)
+        )
+        regions_filtered = drop_small_regions(
+            regions, min_area_threshold=min_area_threshold
+        )  # 10,000 m² = 0.01 km²
         logger.debug(
-            f"Country {idx} split into {len(current_polygons)} regions using {split_count} boundaries"
+            f"Country {idx} split into {len(regions_filtered)} regions using {len(overlapping_lines)} boundaries"
+        )
+        regions_filtered["name"] = country["name"]
+        regions_filtered["area_km2"] = regions_filtered.area / 1000000  # Convert to km²
+        regions_filtered["region_id"] = regions_filtered.index.map(
+            lambda x: f"region_{x:03d}"
         )
 
-        # Create region entries from final polygons
-        for i, polygon in enumerate(current_polygons):
-            if polygon.is_valid and not polygon.is_empty:
-                # Create region data
-                region_data = country.copy()
-                region_data["geometry"] = polygon
-                region_data["region_id"] = f"region_{region_id:03d}"
-                region_data["original_country_id"] = idx
-                region_data["sub_region_id"] = i
-                region_data["area_km2"] = polygon.area / 1000000  # Convert to km²
-                region_data["num_boundaries_used"] = split_count
-
-                regions.append(region_data)
-                region_id += 1
-
     # Create GeoDataFrame from regions
-    if regions:
-        regions_gdf = gpd.GeoDataFrame(regions, crs=country_shapes.crs)
-
+    if not regions_filtered.empty:
         # Calculate total area of regions
         original_area = country_shapes.geometry.area.sum()
-        regions_area = regions_gdf.geometry.area.sum()
+        regions_area = regions_filtered.geometry.area.sum()
         area_difference = abs(original_area - regions_area)
         area_loss_percent = (
             (area_difference / original_area) * 100 if original_area > 0 else 0
@@ -224,10 +178,7 @@ def create_regions_from_boundaries(
                 f"Significant area loss detected after splitting: {area_loss_percent:.3f}%"
             )
 
-        logger.debug(
-            f"Successfully created {len(regions_gdf)} regions from {len(country_shapes)} original shapes"
-        )
-        return regions_gdf
+        return regions_filtered
     else:
         raise ValueError(
             "Failed to create any regions from the provided country shapes and boundary lines"
@@ -300,7 +251,11 @@ if __name__ == "__main__":
     country_shapes = country_shapes[country_shapes.name == "GB"]
 
     # load ETYS boundary lines
-    boundary_lines = load_boundary_lines(snakemake.input.etys_boundary_lines)
+    boundary_lines = load_boundary_lines(
+        snakemake.input.etys_boundary_lines,
+        snakemake.input.etys_focus_boundary_lines,
+        pre_filter_boundaries=snakemake.params.pre_filter_boundaries,
+    )
 
     # align CRS
     country_shapes, boundary_lines = align_crs(country_shapes, boundary_lines)
@@ -311,9 +266,12 @@ if __name__ == "__main__":
 
     # create regions from boundaries
     regions = create_regions_from_boundaries(
-        country_shapes, boundary_lines, snakemake.params.area_loss_tolerance_percent
+        country_shapes,
+        boundary_lines,
+        snakemake.params.min_region_area,
+        snakemake.params.area_loss_tolerance_percent,
     )
-    logger.debug(f"Created {len(regions)} initial regions")
+    logger.debug(f"Created {len(regions)} regions")
     if len(regions) > 1:
         logger.debug(
             f"- Area range: {regions.geometry.area.min() / 1000000:.1f} - {regions.geometry.area.max() / 1000000:.1f} km²"
@@ -322,15 +280,8 @@ if __name__ == "__main__":
             f"- Average area: {regions.geometry.area.mean() / 1000000:.1f} km²"
         )
 
-    # Clean regions with appropriate threshold
-    min_area = snakemake.params.min_region_area
-    logger.debug(
-        f"\nCleaning regions (removing regions < {min_area / 1000000:.0f} km²)..."
-    )
-    cleaned_regions = drop_small_regions(regions, min_area_threshold=min_area)
-
     # save regions to output file
-    save_regions(cleaned_regions, snakemake.output.raw_region_shapes)
+    save_regions(regions, snakemake.output.raw_region_shapes)
 
     # log final summary
     logger.debug("REGION CREATION SUMMARY")

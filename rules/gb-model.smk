@@ -22,7 +22,21 @@ rule download_data:
         logs("download_{gb_data}.log"),
     localrule: True
     shell:
-        "curl -sSLvo {output} {params.url}"
+        "curl -sSLo {output} {params.url}"
+
+
+rule extract_etys_boundary_capabilities:
+    message:
+        "Extract boundary capability data from ETYS PDF report"
+    input:
+        pdf_report="data/gb-model/downloaded/etys.pdf",
+        boundaries="data/gb-model/downloaded/gb-etys-boundaries.zip",
+    output:
+        csv=resources("gb-model/etys_boundary_capabilities.csv"),
+    log:
+        logs("extract_etys_boundary_capabilities.log"),
+    script:
+        "../scripts/gb_model/extract_etys_boundary_capabilities.py"
 
 
 # Rule to create region shapes using create_region_shapes.py
@@ -30,9 +44,13 @@ rule create_region_shapes:
     input:
         country_shapes=resources("country_shapes.geojson"),
         etys_boundary_lines="data/gb-model/downloaded/gb-etys-boundaries.zip",
+        etys_focus_boundary_lines=resources("gb-model/etys_boundary_capabilities.csv"),
     output:
         raw_region_shapes=resources("gb-model/raw_region_shapes.geojson"),
     params:
+        pre_filter_boundaries=config["region_operations"][
+            "filter_boundaries_using_capabilities"
+        ],
         area_loss_tolerance_percent=config["region_operations"][
             "area_loss_tolerance_percent"
         ],
@@ -52,6 +70,9 @@ rule manual_region_merger:
         country_shapes=resources("country_shapes.geojson"),
     output:
         merged_shapes=resources("gb-model/merged_shapes.geojson"),
+    params:
+        splits=config["region_operations"]["splits"],
+        merge_groups=config["region_operations"]["merge_groups"],
     log:
         logs("manual_region_merger.log"),
     resources:
@@ -121,13 +142,31 @@ rule generator_monthly_unavailability:
 
 rule extract_transmission_availability:
     input:
-        pdf_report="data/gb-model/downloaded/transmission-availability.pdf",
+        pdf_report="data/gb-model/downloaded/transmission-availability-{report_year}.pdf",
     output:
-        csv=resources("gb-model/transmission_availability.csv"),
+        csv=resources("gb-model/transmission-availability-{report_year}.csv"),
     log:
-        logs("extract_transmission_availability.log"),
+        logs("extract_transmission_availability_{report_year}.log"),
     script:
         "../scripts/gb_model/extract_transmission_availability.py"
+
+
+rule process_transmission_availability:
+    input:
+        unavailability=expand(
+            resources("gb-model/{report}.csv"),
+            report=[
+                i for i in config["urls"] if i.startswith("transmission-availability-")
+            ],
+        ),
+    output:
+        csv=resources("gb-model/transmission_availability.csv"),
+    params:
+        random_seeds=config["transmission_availability"]["random_seeds"],
+    log:
+        logs("process_transmission_availability.log"),
+    script:
+        "../scripts/gb_model/process_transmission_availability.py"
 
 
 rule extract_fes_workbook_sheet:
@@ -470,6 +509,56 @@ rule process_demand_shape:
         "../scripts/gb_model/process_demand_shape.py"
 
 
+rule process_ev_demand_shape:
+    message:
+        "Process EV demand profile shape into CSV format"
+    params:
+        snapshots=config_provider("snapshots"),
+        drop_leap_day=config_provider("enable", "drop_leap_day"),
+        plug_in_offset=config["ev"]["plug_in_offset"],
+        charging_duration=config["ev"]["charging_duration"],
+    input:
+        clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
+        traffic_data_KFZ="data/bundle/emobility/KFZ__count",
+    output:
+        demand_shape=resources("gb-model/ev_demand_shape_s_{clusters}.csv"),
+    log:
+        logs("ev_demand_shape_s_{clusters}.log"),
+    script:
+        "../scripts/gb_model/process_ev_demand_shape.py"
+
+
+rule create_ev_storage_table:
+    message:
+        "Process EV storage data from FES workbook into CSV format"
+    params:
+        scenario=config["fes"]["gb"]["scenario"],
+        year_range=config["fes"]["year_range_incl"],
+    input:
+        storage_sheet=resources("gb-model/fes/2021/FL.14.csv"),
+        flexibility_sheet=resources("gb-model/fes/2021/FLX1.csv"),
+    output:
+        storage_table=resources("gb-model/fes_ev_storage.csv"),
+    log:
+        logs("create_ev_storage_table.log"),
+    script:
+        "../scripts/gb_model/create_ev_storage_table.py"
+
+
+rule process_regional_ev_storage:
+    message:
+        "Process regional EV storage data into CSV format"
+    input:
+        storage=resources("gb-model/fes_ev_storage.csv"),
+        flexibility=resources("gb-model/regional_fes_ev_v2g.csv"),
+    output:
+        regional_storage=resources("gb-model/regional_fes_ev_storage.csv"),
+    log:
+        logs("process_regional_ev_storage.log"),
+    script:
+        "../scripts/gb_model/process_regional_ev_storage.py"
+
+
 rule create_chp_p_min_pu_profile:
     message:
         "Create CHP minimum operation profiles linked to heat demand"
@@ -542,13 +631,17 @@ rule compose_network:
             resources("gb-model/transport_demand_shape_s_clustered.csv"),
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
+            expand(
+                [
+                    resources("gb-model/{flexibility_type}_flexibility.csv"),
+                    resources("gb-model/regional_{flexibility_type}.csv"),
+                ],
+                flexibility_type=config["fes"]["gb"]["flexibility"][
+                    "Technology Detail"
+                ].keys(),
+            ),
+            resources("gb-model/regional_fes_ev_storage.csv"),
         ],
-        flexibility=expand(
-            resources("gb-model/{flexibility_type}_flexibility.csv"),
-            flexibility_type=config["fes"]["gb"]["flexibility"][
-                "Technology Detail"
-            ].keys(),
-        ),
     output:
         network=resources("networks/composed_{clusters}_{year}.nc"),
     log:
