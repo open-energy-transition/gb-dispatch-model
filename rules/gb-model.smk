@@ -212,12 +212,12 @@ rule process_dukes_current_capacities:
         "Assign current capacities to GB model regions and PyPSA-Eur carriers"
     input:
         regions=resources("gb-model/merged_shapes.geojson"),
-        regions_offshore=resources("regions_offshore_base_s_{clusters}.geojson"),
+        regions_offshore=resources("regions_offshore_base_s_clustered.geojson"),
         dukes_data="data/gb-model/downloaded/dukes-5.11.xlsx",
     output:
-        csv=resources("gb-model/dukes-current-capacity-{clusters}.csv"),
+        csv=resources("gb-model/dukes-current-capacity.csv"),
     log:
-        logs("process_dukes_current_capacities_{clusters}.log"),
+        logs("process_dukes_current_capacities.log"),
     params:
         sheet_config=config["dukes-5.11"]["sheet-config"],
         target_crs=config["target_crs"],
@@ -261,7 +261,7 @@ rule create_powerplants_table:
         tech_costs=lambda w: resources(
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
-        dukes_data=resources("gb-model/dukes-current-capacity-clustered.csv"),
+        dukes_data=resources("gb-model/dukes-current-capacity.csv"),
     output:
         csv=resources("gb-model/fes_powerplants.csv"),
     log:
@@ -463,11 +463,11 @@ rule cluster_baseline_electricity_demand_timeseries:
         scaling_factor=config_provider("load", "scaling_factor"),
     input:
         load=resources("electricity_demand_base_s.nc"),
-        busmap=resources("busmap_base_s_{clusters}.csv"),
+        busmap=resources("busmap_base_s_clustered.csv"),
     output:
-        csv_file=resources("baseline_electricity_demand_s_{clusters}.csv"),
+        csv_file=resources("baseline_electricity_demand_s_clustered.csv"),
     log:
-        logs("baseline_electricity_demand_s_{clusters}.log"),
+        logs("cluster_baseline_electricity_demand_timeseries.log"),
     script:
         "../scripts/gb_model/cluster_baseline_electricity_demand_timeseries.py"
 
@@ -478,11 +478,11 @@ rule process_demand_shape:
     params:
         demand_sector=lambda wildcards: wildcards.demand_sector,
     input:
-        pypsa_eur_demand_timeseries=resources("{demand_sector}_demand_s_{clusters}.csv"),
+        pypsa_eur_demand_timeseries=resources("{demand_sector}_demand_s_clustered.csv"),
     output:
-        demand_shape=resources("gb-model/{demand_sector}_demand_shape_s_{clusters}.csv"),
+        demand_shape=resources("gb-model/{demand_sector}_demand_shape.csv"),
     log:
-        logs("{demand_sector}_demand_shape_s_{clusters}.log"),
+        logs("process_demand_shape_{demand_sector}.log"),
     script:
         "../scripts/gb_model/process_demand_shape.py"
 
@@ -496,12 +496,12 @@ rule process_ev_demand_shape:
         plug_in_offset=config["ev"]["plug_in_offset"],
         charging_duration=config["ev"]["charging_duration"],
     input:
-        clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
+        clustered_pop_layout=resources("pop_layout_base_s_clustered.csv"),
         traffic_data_KFZ="data/bundle/emobility/KFZ__count",
     output:
-        demand_shape=resources("gb-model/ev_demand_shape_s_{clusters}.csv"),
+        demand_shape=resources("gb-model/ev_demand_shape.csv"),
     log:
-        logs("ev_demand_shape_s_{clusters}.log"),
+        logs("process_ev_demand_shape.log"),
     script:
         "../scripts/gb_model/process_ev_demand_shape.py"
 
@@ -546,11 +546,11 @@ rule create_chp_p_min_pu_profile:
         shutdown_threshold=config["chp"]["shutdown_threshold"],
     input:
         regions=resources("gb-model/merged_shapes.geojson"),
-        heat_demand=resources("hourly_heat_demand_total_base_s_{clusters}.nc"),
+        heat_demand=resources("hourly_heat_demand_total_base_s_clustered.nc"),
     output:
-        chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu_clustered.csv"),
     log:
-        logs("create_chp_p_min_pu_profile_{clusters}.log"),
+        logs("create_chp_p_min_pu_profile.log"),
     script:
         "../scripts/gb_model/create_chp_p_min_pu_profile.py"
 
@@ -566,13 +566,13 @@ rule compose_network:
         enable_chp=config["chp"]["enable"],
     input:
         unpack(input_profile_tech),
-        network=resources("networks/base_s_{clusters}.nc"),
+        network=resources("networks/base_s_clustered.nc"),
         powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
         hydro_capacities=ancient("data/hydro_capacities.csv"),
-        chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu_clustered.csv"),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(
@@ -591,8 +591,8 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_supply.csv"),
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
-            resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
-            resources("gb-model/transport_demand_shape_s_clustered.csv"),
+            resources("gb-model/baseline_electricity_demand_shape.csv"),
+            resources("gb-model/transport_demand_shape.csv"),
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
             expand(
@@ -609,7 +609,7 @@ rule compose_network:
                 ].keys(),
             ),
             expand(
-                resources("gb-model/{demand_sector}_demand_shape_s_clustered.csv"),
+                resources("gb-model/{demand_sector}_demand_shape.csv"),
                 demand_sector=[
                     x.replace("fes_", "")
                     for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()
@@ -623,6 +623,9 @@ rule compose_network:
         logs("compose_network_{clusters}.log"),
     resources:
         mem_mb=4000,
+    wildcard_constraints:
+        # We only accept clustered clusters
+        clusters="clustered",
     script:
         "../scripts/gb_model/compose_network.py"
 
@@ -630,7 +633,7 @@ rule compose_network:
 rule compose_networks:
     input:
         expand(
-            resources("networks/composed_{clusters}.nc"),
+            resources("networks/composed_clustered.nc"),
             **config["scenario"],
             run=config["run"]["name"],
         ),
