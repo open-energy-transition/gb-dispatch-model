@@ -92,7 +92,7 @@ def _ensure_column_with_default(
 def assign_technical_and_costs_defaults(
     df: pd.DataFrame,
     costs: pd.DataFrame,
-    default_characteristics: dict[str, tuple[float, str]],
+    default_characteristics: dict[str, dict],
 ) -> pd.DataFrame:
     """
     Enrich powerplants dataframe with cost and technical parameters.
@@ -126,8 +126,8 @@ def assign_technical_and_costs_defaults(
             + df["carrier"].map(costs["fuel"]) / df["efficiency"]
         )
 
-    for col in default_characteristics.items():
-        df = _ensure_column_with_default(df, col, col["data"], col["units"])
+    for name, config in default_characteristics.items():
+        df = _ensure_column_with_default(df, name, config["data"], config["unit"])
 
     # Create unique index: "bus carrier-year-idx"
     df["idx_counter"] = df.groupby(["bus", "carrier", "year"]).cumcount()
