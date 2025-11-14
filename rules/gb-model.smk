@@ -494,6 +494,21 @@ rule cluster_baseline_electricity_demand_timeseries:
         "../scripts/gb_model/cluster_baseline_electricity_demand_timeseries.py"
 
 
+rule cluster_heat_demand_timeseries:
+    message:
+        "Cluster default PyPSA-Eur heat demand timeseries by bus"
+    input:
+        load=resources("hourly_heat_demand_total_base_s_{clusters}.nc"),
+        busmap=resources("busmap_base_s_{clusters}.csv"),
+        cop=resources("cop_profiles_base_s_{clusters}_{year}.nc")
+    output:
+        csv_file=resources("heat_demand_s_{clusters}.csv"),
+    log:
+        logs("heat_demand_s_{clusters}.log"),
+    script:
+        "../scripts/gb_model/cluster_heat_demand_timeseries.py"
+
+
 rule process_demand_shape:
     message:
         "Process {wildcards.demand_sector} demand profile shape into CSV format"
@@ -627,8 +642,8 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_supply.csv"),
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
-            resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
-            resources("gb-model/transport_demand_shape_s_clustered.csv"),
+            #resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
+            #resources("gb-model/transport_demand_shape_s_clustered.csv"),
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
             expand(
