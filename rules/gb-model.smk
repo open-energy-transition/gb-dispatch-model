@@ -7,6 +7,7 @@ import os
 import subprocess
 from zipfile import ZipFile
 from pathlib import Path
+import numpy as np
 
 
 wildcard_constraints:
@@ -597,6 +598,19 @@ rule create_chp_p_min_pu_profile:
         "../scripts/gb_model/create_chp_p_min_pu_profile.py"
 
 
+def demands(w):
+    """Collate annual demands and their profiles into individual inputs for `compose_network`"""
+    return {
+        f"demand_{demand_type}": [
+            resources(f"gb-model/{demand_type}_demand.csv"),
+            resources(
+                f"gb-model/{demand_type.replace('fes_', '')}_demand_shape_s_clustered.csv"
+            ),
+        ]
+        for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"]
+    }
+
+
 rule compose_network:
     params:
         countries=config["countries"],
@@ -608,6 +622,7 @@ rule compose_network:
         enable_chp=config["chp"]["enable"],
     input:
         unpack(input_profile_tech),
+        unpack(demands),
         network=resources("networks/base_s_{clusters}.nc"),
         powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(
@@ -638,10 +653,6 @@ rule compose_network:
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
             expand(
-                resources("gb-model/{demand_type}_demand.csv"),
-                demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),
-            ),
-            expand(
                 [
                     resources("gb-model/{flexibility_type}_flexibility.csv"),
                     resources("gb-model/regional_{flexibility_type}.csv"),
@@ -650,30 +661,27 @@ rule compose_network:
                     "Technology Detail"
                 ].keys(),
             ),
-            expand(
-                resources("gb-model/{demand_sector}_demand_shape_s_clustered.csv"),
-                demand_sector=[
-                    x.replace("fes_", "")
-                    for x in config["fes"]["gb"]["demand"]["Technology Detail"].keys()
-                ],
-            ),
             resources("gb-model/regional_fes_ev_storage.csv"),
             resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
         ],
     output:
-        network=resources("networks/composed_{clusters}.nc"),
+        network=resources("networks/composed_{clusters}_{year}.nc"),
     log:
-        logs("compose_network_{clusters}.log"),
+        logs("compose_network_{clusters}_{year}.log"),
     resources:
         mem_mb=4000,
     script:
         "../scripts/gb_model/compose_network.py"
 
 
+year_range = config["fes"]["year_range_incl"]
+
+
 rule compose_networks:
     input:
         expand(
-            resources("networks/composed_{clusters}.nc"),
+            resources("networks/composed_{clusters}_{year}.nc"),
             **config["scenario"],
             run=config["run"]["name"],
+            year=list(np.arange(year_range[0], year_range[1])),
         ),

@@ -87,7 +87,7 @@ def create_context(
 
 
 def _add_timeseries_data_to_network(
-    n: pypsa.Network, data: pd.DataFrame, attribute: str
+    pypsa_t_dict: dict, data: pd.DataFrame, attribute: str
 ) -> None:
     """
     Add/update timeseries data to a network attribute.
@@ -97,11 +97,11 @@ def _add_timeseries_data_to_network(
     All other columns will remain as-is.
 
     Args:
-        n (pypsa.Network): PyPSA network.
+        pypsa_t_dict (dict): PyPSA network timeseries component dictionary (e.g., n.loads_t).
         data (pd.DataFrame): Timeseries data to add.
         attribute (str): Network timeseries attribute to update.
     """
-    assert n.generators_t[attribute].index.equals(data.index), (
+    assert pypsa_t_dict[attribute].index.equals(data.index), (
         f"Snapshot indices do not match between network attribute {attribute} and data being added."
     )
     logger.info(
@@ -109,9 +109,9 @@ def _add_timeseries_data_to_network(
         attribute,
         len(data.columns),
     )
-    n.generators_t[attribute] = (
-        n.generators_t[attribute]
-        .loc[:, ~n.generators_t[attribute].columns.isin(data.columns)]
+    pypsa_t_dict[attribute] = (
+        pypsa_t_dict[attribute]
+        .loc[:, ~pypsa_t_dict[attribute].columns.isin(data.columns)]
         .join(data)
     )
 
@@ -318,6 +318,80 @@ def add_pypsaeur_components(
     return n
 
 
+def process_demand_data(
+    annual_demand: str,
+    clustered_demand_profile: str,
+    year: int,
+) -> pd.DataFrame:
+    """
+    Process the demand data for a particular demand type
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        Network to finalize
+    demand_list: list[str]
+        CSV paths for demand data for each demand type
+    clustered_demand_profile_list: list[str]
+        CSV paths for demand shape for each demand type
+    demand_type:
+        demand type for which data is to be processed
+    year:
+        Year used in the modelling
+    """
+
+    # Read the files
+    demand = pd.read_csv(annual_demand)
+    demand_profile = pd.read_csv(clustered_demand_profile, index_col=[0])
+
+    # Group demand data by year and bus and filter the data for required year
+    demand_grouped = demand.groupby(["year", "bus"]).sum().loc[year]
+
+    # Filtering those buses that are present in both the dataframes
+    list_of_buses = list(set(demand["bus"]) & set(demand_profile.columns))
+
+    # Scale the profile by the annual demand from FES
+    load = demand_profile[list_of_buses].mul(demand_grouped["p_set"])
+
+    # Convert load index to datetime dtype to avoid flagging an assertion error from pypsa
+    load.index = pd.to_datetime(load.index)
+
+    return load
+
+
+def add_load(
+    n: pypsa.Network,
+    demands: dict[str, list[str]],
+    year: int,
+):
+    """
+    Add load as a timeseries to PyPSA network
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        Network to finalize
+    demand_list: list[str]
+        CSV paths for demand data for each demand type
+    clustered_demand_profile_list: list[str]
+        CSV paths for demand shape for each demand type
+    demand_types:
+        Keywords to map the demand files to each demand type
+    year:
+        Year used in the modelling
+    """
+
+    # Iterate through each demand type
+    for demand_type, (annual_demand, clustered_demand_profile) in demands.items():
+        # Process data for the demand type
+        load = process_demand_data(annual_demand, clustered_demand_profile, year)
+
+        # Add the load to pypsa Network
+        suffix = f" {demand_type}"
+        n.add("Load", load.columns + suffix, bus=load.columns)
+        _add_timeseries_data_to_network(n.loads_t, load.add_suffix(suffix), "p_set")
+
+
 def finalise_composed_network(
     n: pypsa.Network,
     context: CompositionContext,
@@ -388,7 +462,7 @@ def attach_chp_constraints(n: pypsa.Network, p_min_pu: pd.DataFrame) -> None:
     p_min_pu_for_gens.columns = valid_gens.index
 
     # Assign all generators at once
-    _add_timeseries_data_to_network(n, p_min_pu_for_gens, "p_min_pu")
+    _add_timeseries_data_to_network(n.generators_t, p_min_pu_for_gens, "p_min_pu")
 
 
 def compose_network(
@@ -405,6 +479,8 @@ def compose_network(
     clustering_config: dict[str, Any],
     renewable_config: dict[str, Any],
     lines_config: dict[str, Any],
+    demands: dict[str, list[str]],
+    year: int,
     enable_chp: bool,
 ) -> None:
     """
@@ -438,6 +514,14 @@ def compose_network(
         Renewable configuration dictionary
     lines_config : dict
         Lines configuration dictionary
+    demand: list[str]
+        List of paths to the demand data for each demand type
+    clustered_demand_profile: list[str]
+        List of paths to the clustered shape profile for each demand type
+    demand_types: list[str]
+        List of str for demand types
+    year: int
+        Modelling year
     enable_chp : bool
         Whether to enable CHP constraints
     """
@@ -495,6 +579,9 @@ def compose_network(
         attach_chp_constraints(network, chp_p_min_pu)
 
     add_pypsaeur_components(network, electricity_config, context, costs)
+
+    add_load(network, demands, year)
+
     finalise_composed_network(network, context)
 
     network.export_to_netcdf(output_path)
@@ -513,7 +600,11 @@ if __name__ == "__main__":
     renewable_carriers = snakemake.params.electricity["renewable_carriers"]
     renewable_profile_keys = [f"profile_{carrier}" for carrier in renewable_carriers]
     renewable_profiles = {key: snakemake.input[key] for key in renewable_profile_keys}
-
+    demands = {
+        k.replace("demand_", ""): v
+        for k, v in snakemake.input.items()
+        if k.startswith("demand_")
+    }
     compose_network(
         network_path=snakemake.input.network,
         output_path=snakemake.output.network,
@@ -528,5 +619,7 @@ if __name__ == "__main__":
         clustering_config=snakemake.params.clustering,
         renewable_config=snakemake.params.renewable,
         lines_config=snakemake.params.lines,
+        demands=demands,
+        year=int(snakemake.wildcards.year),
         enable_chp=snakemake.params.enable_chp,
     )
