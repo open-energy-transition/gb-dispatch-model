@@ -19,35 +19,35 @@ from scripts.gb_model._helpers import get_regional_distribution
 logger = logging.getLogger(__name__)
 
 
-def prepare_regional_ev_data(input_path: str, flexibility_path: str) -> pd.DataFrame:
+def prepare_regional_ev_data(input_path: str, reference_data_path: str) -> pd.DataFrame:
     """
-    Prepare regional disaggregation of EV data using flexibility distribution patterns.
+    Prepare regional disaggregation of EV data using reference data distribution patterns.
 
     Args:
         input_path (str): Filepath to the EV data CSV file containing
                            annual aggregated data indexed by year
-        flexibility_path (str): Filepath to the flexibility data CSV file containing
-                               regional flexibility data with MultiIndex [bus, year]
+        reference_data_path (str): Filepath to the reference data CSV file containing
+                               regional data with MultiIndex [bus, year]
 
     Returns:
         pd.Series: Series with MultiIndex [bus, year] containing regionally distributed
                   EV storage capacity in GWh. Each region gets a proportional share of
-                  the annual storage capacity based on flexibility distribution patterns.
+                  the annual storage capacity based on reference distribution patterns.
 
     Processing steps:
-        1. Load annual storage data and regional flexibility distribution
-        2. Calculate regional distribution patterns from flexibility data
+        1. Load annual storage data and regional reference distribution
+        2. Calculate regional distribution patterns from reference data
         3. Apply regional distribution to annual storage capacity
     """
 
     # Load EV data
     df_ev = pd.read_csv(input_path, index_col=0)
 
-    # Load flexibility data
-    df_flexibility = pd.read_csv(flexibility_path, index_col=[0, 1])
+    # Load reference data
+    df_reference = pd.read_csv(reference_data_path, index_col=[0, 1])
 
     # Get regional distribution
-    regional_dist = get_regional_distribution(df_flexibility)
+    regional_dist = get_regional_distribution(df_reference)  # Avoid division by zero
 
     # Fillna values with 0
     regional_dist = regional_dist.fillna(0)
@@ -71,12 +71,12 @@ if __name__ == "__main__":
 
     # Load input paths
     input_path = snakemake.input.input_csv
-    flexibility_path = snakemake.input.flexibility
+    reference_data_path = snakemake.input.reference_data
 
     # Prepare regional EV data
     df_regional_ev = prepare_regional_ev_data(
         input_path,
-        flexibility_path,
+        reference_data_path,
     )
 
     # Write EV dataframe to csv file

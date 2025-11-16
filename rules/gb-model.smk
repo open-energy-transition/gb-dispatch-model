@@ -555,7 +555,10 @@ rule process_regional_ev_data:
         "Process regional EV {wildcards.data_type} data into CSV format"
     input:
         input_csv=resources("gb-model/fes_ev_{data_type}.csv"),
-        flexibility=resources("gb-model/regional_fes_ev_v2g.csv"),
+        reference_data=lambda wildcards: {
+            "unmanaged_charging": resources("gb-model/fes_transport_demand.csv"),
+            "storage": resources("gb-model/regional_fes_ev_v2g.csv"),
+        }[wildcards.data_type],
     output:
         regional_output=resources("gb-model/regional_fes_ev_{data_type}.csv"),
     log:
