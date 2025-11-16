@@ -53,7 +53,7 @@ def prepare_regional_ev_data(input_path: str, reference_data_path: str) -> pd.Da
     regional_dist = regional_dist.fillna(0)
 
     # Disaggregate EV data regionally
-    regional_ev = regional_dist["p_nom"] * df_ev.squeeze()
+    regional_ev = regional_dist.squeeze() * df_ev.squeeze()
 
     # Keep original column name
     regional_ev = regional_ev.rename(df_ev.columns[0])
