@@ -602,6 +602,14 @@ rule compose_network:
     input:
         unpack(input_profile_tech),
         unpack(demands),
+        **{
+            f"regional_{flexibility_type}": resources(
+                f"gb-model/regional_{flexibility_type}.csv"
+            )
+            for flexibility_type in config["fes"]["gb"]["flexibility"][
+                "Technology Detail"
+            ].keys()
+        },
         network=resources("networks/base_s_{clusters}.nc"),
         powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(
@@ -609,6 +617,9 @@ rule compose_network:
         ),
         hydro_capacities=ancient("data/hydro_capacities.csv"),
         chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
+        ev_demand_shape=resources("gb-model/ev_demand_shape_s_{clusters}.csv"),
+        ev_demand_peak=resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
+        ev_storage_capacity=resources("gb-model/regional_fes_ev_storage.csv"),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(
@@ -631,16 +642,6 @@ rule compose_network:
             resources("gb-model/transport_demand_shape_s_clustered.csv"),
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
-            expand(
-                [
-                    resources("gb-model/{flexibility_type}_flexibility.csv"),
-                    resources("gb-model/regional_{flexibility_type}.csv"),
-                ],
-                flexibility_type=config["fes"]["gb"]["flexibility"][
-                    "Technology Detail"
-                ].keys(),
-            ),
-            resources("gb-model/regional_fes_ev_storage.csv"),
         ],
     output:
         network=resources("networks/composed_{clusters}_{year}.nc"),

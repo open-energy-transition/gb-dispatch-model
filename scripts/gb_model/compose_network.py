@@ -392,6 +392,77 @@ def add_load(
         _add_timeseries_data_to_network(n.loads_t, load.add_suffix(suffix), "p_set")
 
 
+def add_EVs(
+    n: pypsa.Network,
+    ev_data: dict[str, str],
+    year: int,
+):
+    """
+    Add EV load as a timeseries to PyPSA network
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        Network to finalize
+    ev_demand_profile: str
+        CSV path for EV demand shape
+    year:
+        Year used in the modelling
+    """
+    # Compute EV demand profile using demand shape, annual EV demand and peak EV demand
+    ev_demand_profile = estimate_ev_demand_profile(
+        ev_data["ev_demand_shape"],
+        ev_data["ev_demand_annual"],
+        ev_data["ev_demand_peak"],
+        year,
+    )
+
+    print("EV addition function called")
+    return ev_demand_profile
+
+
+def estimate_ev_demand_profile(
+    ev_demand_shape_path: str,
+    ev_demand_annual_path: str,
+    ev_demand_peak_path: str,
+    year: int,
+) -> pd.DataFrame:
+    """
+    Estimate the EV demand profile for the given year
+
+    Parameters
+    ----------
+    ev_demand_shape_path : str
+        CSV path for EV demand shape
+    ev_demand_annual_path : str
+        CSV path for annual EV demand
+    ev_demand_peak_path : str
+        CSV path for peak EV demand
+    year : int
+        Year used in the modelling
+
+    Returns
+    -------
+    pd.DataFrame
+        Estimated EV demand profile
+    """
+    # Read the files
+    ev_demand_shape = pd.read_csv(ev_demand_shape_path, index_col=[0])
+    ev_demand_annual = pd.read_csv(ev_demand_annual_path)
+    # ev_demand_peak = pd.read_csv(ev_demand_peak_path)
+
+    # Group annual demand data by year and bus and filter the data for required year
+    ev_demand_annual_grouped = ev_demand_annual.groupby(["year", "bus"]).sum().loc[year]
+
+    # Convert load index to datetime dtype to avoid flagging an assertion error from pypsa
+    ev_demand_shape.index = pd.to_datetime(ev_demand_shape.index)
+
+    # Scale the profile by the annual demand from FES
+    ev_load = ev_demand_shape.mul(ev_demand_annual_grouped["p_set"])
+
+    return ev_load
+
+
 def finalise_composed_network(
     n: pypsa.Network,
     context: CompositionContext,
@@ -482,6 +553,7 @@ def compose_network(
     demands: dict[str, list[str]],
     year: int,
     enable_chp: bool,
+    ev_data: dict[str, str],
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -524,6 +596,8 @@ def compose_network(
         Modelling year
     enable_chp : bool
         Whether to enable CHP constraints
+    ev_data : dict[str, str]
+        Dictionary containing EV demand and flexibility data
     """
     network = pypsa.Network(network_path)
     max_hours = electricity_config["max_hours"]
@@ -582,6 +656,8 @@ def compose_network(
 
     add_load(network, demands, year)
 
+    add_EVs(network, ev_data, year)
+
     finalise_composed_network(network, context)
 
     network.export_to_netcdf(output_path)
@@ -591,7 +667,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
 
-        snakemake = mock_snakemake("compose_network", clusters=100)
+        snakemake = mock_snakemake("compose_network", clusters="clustered", year=2041)
 
     configure_logging(snakemake)
     set_scenario_config(snakemake)
@@ -603,8 +679,17 @@ if __name__ == "__main__":
     demands = {
         k.replace("demand_", ""): v
         for k, v in snakemake.input.items()
-        if k.startswith("demand_")
+        if k.startswith("demand_") and k != "demand_fes_transport"
     }
+    ev_data = {
+        "ev_demand_annual": snakemake.input.demand_fes_transport,
+        "ev_demand_shape": snakemake.input.ev_demand_shape,
+        "ev_demand_peak": snakemake.input.ev_demand_peak,
+        "ev_storage_capacity": snakemake.input.ev_storage_capacity,
+        "ev_smart_charging": snakemake.input.regional_fes_ev_dsm,
+        "ev_v2g": snakemake.input.regional_fes_ev_v2g,
+    }
+
     compose_network(
         network_path=snakemake.input.network,
         output_path=snakemake.output.network,
@@ -622,4 +707,5 @@ if __name__ == "__main__":
         demands=demands,
         year=int(snakemake.wildcards.year),
         enable_chp=snakemake.params.enable_chp,
+        ev_data=ev_data,
     )
