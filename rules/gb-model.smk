@@ -506,6 +506,9 @@ rule cluster_heat_demand_timeseries:
         ),
         clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
         district_heat_share=resources("district_heat_share.csv"),
+        residential_share=resources("gb-model/fes/2021/CV.16.csv"),
+        commercial_share=resources("gb-model/fes/2021/CV.55.csv")
+
     output:
         csv_file=resources("heat_demand_s_{clusters}.csv"),
     log:
