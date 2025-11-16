@@ -490,6 +490,25 @@ fes-sheet-config:
       header: 0
       rename:
         columns: Parameter
+    
+    # Overall heating technology mix in homes (residential) in 2050
+    CV.16:
+      usecols: "K:P"
+      skiprows: 3
+      index_col: [0,1]
+      header: 0
+      rename:
+        index: ["Type","2020"]
+    
+    
+    CV.55:
+      usecols: "K:P"
+      skiprows: 3
+      index_col: [0,1]
+      header: 0
+      rename:
+        index: ["Type","2020"]
+
 
   2023:
     WS1:
