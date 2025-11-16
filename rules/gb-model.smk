@@ -505,7 +505,12 @@ rule cluster_heat_demand_timeseries:
     input:
         load=resources("hourly_heat_demand_total_base_s_{clusters}.nc"),
         busmap=resources("busmap_base_s_{clusters}.csv"),
-        cop=resources("cop_profiles_base_s_{clusters}_{year}.nc")
+        cop_profile=expand(
+            resources("cop_profiles_base_s_{clusters}_{planning_horizons}.nc"),
+            **config["scenario"]
+        ),
+        clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
+        district_heat_share=resources("district_heat_share.csv"),
     output:
         csv_file=resources("heat_demand_s_{clusters}.csv"),
     log:
