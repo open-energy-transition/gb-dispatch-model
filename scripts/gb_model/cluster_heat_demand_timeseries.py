@@ -53,6 +53,9 @@ def process_cop_profiles(
         else:
             cop_wt_avg[source] /= clustered_population_layout["rural"]
 
+    # To match the naming convention in FES data
+    cop_wt_avg.rename(columns={'air':'ASHP','ground':'GSHP'},inplace=True)
+
     return cop_wt_avg
 
 def process_fes_heatmix(
@@ -75,7 +78,10 @@ def process_fes_heatmix(
 
 def cluster_demand_timeseries(
     load_path: str,
-    busmap_path: str,
+    fes_residential_share: pd.DataFrame,
+    fes_commercial_share: pd.DataFrame,
+    cop_profile: pd.DataFrame,
+    output_path: str
 ) -> pd.DataFrame:
     """
     Cluster the regional gb data to obtain required electricity demand timeseries by bus
@@ -87,27 +93,40 @@ def cluster_demand_timeseries(
     Returns:
         pd.DataFrame : pandas dataframe containing the clustered electricity demand by bus indexed by the snapshots
     """
-    breakpoint()
 
     # Read the electricity demand base .nc file
     load = (
         xr.open_dataset(load_path)
         .to_dataframe()
         .squeeze(axis=1)
-        .unstack(level="snapshots")
+        .unstack("node")
     )
-    # apply clustering busmap
-    logger.info("Clustering the base electricity demand using busmap")
-    busmap = pd.read_csv(busmap_path, dtype=str)
-    busmap = busmap.set_index("Index").squeeze()
 
-    missing_buses = list(set(load.index) - set(busmap.index))
-    if len(missing_buses) > 0:
-        logger.error(f"Busmap missing for buses: {missing_buses}.")
+    # Normalize the annual demand of each node
+    load_normalized=load/load.sum()
+    load_normalized=load_normalized.stack("node")
 
-    load_clustered = load.groupby(busmap).sum().T
+    scaled_load=pd.DataFrame(index=load_normalized.index)
+    sectors=["residential","services"]
+    system=["space","water"]
 
-    return load_clustered
+    for sector in sectors:
+        for sys in system:
+            load_reqd=load_normalized[f"{sector} {sys}"]
+            if sector == 'residential':
+                ashp_share=fes_residential_share.loc['ASHP','share'].values[0]
+                gshp_share=fes_residential_share.loc['GSHP','share'].values[0]
+            else:
+                ashp_share=fes_commercial_share.loc['ASHP','share'].values[0]
+                gshp_share=fes_commercial_share.loc['GSHP','share'].values[0]
+            load_scaled=load_reqd*ashp_share/cop_profile['ASHP']
+            load_scaled+= load_reqd*gshp_share/cop_profile['GSHP']
+            scaled_load[f"{sector} {sys}"] = load_scaled
+
+            # breakpoint()
+    
+
+    return scaled_load
 
 
 if __name__ == "__main__":
@@ -138,10 +157,15 @@ if __name__ == "__main__":
         scenario=snakemake.params.scenario
     )
 
-    load = cluster_demand_timeseries(load_path, busmap_path)
+    scaled_load = cluster_demand_timeseries(
+        load_path=snakemake.input.load, 
+        fes_residential_share=fes_residential_share,
+        fes_commercial_share=fes_commercial_share,
+        cop_profile=cop_profile,
+        output_path=snakemake.output.csv_file)
 
     # Save the regional base electricity demand profiles
-    load.to_csv(snakemake.output.csv_file)
+    scaled_load.to_csv(snakemake.output.csv_file)
     logger.info(
         f"Base electricity demand dataframe saved to {snakemake.output.csv_file}"
     )
