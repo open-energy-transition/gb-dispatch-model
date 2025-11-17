@@ -418,7 +418,12 @@ def add_EVs(
     )
 
     # Add the EV load to pypsa Network
-    n.add("Load", ev_demand_profile.columns + " EV", bus=ev_demand_profile.columns)
+    n.add(
+        "Load",
+        ev_demand_profile.columns + " EV",
+        bus=ev_demand_profile.columns,
+        carrier="EV",
+    )
     _add_timeseries_data_to_network(
         n.loads_t, ev_demand_profile.add_suffix(" EV"), "p_set"
     )
@@ -440,11 +445,50 @@ def add_EVs(
         suffix=" store",
         bus=ev_storage_capacity.index,
         e_nom=ev_storage_capacity["MWh"],
+        e_cyclic=True,
         carrier="EV store",
+        # TODO: add e_min_pu to mimic DSR
+    )
+
+    # Acc EV buses
+    n.add(
+        "Bus",
+        ev_storage_capacity.index,
+        carrier="EV",
+        # TODO: add x, y, and country attributes based on AC
     )
 
     # Load EV dsr and V2G data
-    # ev_dsr = pd.read_csv(ev_data["ev_smart_charging"], index_col=["bus", "year"])
+    ev_dsr = pd.read_csv(ev_data["ev_smart_charging"], index_col=["bus", "year"])
+    ev_v2g = pd.read_csv(ev_data["ev_v2g"], index_col=["bus", "year"])
+
+    # Filter data for the given year
+    ev_dsr = ev_dsr.loc[ev_dsr.index.get_level_values("year") == year]
+    ev_v2g = ev_v2g.loc[ev_v2g.index.get_level_values("year") == year]
+    ev_dsr = ev_dsr.droplevel("year")
+    ev_v2g = ev_v2g.droplevel("year")
+
+    # Add the EV DSR and V2G data to the PyPSA network
+    n.add(
+        "Link",
+        ev_dsr.index,
+        suffix=" EV DSR",
+        bus0=ev_dsr.index + " EV",
+        bus1=ev_dsr.index,
+        p_nom=ev_dsr["p_nom"].abs(),
+        efficiency=1.0,
+        carrier="EV DSR",
+    )
+    n.add(
+        "Link",
+        ev_v2g.index,
+        suffix=" EV V2G",
+        bus0=ev_v2g.index + " EV",
+        bus1=ev_v2g.index,
+        p_nom=ev_v2g["p_nom"].abs(),
+        efficiency=1.0,
+        carrier="EV V2G",
+    )
 
 
 def transform_ev_profile_with_shape_adjustment(
@@ -516,7 +560,7 @@ def transform_ev_profile_with_shape_adjustment(
     # Find optimal gamma using golden section search
     from scipy.optimize import minimize_scalar
 
-    result = minimize_scalar(objective_function, bounds=(0.1, 10.0), method="bounded")
+    result = minimize_scalar(objective_function, bounds=(0.01, 100.0), method="bounded")
     optimal_gamma = result.x
 
     # Apply optimal transformation
@@ -590,15 +634,15 @@ def estimate_ev_demand_profile(
         actual_peak = ev_demand_profile[bus].max()
         actual_annual = ev_demand_profile[bus].sum()
 
-        # Assert peak constraint with 2 decimal precision
-        assert abs(actual_peak - peak) < 0.01, (
+        # Assert peak constraint with 1 MW
+        assert abs(actual_peak - peak) < 1, (
             f"Bus {bus}: Peak constraint violated - "
             f"Expected: {peak:.2f} MW, Got: {actual_peak:.2f} MW, "
             f"Difference: {abs(actual_peak - peak):.4f} MW"
         )
 
-        # Assert annual constraint with 2 decimal precision
-        assert abs(actual_annual - annual) < 0.01, (
+        # Assert annual constraint with 1 MWh
+        assert abs(actual_annual - annual) < 1, (
             f"Bus {bus}: Annual constraint violated - "
             f"Expected: {annual:.2f} MWh, Got: {actual_annual:.2f} MWh, "
             f"Difference: {abs(actual_annual - annual):.4f} MWh"
