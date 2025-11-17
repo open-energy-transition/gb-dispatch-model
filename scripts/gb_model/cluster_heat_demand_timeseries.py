@@ -18,11 +18,12 @@ from scripts._helpers import configure_logging, set_scenario_config
 
 logger = logging.getLogger(__name__)
 
-def get_avg_cop_profiles(
-    cop_path,
-    clustered_population_layout_path,
-    district_heat_share_path,
-):
+def process_cop_profiles(
+    cop_path: str,
+    clustered_population_layout_path: str,
+    district_heat_share_path: str,
+) -> pd.DataFrame :
+
     clustered_population_layout=pd.read_csv(clustered_population_layout_path,index_col="name")
 
     district_heat_share=pd.read_csv(district_heat_share_path,index_col="country")
@@ -53,6 +54,24 @@ def get_avg_cop_profiles(
             cop_wt_avg[source] /= clustered_population_layout["rural"]
 
     return cop_wt_avg
+
+def process_fes_heatmix(
+    fes_data_heatmix_path: str,
+    scenario: str
+) -> pd.DataFrame :
+
+    electrified_demand_cols=["Electric resistive","Electric storage","ASHP","GSHP"]
+    fes_data=pd.read_csv(fes_data_heatmix_path,index_col=[0,1,2])
+
+    fes_data_filtered=fes_data[(fes_data
+                                                .index.get_level_values(2)
+                                                .str.lower().
+                                                str.contains(scenario))]
+    fes_data_filtered=fes_data_filtered.loc[electrified_demand_cols]
+    fes_data_filtered['data']=fes_data_filtered['data'].apply(float)
+    fes_data_filtered["share"]=fes_data_filtered["data"]/fes_data_filtered["data"].sum()       
+    
+    return fes_data_filtered
 
 def cluster_demand_timeseries(
     load_path: str,
@@ -102,11 +121,22 @@ if __name__ == "__main__":
     # Load the files
     load_path = snakemake.input.load
     busmap_path = snakemake.input.busmap
-    cop_path=snakemake.input.cop_profile[0]
-    clustered_population_layout=snakemake.input.clustered_pop_layout
-    district_heat_share=snakemake.input.district_heat_share
 
-    cop=get_avg_cop_profiles(cop_path, clustered_population_layout, district_heat_share)
+    cop_profile=process_cop_profiles(
+        cop_path=snakemake.input.cop_profile[0], 
+        clustered_population_layout_path=snakemake.input.clustered_pop_layout, 
+        district_heat_share_path=snakemake.input.district_heat_share
+    )
+
+    fes_residential_share=process_fes_heatmix(
+        fes_data_heatmix_path=snakemake.input.fes_residential_heatmix,
+        scenario=snakemake.params.scenario
+    )
+
+    fes_commercial_share=process_fes_heatmix(
+        fes_data_heatmix_path=snakemake.input.fes_commercial_heatmix,
+        scenario=snakemake.params.scenario
+    )
 
     load = cluster_demand_timeseries(load_path, busmap_path)
 

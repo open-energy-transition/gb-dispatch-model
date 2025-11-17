@@ -497,6 +497,8 @@ rule cluster_baseline_electricity_demand_timeseries:
 rule cluster_heat_demand_timeseries:
     message:
         "Cluster default PyPSA-Eur heat demand timeseries by bus"
+    params:
+        scenario=config["fes"]["gb"]["scenario"],
     input:
         load=resources("hourly_heat_demand_total_base_s_{clusters}.nc"),
         busmap=resources("busmap_base_s_{clusters}.csv"),
@@ -506,8 +508,8 @@ rule cluster_heat_demand_timeseries:
         ),
         clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
         district_heat_share=resources("district_heat_share.csv"),
-        residential_share=resources("gb-model/fes/2021/CV.16.csv"),
-        commercial_share=resources("gb-model/fes/2021/CV.55.csv")
+        fes_residential_heatmix=resources("gb-model/fes/2021/CV.16.csv"),
+        fes_commercial_heatmix=resources("gb-model/fes/2021/CV.55.csv")
 
     output:
         csv_file=resources("heat_demand_s_{clusters}.csv"),
