@@ -417,15 +417,39 @@ def add_EVs(
         year=year,
     )
 
+    # Add EV bus
+    n.add(
+        "Bus",
+        ev_demand_profile.columns,
+        suffix=" EV",
+        carrier="EV",
+        x=n.buses.loc[ev_demand_profile.columns].x,
+        y=n.buses.loc[ev_demand_profile.columns].y,
+        country=n.buses.loc[ev_demand_profile.columns].country,
+    )
+
     # Add the EV load to pypsa Network
     n.add(
         "Load",
-        ev_demand_profile.columns + " EV",
-        bus=ev_demand_profile.columns,
+        ev_demand_profile.columns,
+        suffix=" EV",
+        bus=ev_demand_profile.columns + " EV",
         carrier="EV",
     )
     _add_timeseries_data_to_network(
         n.loads_t, ev_demand_profile.add_suffix(" EV"), "p_set"
+    )
+
+    # Add EV unmanaged charging
+    n.add(
+        "Link",
+        ev_demand_profile.columns,
+        suffix=" EV unmanaged charging",
+        bus0=ev_demand_profile.columns,
+        bus1=ev_demand_profile.columns + " EV",
+        p_nom=ev_demand_profile.max(),
+        efficiency=1.0,
+        carrier="EV unmanaged charging",
     )
 
     # Load EV storage data
@@ -437,25 +461,27 @@ def add_EVs(
     ]
     ev_storage_capacity = ev_storage_capacity.droplevel("year")
 
-    # Add the EV storage to pypsa Network
-    ev_storage_capacity.index += " EV"
+    # Add EV storage buses
+    n.add(
+        "Bus",
+        ev_storage_capacity.index,
+        suffix=" EV store",
+        carrier="EV store",
+        x=n.buses.loc[ev_storage_capacity.index].x,
+        y=n.buses.loc[ev_storage_capacity.index].y,
+        country=n.buses.loc[ev_storage_capacity.index].country,
+    )
+
+    # Add the EV store to pypsa Network
     n.add(
         "Store",
         ev_storage_capacity.index,
-        suffix=" store",
-        bus=ev_storage_capacity.index,
+        suffix=" EV store",
+        bus=ev_storage_capacity.index + " EV store",
         e_nom=ev_storage_capacity["MWh"],
         e_cyclic=True,
         carrier="EV store",
         # TODO: add e_min_pu to mimic DSR
-    )
-
-    # Acc EV buses
-    n.add(
-        "Bus",
-        ev_storage_capacity.index,
-        carrier="EV",
-        # TODO: add x, y, and country attributes based on AC
     )
 
     # Load EV dsr and V2G data
@@ -468,22 +494,34 @@ def add_EVs(
     ev_dsr = ev_dsr.droplevel("year")
     ev_v2g = ev_v2g.droplevel("year")
 
-    # Add the EV DSR and V2G data to the PyPSA network
+    # Add the EV DSR to the PyPSA network
     n.add(
         "Link",
         ev_dsr.index,
         suffix=" EV DSR",
-        bus0=ev_dsr.index + " EV",
-        bus1=ev_dsr.index,
+        bus0=ev_dsr.index + " EV store",
+        bus1=ev_dsr.index + " EV",
         p_nom=ev_dsr["p_nom"].abs(),
         efficiency=1.0,
         carrier="EV DSR",
     )
     n.add(
         "Link",
+        ev_dsr.index,
+        suffix=" EV DSR reverse",
+        bus0=ev_dsr.index + " EV",
+        bus1=ev_dsr.index + " EV store",
+        p_nom=ev_dsr["p_nom"].abs(),
+        efficiency=1.0,
+        carrier="EV DSR reverse",
+    )
+
+    # Add EV V2G to the PyPSA network
+    n.add(
+        "Link",
         ev_v2g.index,
         suffix=" EV V2G",
-        bus0=ev_v2g.index + " EV",
+        bus0=ev_v2g.index + " EV store",
         bus1=ev_v2g.index,
         p_nom=ev_v2g["p_nom"].abs(),
         efficiency=1.0,
