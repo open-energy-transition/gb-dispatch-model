@@ -3781,7 +3781,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/grpcio-status-1.73.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gtk3-3.24.43-h0c6a113_5.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gts-0.7.6-h977cf35_4.conda
-      - conda: https://conda.anaconda.org/gurobi/linux-64/gurobi-13.0.0-py312_0.conda
+      - conda: https://conda.anaconda.org/gurobi/linux-64/gurobi-12.0.3-py312_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.16.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.3.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h5netcdf-1.7.3-pyhd8ed1ab_0.conda
@@ -4354,7 +4354,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/grpcio-status-1.73.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/gtk3-3.24.43-h70b172e_5.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/gts-0.7.6-h53e17e3_4.conda
-      - conda: https://conda.anaconda.org/gurobi/osx-64/gurobi-13.0.0-py312_0.conda
+      - conda: https://conda.anaconda.org/gurobi/osx-64/gurobi-12.0.3-py312_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.16.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.3.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h5netcdf-1.7.3-pyhd8ed1ab_0.conda
@@ -4869,7 +4869,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/grpcio-status-1.73.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtk3-3.24.43-h07173f4_5.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gts-0.7.6-he42f4ea_4.conda
-      - conda: https://conda.anaconda.org/gurobi/osx-arm64/gurobi-13.0.0-py312_0.conda
+      - conda: https://conda.anaconda.org/gurobi/osx-arm64/gurobi-12.0.3-py312_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.16.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.3.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h5netcdf-1.7.3-pyhd8ed1ab_0.conda
@@ -5373,7 +5373,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/grpcio-1.73.1-py312h9256aa6_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/grpcio-status-1.73.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/gts-0.7.6-h6b5321d_4.conda
-      - conda: https://conda.anaconda.org/gurobi/win-64/gurobi-13.0.0-py312_0.conda
+      - conda: https://conda.anaconda.org/gurobi/win-64/gurobi-12.0.3-py312_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.16.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.3.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h5netcdf-1.7.3-pyhd8ed1ab_0.conda
@@ -14473,15 +14473,6 @@ packages:
   license: PROPRIETARY
   size: 41692443
   timestamp: 1752065952087
-- conda: https://conda.anaconda.org/gurobi/linux-64/gurobi-13.0.0-py312_0.conda
-  sha256: 05786a9201a205217413cb4931c7a4fec1d2910c1276abb604d6bbabfd9fbbf4
-  md5: ef0ccf2535c1ad7699b19ec5831b7c4e
-  depends:
-  - python >=3.12,<3.13.0a0
-  - python_abi 3.12.* *_cp312
-  license: PROPRIETARY
-  size: 47869815
-  timestamp: 1762321505617
 - conda: https://conda.anaconda.org/gurobi/osx-64/gurobi-12.0.3-py312_0.tar.bz2
   sha256: c804153a31515e8f4722cf0d8e9662001b5e3e676abfda0f3039b13f1e8c2d8e
   md5: 3a84209da316a4e33e565ceeac378fb4
@@ -14491,15 +14482,6 @@ packages:
   license: PROPRIETARY
   size: 37881203
   timestamp: 1752068765847
-- conda: https://conda.anaconda.org/gurobi/osx-64/gurobi-13.0.0-py312_0.conda
-  sha256: 09f95e36fd3ebbb2232ca4dc08807ae88025ca37c3e88047565125ba607a7dbf
-  md5: 1685723870a342300f4d9ee1d55e7de6
-  depends:
-  - python >=3.12,<3.13.0a0
-  - python_abi 3.12.* *_cp312
-  license: PROPRIETARY
-  size: 48219649
-  timestamp: 1762316049347
 - conda: https://conda.anaconda.org/gurobi/osx-arm64/gurobi-12.0.3-py312_0.tar.bz2
   sha256: 27f297e55bb427f746d0a7f5dd21d3f226bbfd6bfbdfd3a5c4272b20c47320b0
   md5: 2e3cb9c09ff8b5612f2a73ff387fd97a
@@ -14509,15 +14491,6 @@ packages:
   license: PROPRIETARY
   size: 34790483
   timestamp: 1752071415926
-- conda: https://conda.anaconda.org/gurobi/osx-arm64/gurobi-13.0.0-py312_0.conda
-  sha256: 678b518975f04a2c21477ec6cde2807ef2ffc7683812433598e828a6b318d58a
-  md5: 55126f693602482dc8a8677fe9bfc68f
-  depends:
-  - python >=3.12,<3.13.0a0
-  - python_abi 3.12.* *_cp312
-  license: PROPRIETARY
-  size: 43989380
-  timestamp: 1762319283613
 - conda: https://conda.anaconda.org/gurobi/win-64/gurobi-12.0.3-py312_0.tar.bz2
   sha256: ca9d7c05c649882623ebdfb6c405c4b8617f8ccde62e0c49a7a6595a5141bb64
   md5: e2afb62626753f6c1d25e482fa7bf759
@@ -14526,15 +14499,6 @@ packages:
   license: PROPRIETARY
   size: 38837169
   timestamp: 1752066332107
-- conda: https://conda.anaconda.org/gurobi/win-64/gurobi-13.0.0-py312_0.conda
-  sha256: da51db4daa9bd0f8b008d41e5c9a6163240ee32222b037367501f60c2302a0ce
-  md5: 4b28ca56726d68ced86307620d1860e3
-  depends:
-  - python >=3.12,<3.13.0a0
-  - python_abi 3.12.* *_cp312
-  license: PROPRIETARY
-  size: 43763677
-  timestamp: 1762312138757
 - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.16.0-pyhd8ed1ab_0.conda
   sha256: f64b68148c478c3bfc8f8d519541de7d2616bf59d44485a5271041d40c061887
   md5: 4b69232755285701bc86a5afe4d9933a

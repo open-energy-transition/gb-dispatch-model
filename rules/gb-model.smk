@@ -582,9 +582,7 @@ def demands(w):
     return {
         f"demand_{demand_type}": [
             resources(f"gb-model/{demand_type}_demand.csv"),
-            resources(
-                f"gb-model/{demand_type.replace('fes_', '')}_demand_shape_s_clustered.csv"
-            ),
+            resources(f"gb-model/{demand_type.replace('fes_', '')}_demand_shape.csv"),
         ]
         for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"]
     }
