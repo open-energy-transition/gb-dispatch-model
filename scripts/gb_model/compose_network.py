@@ -404,8 +404,20 @@ def add_EVs(
     ----------
     n : pypsa.Network
         Network to finalize
-    ev_demand_profile: str
-        CSV path for EV demand shape
+    ev_data: dict[str, str]
+        Dictionary containing paths to EV data files:
+            ev_demand_annual:
+                CSV path for annual EV demand
+            ev_demand_peak:
+                CSV path for peak EV demand
+            ev_demand_shape:
+                CSV path for EV demand shape
+            ev_storage_capacity:
+                CSV path for EV storage capacity
+            ev_smart_charging:
+                CSV path for EV smart charging (DSR) data
+            ev_v2g:
+                CSV path for EV V2G data
     year:
         Year used in the modelling
     """
