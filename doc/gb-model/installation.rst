@@ -24,36 +24,20 @@ First of all, clone the `gb-dispatch-model repository <https://github.com/open-e
 
 .. _deps:
 
-Install Python Dependencies
-===============================
+Create working environment
+==========================
 
-gb-dispatch-model relies on a set of other Python packages to function. We recommend
-using the package manager `conda <https://docs.anaconda.com/miniconda/>` or
-`mamba <https://mamba.readthedocs.io/en/latest/>`__ to install them and manage
-your environments.
-
-The package requirements are curated in the ``envs/environment.yaml`` file.
-Since you cannot install these together directly, you should use one of the regularly updated locked environment files for each platform.
-Choose the correct file for your platform:
-
-* For Intel/AMD processors:
-
-  - Linux: ``envs/linux-64.lock.yaml``
-
-  - macOS: ``envs/osx-64.lock.yaml``
-
-  - Windows: ``envs/win-64.lock.yaml``
-
-* For ARM processors:
-
-  - macOS (Apple Silicon): ``envs/gb-model/osx-arm64.lock.yaml``
-
-  - Linux (ARM): Currently not supported via lock files; requires building certain packages, such as ``PySCIPOpt``, from source
+gb-dispatch-model relies on a set of other Python packages to function.
+We manage these using `pixi <https://pixi.sh/latest/>`_.
+Once pixi is installed, you can activate the project environment (``gb-model``) for your operating system and have access to all the PyPSA-Eur dependencies from the command line:
 
 .. code:: console
 
-    $ conda update conda
+    $ pixi -e gb-model shell
 
-    $ conda env create -n gb-dispatch-model -f envs/linux-64.lock.yaml # select the appropriate file for your platform
+.. tip::
+    You can also set up automatic shell activation in several popular editors (e.g. in `VSCode <https://pixi.sh/dev/integration/editor/vscode/>`_ or `Zed <https://pixi.sh/dev/integration/editor/zed/>`_).
+    Refer to the ``pixi`` documentation for the most up-to-date options.
 
-    $ conda activate gb-dispatch-model
+.. note::
+    We don't currently support linux operating systems using ARM processors since certain packages, such as ``PySCIPOpt``, require being built from source.

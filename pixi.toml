@@ -149,6 +149,21 @@ all-tests = {depends-on = ["integration-tests", "clean-tests", "unit-tests"]}
 [feature.test.dependencies]
 pytest = ">=8.4.2"
 
+[feature.gb-model.tasks]
+gb-test = """
+	snakemake compose_networks -n &&
+	snakemake compose_networks -n --configfile config/config.gb.etys-subset.yaml &&
+	echo "All GB tests completed successfully."
+    """
+
+[feature.gb-model.dependencies]
+curl = ">=8.17.0"
+python-dotenv = ">=1.2.1"
+
+[feature.gb-model.pypi-dependencies]
+pdfplumber = ">=0.11.8"
+
 [environments]
 doc = { features = ["doc"], no-default-feature = true }
 test = ["test"]
+gb-model = ["gb-model", "test"] # for ease, we include test deps in our working environment
