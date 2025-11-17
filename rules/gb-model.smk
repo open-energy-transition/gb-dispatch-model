@@ -12,7 +12,7 @@ import numpy as np
 
 wildcard_constraints:
     flexibility_type="fes_ev_dsm|fes_ev_v2g|fes_residential_dsr|fes_services_dsr",
-    data_type="storage|unmanaged_charging",
+    ev_data_type="storage|unmanaged_charging",
 
 
 # Rule to download and extract ETYS boundary data
@@ -552,17 +552,17 @@ rule create_ev_storage_table:
 
 rule process_regional_ev_data:
     message:
-        "Process regional EV {wildcards.data_type} data into CSV format"
+        "Process regional EV {wildcards.ev_data_type} data into CSV format"
     input:
-        input_csv=resources("gb-model/fes_ev_{data_type}.csv"),
+        input_csv=resources("gb-model/fes_ev_{ev_data_type}.csv"),
         reference_data=lambda wildcards: {
             "unmanaged_charging": resources("gb-model/fes_transport_demand.csv"),
             "storage": resources("gb-model/regional_fes_ev_v2g.csv"),
-        }[wildcards.data_type],
+        }[wildcards.ev_data_type],
     output:
-        regional_output=resources("gb-model/regional_fes_ev_{data_type}.csv"),
+        regional_output=resources("gb-model/regional_fes_ev_{ev_data_type}.csv"),
     log:
-        logs("process_regional_ev_{data_type}.log"),
+        logs("process_regional_ev_{ev_data_type}.log"),
     script:
         "../scripts/gb_model/process_regional_ev_data.py"
 
