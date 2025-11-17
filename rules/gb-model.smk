@@ -633,6 +633,9 @@ rule compose_network:
         ),
         hydro_capacities=ancient("data/hydro_capacities.csv"),
         chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
+        ev_demand_shape=resources("gb-model/ev_demand_shape_s_{clusters}.csv"),
+        ev_demand_peak=resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
+        ev_storage_capacity=resources("gb-model/regional_fes_ev_storage.csv"),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(
@@ -664,8 +667,6 @@ rule compose_network:
                     "Technology Detail"
                 ].keys(),
             ),
-            resources("gb-model/regional_fes_ev_storage.csv"),
-            resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
         ],
     output:
         network=resources("networks/composed_{clusters}_{year}.nc"),
