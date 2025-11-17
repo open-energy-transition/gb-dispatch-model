@@ -41,7 +41,7 @@ jobs:
         cache: true
         # Do not cache in branches
         cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-        environments: gb-model
+        environments: gb-model test
 
     - name: Setup cache keys
       run: |
@@ -65,7 +65,7 @@ jobs:
 
     - name: Run unit tests
       run: |
-        pixi run unit-tests
+        pixi run -e test unit-tests
 
     - name: Upload artifacts
       if: always()
