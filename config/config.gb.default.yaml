@@ -508,8 +508,7 @@ fes-sheet-config:
       header: 0
       rename:
         index: ["Type","2020"]
-
-
+ 
   2023:
     WS1:
       usecols: "A:D,H:AM" # Ignore columns: "Baseline (2022)", "Share of GSP" (empty), "DNO License Area"
