@@ -18,8 +18,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import pypsa
+from scipy.optimize import minimize_scalar
 
 from scripts._helpers import configure_logging, set_scenario_config
 from scripts.add_electricity import (
@@ -392,6 +394,331 @@ def add_load(
         _add_timeseries_data_to_network(n.loads_t, load.add_suffix(suffix), "p_set")
 
 
+def add_EVs(
+    n: pypsa.Network,
+    ev_data: dict[str, str],
+    ev_params: dict[str, float],
+    year: int,
+):
+    """
+    Add EV load as a timeseries to PyPSA network
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        Network to finalize
+    ev_data: dict[str, str]
+        Dictionary containing paths to EV data files:
+            ev_demand_annual:
+                CSV path for annual EV demand
+            ev_demand_peak:
+                CSV path for peak EV demand
+            ev_demand_shape:
+                CSV path for EV demand shape
+            ev_storage_capacity:
+                CSV path for EV storage capacity
+            ev_smart_charging:
+                CSV path for EV smart charging (DSR) data
+            ev_v2g:
+                CSV path for EV V2G data
+    ev_params: dict[str, float]
+        Dictionary containing EV profile adjustment parameters such as:
+            relative_peak_tolerance: float
+                Relative tolerance for peak load
+            relative_energy_tolerance: float
+                Relative tolerance for energy load
+            upper_optimization_bound: float
+                Upper bound for optimization
+            lower_optimization_bound: float
+                Lower bound for optimization
+    year:
+        Year used in the modelling
+    """
+    # Compute EV demand profile using demand shape, annual EV demand and peak EV demand
+    ev_demand_profile = _estimate_ev_demand_profile(
+        ev_data["ev_demand_shape"],
+        ev_data["ev_demand_annual"],
+        ev_data["ev_demand_peak"],
+        year=year,
+        ev_params=ev_params,
+    )
+
+    # Add EV bus
+    n.add(
+        "Bus",
+        ev_demand_profile.columns,
+        suffix=" EV",
+        carrier="EV",
+        x=n.buses.loc[ev_demand_profile.columns].x,
+        y=n.buses.loc[ev_demand_profile.columns].y,
+        country=n.buses.loc[ev_demand_profile.columns].country,
+    )
+
+    # Add the EV load to pypsa Network
+    n.add(
+        "Load",
+        ev_demand_profile.columns,
+        suffix=" EV",
+        bus=ev_demand_profile.columns + " EV",
+        carrier="EV",
+    )
+    _add_timeseries_data_to_network(
+        n.loads_t, ev_demand_profile.add_suffix(" EV"), "p_set"
+    )
+
+    # Add EV unmanaged charging
+    n.add(
+        "Link",
+        ev_demand_profile.columns,
+        suffix=" EV unmanaged charging",
+        bus0=ev_demand_profile.columns,
+        bus1=ev_demand_profile.columns + " EV",
+        p_nom=ev_demand_profile.max(),
+        efficiency=1.0,
+        carrier="EV unmanaged charging",
+    )
+
+    # Load EV storage data
+    ev_storage_capacity = pd.read_csv(
+        ev_data["ev_storage_capacity"], index_col=["bus", "year"]
+    )
+    ev_storage_capacity = ev_storage_capacity.xs(year, level="year")
+
+    # Add EV storage buses
+    n.add(
+        "Bus",
+        ev_storage_capacity.index,
+        suffix=" EV store",
+        carrier="EV store",
+        x=n.buses.loc[ev_storage_capacity.index].x,
+        y=n.buses.loc[ev_storage_capacity.index].y,
+        country=n.buses.loc[ev_storage_capacity.index].country,
+    )
+
+    # Add the EV store to pypsa Network
+    ev_dsm_profile = pd.read_csv(
+        ev_data["ev_dsm_profile"], index_col=0, parse_dates=True
+    )
+    n.add(
+        "Store",
+        ev_storage_capacity.index,
+        suffix=" EV store",
+        bus=ev_storage_capacity.index + " EV store",
+        e_nom=ev_storage_capacity["MWh"],
+        e_cyclic=True,
+        carrier="EV store",
+        e_min_pu=ev_dsm_profile.loc[n.snapshots, ev_storage_capacity.index],
+    )
+
+    # Load EV dsr and V2G data
+    ev_dsr = pd.read_csv(ev_data["ev_smart_charging"], index_col=["bus", "year"])
+    ev_v2g = pd.read_csv(ev_data["ev_v2g"], index_col=["bus", "year"])
+
+    # Filter data for the given year
+    ev_dsr = ev_dsr.xs(year, level="year")
+    ev_v2g = ev_v2g.xs(year, level="year")
+
+    # Add the EV DSR to the PyPSA network
+    n.add(
+        "Link",
+        ev_dsr.index,
+        suffix=" EV DSR",
+        bus0=ev_dsr.index + " EV store",
+        bus1=ev_dsr.index + " EV",
+        p_nom=ev_dsr["p_nom"].abs(),
+        efficiency=1.0,
+        carrier="EV DSR",
+    )
+    n.add(
+        "Link",
+        ev_dsr.index,
+        suffix=" EV DSR reverse",
+        bus0=ev_dsr.index + " EV",
+        bus1=ev_dsr.index + " EV store",
+        p_nom=ev_dsr["p_nom"].abs(),
+        efficiency=1.0,
+        carrier="EV DSR reverse",
+    )
+
+    # Add EV V2G to the PyPSA network
+    n.add(
+        "Link",
+        ev_v2g.index,
+        suffix=" EV V2G",
+        bus0=ev_v2g.index + " EV store",
+        bus1=ev_v2g.index,
+        p_nom=ev_v2g["p_nom"].abs(),
+        efficiency=1.0,
+        carrier="EV V2G",
+    )
+
+
+def _normalize(series: pd.Series) -> pd.Series:
+    """Normalize a pandas Series so that its sum equals 1."""
+    normalized = series / series.sum()
+    return normalized
+
+
+def _transform_ev_profile_with_shape_adjustment(
+    shape_series: pd.Series,
+    peak_target: float,
+    annual_target: float,
+    relative_peak_tolerance: float,
+    relative_energy_tolerance: float,
+    upper_optimization_bound: float,
+    lower_optimization_bound: float,
+) -> pd.Series:
+    """
+    Transform EV profile to match both peak and annual targets by adjusting the shape.
+
+    This function can squeeze (make peakier) or widen (make flatter) the profile
+    to satisfy both constraints simultaneously.
+
+    Parameters
+    ----------
+    shape_series : pd.Series
+        Normalized EV demand shape (sum = 1)
+    peak_target : float
+        Target peak demand (MW)
+    annual_target : float
+        Target annual energy (MWh)
+
+    Returns
+    -------
+    pd.Series
+        Transformed profile satisfying both constraints
+    """
+    # Normalize input to ensure sum = 1
+    normalized_shape = _normalize(shape_series)
+
+    # Try simple scaling first
+    simple_scaled = normalized_shape * annual_target
+    scaled_peak = simple_scaled.max()
+
+    # If simple scaling satisfies peak constraint, return it
+    if np.isclose(scaled_peak, peak_target, rtol=relative_peak_tolerance, atol=0):
+        return simple_scaled
+
+    # Need to adjust the shape - use power transformation
+    # Higher gamma = more peaked, lower gamma = flatter
+
+    def objective_function(gamma):
+        """Objective function to find optimal shape parameter."""
+        if gamma <= 0:
+            return float("inf")
+
+        # Apply power transformation and scale to match annual target
+        scaled = _normalize(normalized_shape**gamma) * annual_target
+
+        # Check how well we satisfy both constraints
+        peak_error = abs(scaled.max() - peak_target) / peak_target
+        annual_error = abs(scaled.sum() - annual_target) / annual_target
+
+        return peak_error + annual_error
+
+    result = minimize_scalar(
+        objective_function,
+        bounds=(lower_optimization_bound, upper_optimization_bound),
+        method="bounded",
+    )
+    optimal_gamma = result.x
+
+    # Apply optimal transformation
+    final_profile = _normalize(normalized_shape**optimal_gamma) * annual_target
+
+    # Verify constraints
+    final_peak = final_profile.max()
+    final_annual = final_profile.sum()
+
+    logger.info(
+        "Gamma optimization result for bus %s: optimal_gamma=%.4f, final_peak=%.2f MW, target_peak=%.2f MW, final_annual=%.2f MWh, target_annual=%.2f MWh",
+        shape_series.name,
+        optimal_gamma,
+        final_peak,
+        peak_target,
+        final_annual,
+        annual_target,
+    )
+
+    assert np.isclose(final_peak, peak_target, rtol=relative_peak_tolerance, atol=0), (
+        f"Peak constraint violated after optimization for bus {shape_series.name} - "
+        f"Expected: {peak_target:.2f} MW, Obtained: {final_peak:.2f} MW"
+    )
+
+    assert np.isclose(
+        final_annual, annual_target, rtol=relative_energy_tolerance, atol=0
+    ), (
+        f"Annual constraint violated after optimization for bus {shape_series.name} - "
+        f"Expected: {annual_target:.2f} MWh, Obtained: {final_annual:.2f} MWh"
+    )
+
+    return final_profile
+
+
+def _estimate_ev_demand_profile(
+    ev_demand_shape_path: str,
+    ev_demand_annual_path: str,
+    ev_demand_peak_path: str,
+    year: int,
+    ev_params: dict[str, float],
+) -> pd.DataFrame:
+    """
+    Estimate the EV demand profile for the given year using shape, annual and peak data.
+
+    Parameters
+    ----------
+    ev_demand_shape_path : str
+        CSV path for EV demand shape
+    ev_demand_annual_path : str
+        CSV path for annual EV demand
+    ev_demand_peak_path : str
+        CSV path for peak EV demand
+    year : int
+        Year used in the modelling
+    ev_params: dict[str, float]
+        Dictionary containing EV profile adjustment parameters
+
+    Returns
+    -------
+    pd.DataFrame
+        Estimated EV demand profile
+    """
+    # Load the files
+    ev_demand_shape = pd.read_csv(ev_demand_shape_path, index_col=[0], parse_dates=True)
+    ev_demand_annual = pd.read_csv(ev_demand_annual_path, index_col=["bus", "year"])
+    ev_demand_peak = pd.read_csv(ev_demand_peak_path, index_col=["bus", "year"])
+
+    # Select data for given year
+    ev_demand_annual = ev_demand_annual.xs(year, level="year")
+    ev_demand_peak = ev_demand_peak.xs(year, level="year")
+
+    # Affine transformation to scale the maximum with peak and total energy with annual demand
+    ev_demand_profile = pd.DataFrame(index=ev_demand_shape.index)
+    for bus in ev_demand_shape.columns:
+        if bus not in ev_demand_annual.index or bus not in ev_demand_peak.index:
+            continue
+
+        peak = ev_demand_peak.loc[bus, "p_nom"]
+        annual = ev_demand_annual.loc[bus, "p_set"]
+
+        # Use shape-adjusting transformation to satisfy both peak and annual constraints
+        ev_demand_profile[bus] = _transform_ev_profile_with_shape_adjustment(
+            ev_demand_shape[bus],
+            peak,
+            annual,
+            relative_peak_tolerance=ev_params["relative_peak_tolerance"],
+            relative_energy_tolerance=ev_params["relative_energy_tolerance"],
+            upper_optimization_bound=ev_params["upper_optimization_bound"],
+            lower_optimization_bound=ev_params["lower_optimization_bound"],
+        )
+
+    logger.info(
+        "EV unmanaged charging demand profile successfully generated with both peak and annual constraints satisfied."
+    )
+
+    return ev_demand_profile
+
+
 def finalise_composed_network(
     n: pypsa.Network,
     context: CompositionContext,
@@ -482,6 +809,8 @@ def compose_network(
     demands: dict[str, list[str]],
     year: int,
     enable_chp: bool,
+    ev_data: dict[str, str],
+    ev_params: dict[str, float],
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -524,6 +853,10 @@ def compose_network(
         Modelling year
     enable_chp : bool
         Whether to enable CHP constraints
+    ev_data : dict[str, str]
+        Dictionary containing EV demand and flexibility data
+    ev_params : dict[str, float]
+        Dictionary containing EV profile adjustment parameters
     """
     network = pypsa.Network(network_path)
     max_hours = electricity_config["max_hours"]
@@ -582,6 +915,8 @@ def compose_network(
 
     add_load(network, demands, year)
 
+    add_EVs(network, ev_data, ev_params, year)
+
     finalise_composed_network(network, context)
 
     network.export_to_netcdf(output_path)
@@ -591,7 +926,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
 
-        snakemake = mock_snakemake("compose_network", clusters=100)
+        snakemake = mock_snakemake("compose_network", clusters="clustered", year=2022)
 
     configure_logging(snakemake)
     set_scenario_config(snakemake)
@@ -604,6 +939,29 @@ if __name__ == "__main__":
         k.replace("demand_", ""): v
         for k, v in snakemake.input.items()
         if k.startswith("demand_")
+    }
+    ev_data = {
+        "ev_demand_annual": snakemake.input.ev_demand_annual,
+        "ev_demand_shape": snakemake.input.ev_demand_shape,
+        "ev_demand_peak": snakemake.input.ev_demand_peak,
+        "ev_storage_capacity": snakemake.input.ev_storage_capacity,
+        "ev_smart_charging": snakemake.input.regional_fes_ev_dsm,
+        "ev_v2g": snakemake.input.regional_fes_ev_v2g,
+        "ev_dsm_profile": snakemake.input.ev_dsm_profile,
+    }
+    ev_params = {
+        "relative_peak_tolerance": snakemake.params.ev_profile_config[
+            "relative_peak_tolerance"
+        ],
+        "relative_energy_tolerance": snakemake.params.ev_profile_config[
+            "relative_energy_tolerance"
+        ],
+        "upper_optimization_bound": snakemake.params.ev_profile_config[
+            "upper_optimization_bound"
+        ],
+        "lower_optimization_bound": snakemake.params.ev_profile_config[
+            "lower_optimization_bound"
+        ],
     }
     compose_network(
         network_path=snakemake.input.network,
@@ -622,4 +980,6 @@ if __name__ == "__main__":
         demands=demands,
         year=int(snakemake.wildcards.year),
         enable_chp=snakemake.params.enable_chp,
+        ev_data=ev_data,
+        ev_params=ev_params,
     )

@@ -611,6 +611,19 @@ def demands(w):
             ),
         ]
         for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"]
+        if demand_type != "fes_transport"
+    }
+
+
+def flexibilities(w):
+    """Collate flexibility data into input of `compose_network`"""
+    return {
+        f"regional_{flexibility_type}": resources(
+            f"gb-model/regional_{flexibility_type}.csv"
+        )
+        for flexibility_type in config["fes"]["gb"]["flexibility"][
+            "Technology Detail"
+        ].keys()
     }
 
 
@@ -623,9 +636,11 @@ rule compose_network:
         renewable=config["renewable"],
         lines=config["lines"],
         enable_chp=config["chp"]["enable"],
+        ev_profile_config=config["ev"]["ev_demand_profile_transformation"],
     input:
         unpack(input_profile_tech),
         unpack(demands),
+        unpack(flexibilities),
         network=resources("networks/base_s_{clusters}.nc"),
         powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(
@@ -635,7 +650,9 @@ rule compose_network:
         chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
         ev_demand_shape=resources("gb-model/ev_demand_shape_s_{clusters}.csv"),
         ev_demand_peak=resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
+        ev_demand_annual=resources("gb-model/fes_transport_demand.csv"),
         ev_storage_capacity=resources("gb-model/regional_fes_ev_storage.csv"),
+        ev_dsm_profile=resources("dsm_profile_s_{clusters}.csv"),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(
@@ -658,15 +675,6 @@ rule compose_network:
             resources("gb-model/transport_demand_shape_s_clustered.csv"),
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
-            expand(
-                [
-                    resources("gb-model/{flexibility_type}_flexibility.csv"),
-                    resources("gb-model/regional_{flexibility_type}.csv"),
-                ],
-                flexibility_type=config["fes"]["gb"]["flexibility"][
-                    "Technology Detail"
-                ].keys(),
-            ),
         ],
     output:
         network=resources("networks/composed_{clusters}_{year}.nc"),
