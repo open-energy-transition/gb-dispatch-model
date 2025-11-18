@@ -18,8 +18,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import pypsa
+from scipy.optimize import minimize_scalar
 
 from scripts._helpers import configure_logging, set_scenario_config
 from scripts.add_electricity import (
@@ -422,7 +424,7 @@ def add_EVs(
         Year used in the modelling
     """
     # Compute EV demand profile using demand shape, annual EV demand and peak EV demand
-    ev_demand_profile = estimate_ev_demand_profile(
+    ev_demand_profile = _estimate_ev_demand_profile(
         ev_data["ev_demand_shape"],
         ev_data["ev_demand_annual"],
         ev_data["ev_demand_peak"],
@@ -498,10 +500,8 @@ def add_EVs(
     ev_v2g = pd.read_csv(ev_data["ev_v2g"], index_col=["bus", "year"])
 
     # Filter data for the given year
-    ev_dsr = ev_dsr.loc[ev_dsr.index.get_level_values("year") == year]
-    ev_v2g = ev_v2g.loc[ev_v2g.index.get_level_values("year") == year]
-    ev_dsr = ev_dsr.droplevel("year")
-    ev_v2g = ev_v2g.droplevel("year")
+    ev_dsr = ev_dsr.xs(year, level="year")
+    ev_v2g = ev_v2g.xs(year, level="year")
 
     # Add the EV DSR to the PyPSA network
     n.add(
@@ -538,9 +538,21 @@ def add_EVs(
     )
 
 
-def transform_ev_profile_with_shape_adjustment(
-    shape_series, peak_target, annual_target
-):
+def _normalize(series: pd.Series) -> pd.Series:
+    """Normalize a pandas Series so that its sum equals 1."""
+    normalized = series / series.sum()
+    return normalized
+
+
+def _transform_ev_profile_with_shape_adjustment(
+    shape_series: pd.Series,
+    peak_target: float,
+    annual_target: float,
+    relative_peak_tolerance: float,
+    relative_energy_tolerance: float,
+    upper_optimization_bound: float,
+    lower_optimization_bound: float,
+) -> pd.Series:
     """
     Transform EV profile to match both peak and annual targets by adjusting the shape.
 
@@ -561,27 +573,16 @@ def transform_ev_profile_with_shape_adjustment(
     pd.Series
         Transformed profile satisfying both constraints
     """
-    if shape_series.sum() == 0 or len(shape_series) == 0:
-        return pd.Series(
-            [annual_target / len(shape_series)] * len(shape_series),
-            index=shape_series.index,
-        )
-
     # Normalize input to ensure sum = 1
-    normalized_shape = shape_series / shape_series.sum()
+    normalized_shape = _normalize(shape_series)
 
-    # Current peak of normalized shape
-    current_peak = normalized_shape.max()
+    # Try simple scaling first
+    simple_scaled = normalized_shape * annual_target
+    scaled_peak = simple_scaled.max()
 
-    # Required peak in normalized space
-    required_peak_normalized = peak_target / len(normalized_shape)
-
-    # If the required peak is achievable with current shape, use simple scaling
-    if required_peak_normalized <= current_peak:
-        # Scale entire profile to match annual, then check if peak constraint is satisfied
-        simple_scaled = normalized_shape * annual_target
-        if simple_scaled.max() <= peak_target:
-            return simple_scaled
+    # If simple scaling satisfies peak constraint, return it
+    if np.isclose(scaled_peak, peak_target, rtol=relative_peak_tolerance, atol=0):
+        return simple_scaled
 
     # Need to adjust the shape - use power transformation
     # Higher gamma = more peaked, lower gamma = flatter
@@ -591,12 +592,8 @@ def transform_ev_profile_with_shape_adjustment(
         if gamma <= 0:
             return float("inf")
 
-        # Apply power transformation
-        transformed = normalized_shape**gamma
-        transformed = transformed / transformed.sum()  # Renormalize
-
-        # Scale to match annual target
-        scaled = transformed * annual_target
+        # Apply power transformation and scale to match annual target
+        scaled = _normalize(normalized_shape**gamma) * annual_target
 
         # Check how well we satisfy both constraints
         peak_error = abs(scaled.max() - peak_target) / peak_target
@@ -604,21 +601,46 @@ def transform_ev_profile_with_shape_adjustment(
 
         return peak_error + annual_error
 
-    # Find optimal gamma using golden section search
-    from scipy.optimize import minimize_scalar
-
-    result = minimize_scalar(objective_function, bounds=(0.01, 100.0), method="bounded")
+    result = minimize_scalar(
+        objective_function,
+        bounds=(lower_optimization_bound, upper_optimization_bound),
+        method="bounded",
+    )
     optimal_gamma = result.x
 
     # Apply optimal transformation
-    transformed = normalized_shape**optimal_gamma
-    transformed = transformed / transformed.sum()
-    final_profile = transformed * annual_target
+    final_profile = _normalize(normalized_shape**optimal_gamma) * annual_target
+
+    # Verify constraints
+    final_peak = final_profile.max()
+    final_annual = final_profile.sum()
+
+    logger.debug(
+        "Gamma optimization result for bus %s: optimal_gamma=%.4f, final_peak=%.2f MW, target_peak=%.2f MW, final_annual=%.2f MWh, target_annual=%.2f MWh",
+        shape_series.name,
+        optimal_gamma,
+        final_peak,
+        peak_target,
+        final_annual,
+        annual_target,
+    )
+
+    assert np.isclose(final_peak, peak_target, rtol=relative_peak_tolerance, atol=0), (
+        f"Peak constraint violated after optimization for bus {shape_series.name} - "
+        f"Expected: {peak_target:.2f} MW, Obtained: {final_peak:.2f} MW"
+    )
+
+    assert np.isclose(
+        final_annual, annual_target, rtol=relative_energy_tolerance, atol=0
+    ), (
+        f"Annual constraint violated after optimization for bus {shape_series.name} - "
+        f"Expected: {annual_target:.2f} MWh, Obtained: {final_annual:.2f} MWh"
+    )
 
     return final_profile
 
 
-def estimate_ev_demand_profile(
+def _estimate_ev_demand_profile(
     ev_demand_shape_path: str,
     ev_demand_annual_path: str,
     ev_demand_peak_path: str,
@@ -644,24 +666,13 @@ def estimate_ev_demand_profile(
         Estimated EV demand profile
     """
     # Load the files
-    ev_demand_shape = pd.read_csv(ev_demand_shape_path, index_col=[0])
+    ev_demand_shape = pd.read_csv(ev_demand_shape_path, index_col=[0], parse_dates=True)
     ev_demand_annual = pd.read_csv(ev_demand_annual_path, index_col=["bus", "year"])
     ev_demand_peak = pd.read_csv(ev_demand_peak_path, index_col=["bus", "year"])
 
-    # Convert index of EV demand shape to datetime
-    ev_demand_shape.index = pd.to_datetime(ev_demand_shape.index)
-
     # Select data for given year
-    ev_demand_annual = ev_demand_annual.loc[
-        ev_demand_annual.index.get_level_values("year") == year
-    ]
-    ev_demand_peak = ev_demand_peak.loc[
-        ev_demand_peak.index.get_level_values("year") == year
-    ]
-
-    # Drop year index after filtering
-    ev_demand_annual = ev_demand_annual.droplevel("year")
-    ev_demand_peak = ev_demand_peak.droplevel("year")
+    ev_demand_annual = ev_demand_annual.xs(year, level="year")
+    ev_demand_peak = ev_demand_peak.xs(year, level="year")
 
     # Affine transformation to scale the maximum with peak and total energy with annual demand
     ev_demand_profile = pd.DataFrame(index=ev_demand_shape.index)
@@ -673,27 +684,24 @@ def estimate_ev_demand_profile(
         annual = ev_demand_annual.loc[bus, "p_set"]
 
         # Use shape-adjusting transformation to satisfy both peak and annual constraints
-        ev_demand_profile[bus] = transform_ev_profile_with_shape_adjustment(
-            ev_demand_shape[bus], peak, annual
+        ev_demand_profile[bus] = _transform_ev_profile_with_shape_adjustment(
+            ev_demand_shape[bus],
+            peak,
+            annual,
+            relative_peak_tolerance=snakemake.params.ev_profile_config[
+                "relative_peak_tolerance"
+            ],
+            relative_energy_tolerance=snakemake.params.ev_profile_config[
+                "relative_energy_tolerance"
+            ],
+            upper_optimization_bound=snakemake.params.ev_profile_config[
+                "upper_optimization_bound"
+            ],
+            lower_optimization_bound=snakemake.params.ev_profile_config[
+                "lower_optimization_bound"
+            ],
         )
 
-        # Verify results
-        actual_peak = ev_demand_profile[bus].max()
-        actual_annual = ev_demand_profile[bus].sum()
-
-        # Assert peak constraint with 1 MW
-        assert abs(actual_peak - peak) < 1, (
-            f"Bus {bus}: Peak constraint violated - "
-            f"Expected: {peak:.2f} MW, Got: {actual_peak:.2f} MW, "
-            f"Difference: {abs(actual_peak - peak):.4f} MW"
-        )
-
-        # Assert annual constraint with 1 MWh
-        assert abs(actual_annual - annual) < 1, (
-            f"Bus {bus}: Annual constraint violated - "
-            f"Expected: {annual:.2f} MWh, Got: {actual_annual:.2f} MWh, "
-            f"Difference: {abs(actual_annual - annual):.4f} MWh"
-        )
     logger.info(
         "EV unmanaged charging demand profile successfully generated with both peak and annual constraints satisfied."
     )

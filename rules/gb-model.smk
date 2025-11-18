@@ -599,6 +599,7 @@ rule compose_network:
         renewable=config["renewable"],
         lines=config["lines"],
         enable_chp=config["chp"]["enable"],
+        ev_profile_config=config["ev"]["ev_demand_profile_transformation"],
     input:
         unpack(input_profile_tech),
         unpack(demands),
