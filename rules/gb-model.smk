@@ -282,12 +282,15 @@ rule create_powerplants_table:
         eur_config=config["fes"]["eur"],
         dukes_config=config["dukes-5.11"],
         default_set=config["fes"]["default_set"],
+        costs_config=config["costs"],
     input:
         gsp_data=resources("gb-model/regional_gb_data.csv"),
         eur_data=resources("gb-model/national_eur_data.csv"),
         tech_costs=lambda w: resources(
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
+        fes_power_costs=resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
+        fes_carbon_costs=resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
         dukes_data=resources("gb-model/dukes-current-capacity-clustered.csv"),
     output:
         csv=resources("gb-model/fes_powerplants.csv"),

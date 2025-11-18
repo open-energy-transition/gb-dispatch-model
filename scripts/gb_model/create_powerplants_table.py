@@ -91,8 +91,11 @@ def _ensure_column_with_default(
 
 def assign_technical_and_costs_defaults(
     df: pd.DataFrame,
-    costs: pd.DataFrame,
+    tech_costs_path: str,
+    fes_power_costs_path: str,
+    fes_carbon_costs_path: str,
     default_characteristics: dict[str, dict],
+    costs_config: dict[str, dict],
 ) -> pd.DataFrame:
     """
     Enrich powerplants dataframe with cost and technical parameters.
@@ -107,6 +110,25 @@ def assign_technical_and_costs_defaults(
     Returns:
         pd.DataFrame: enriched powerplants data ready for PyPSA
     """
+    # Load costs data
+    costs = load_costs(tech_costs_path, costs_config)
+    # fes_power_costs = pd.read_csv(fes_power_costs_path)
+    # fes_carbon_costs = pd.read_csv(fes_carbon_costs_path)
+    logger.info("Loaded technology costs and FES power and carbon costs data")
+
+    # Join cost data
+    df = df.join(costs[costs_config["marginal_cost_columns"]], on="carrier")
+
+    # Fill CO2 intensities and fuel costs using carrier_fuel_mapping
+    df["CO2 intensity"] = (
+        df["carrier"]
+        .map(costs_config["carrier_fuel_mapping"])
+        .map(costs["CO2 intensity"])
+    )
+    df["fuel"] = (
+        df["carrier"].map(costs_config["carrier_fuel_mapping"]).map(costs["fuel"])
+    )
+
     df["bus"] = df["bus"].astype(str)
     df["build_year"] = df["year"].astype(int)
 
@@ -261,6 +283,34 @@ def distribute_direct_data(
     return df_capacity_gb_final.to_frame("p_nom").reset_index()
 
 
+def load_costs(
+    tech_costs_path: str,
+    costs_config: dict[str, dict],
+) -> pd.DataFrame:
+    """Load technology costs data."""
+    costs = pd.read_csv(tech_costs_path, index_col=[0, 1])
+
+    # correct units to MW
+    costs.loc[costs.unit.str.contains("/kW"), "value"] *= 1e3
+    costs.loc[costs.unit.str.contains("/GW"), "value"] /= 1e3
+    costs.unit = costs.unit.str.replace("/kW", "/MW")
+    costs.unit = costs.unit.str.replace("/GW", "/MW")
+
+    # Convert costs to GBP from EUR or USD
+    costs.loc[costs.unit.str.contains("EUR"), "value"] /= costs_config["GBP_to_EUR"]
+    costs.loc[costs.unit.str.contains("USD"), "value"] /= costs_config["GBP_to_USD"]
+    costs.unit = costs.unit.str.replace("EUR", "GBP")
+    costs.unit = costs.unit.str.replace("USD", "GBP")
+
+    # min_count=1 is important to generate NaNs which will be filled with default characteristics later
+    costs = costs.value.unstack(level=1).groupby("technology").sum(min_count=1)
+
+    # Keep only relevant cost columns
+    costs = costs[costs_config["relevant_cost_columns"]]
+
+    return costs
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
@@ -282,6 +332,7 @@ if __name__ == "__main__":
     eur_config = snakemake.params.eur_config
     dukes_config = snakemake.params.dukes_config
     default_set = snakemake.params.default_set
+    costs_config = snakemake.params.costs_config
 
     df_capacity_gb_gsp = capacity_table(
         df_gsp[df_gsp.bus.notnull()], gb_config, default_set
@@ -313,12 +364,14 @@ if __name__ == "__main__":
 
     df_capacity = pd.concat([df_capacity_gb, df_capacity_eur], ignore_index=True)
 
-    # Load costs data and enrich powerplants with technical/cost parameters
-    costs = pd.read_csv(snakemake.input.tech_costs, index_col=0)
-    logger.info("Loaded technology costs data")
-
+    # Enrich powerplants with technical/cost parameters
     df_powerplants = assign_technical_and_costs_defaults(
-        df_capacity, costs, snakemake.params.default_characteristics
+        df_capacity,
+        tech_costs_path=snakemake.input.tech_costs,
+        fes_power_costs_path=snakemake.input.fes_power_costs,
+        fes_carbon_costs_path=snakemake.input.fes_carbon_costs,
+        default_characteristics=snakemake.params.default_characteristics,
+        costs_config=costs_config,
     )
     logger.info("Enriched powerplants with cost and technical parameters")
 
