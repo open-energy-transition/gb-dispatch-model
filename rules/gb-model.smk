@@ -611,6 +611,7 @@ def demands(w):
             ),
         ]
         for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"]
+        if demand_type != "fes_transport"
     }
 
 
@@ -649,6 +650,7 @@ rule compose_network:
         chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
         ev_demand_shape=resources("gb-model/ev_demand_shape_s_{clusters}.csv"),
         ev_demand_peak=resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
+        ev_demand_annual=resources("gb-model/fes_transport_demand.csv"),
         ev_storage_capacity=resources("gb-model/regional_fes_ev_storage.csv"),
         ev_dsm_profile=resources("dsm_profile_s_{clusters}.csv"),
         intermediate_data=[

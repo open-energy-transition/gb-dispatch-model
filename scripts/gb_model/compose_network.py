@@ -928,10 +928,10 @@ if __name__ == "__main__":
     demands = {
         k.replace("demand_", ""): v
         for k, v in snakemake.input.items()
-        if k.startswith("demand_") and k != "demand_fes_transport"
+        if k.startswith("demand_")
     }
     ev_data = {
-        "ev_demand_annual": snakemake.input.demand_fes_transport[0],
+        "ev_demand_annual": snakemake.input.ev_demand_annual,
         "ev_demand_shape": snakemake.input.ev_demand_shape,
         "ev_demand_peak": snakemake.input.ev_demand_peak,
         "ev_storage_capacity": snakemake.input.ev_storage_capacity,
