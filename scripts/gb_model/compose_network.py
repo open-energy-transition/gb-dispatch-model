@@ -397,6 +397,7 @@ def add_load(
 def add_EVs(
     n: pypsa.Network,
     ev_data: dict[str, str],
+    ev_params: dict[str, float],
     year: int,
 ):
     """
@@ -420,6 +421,16 @@ def add_EVs(
                 CSV path for EV smart charging (DSR) data
             ev_v2g:
                 CSV path for EV V2G data
+    ev_params: dict[str, float]
+        Dictionary containing EV profile adjustment parameters such as:
+            relative_peak_tolerance: float
+                Relative tolerance for peak load
+            relative_energy_tolerance: float
+                Relative tolerance for energy load
+            upper_optimization_bound: float
+                Upper bound for optimization
+            lower_optimization_bound: float
+                Lower bound for optimization
     year:
         Year used in the modelling
     """
@@ -429,6 +440,7 @@ def add_EVs(
         ev_data["ev_demand_annual"],
         ev_data["ev_demand_peak"],
         year=year,
+        ev_params=ev_params,
     )
 
     # Add EV bus
@@ -618,7 +630,7 @@ def _transform_ev_profile_with_shape_adjustment(
     final_peak = final_profile.max()
     final_annual = final_profile.sum()
 
-    logger.debug(
+    logger.info(
         "Gamma optimization result for bus %s: optimal_gamma=%.4f, final_peak=%.2f MW, target_peak=%.2f MW, final_annual=%.2f MWh, target_annual=%.2f MWh",
         shape_series.name,
         optimal_gamma,
@@ -648,6 +660,7 @@ def _estimate_ev_demand_profile(
     ev_demand_annual_path: str,
     ev_demand_peak_path: str,
     year: int,
+    ev_params: dict[str, float],
 ) -> pd.DataFrame:
     """
     Estimate the EV demand profile for the given year using shape, annual and peak data.
@@ -662,6 +675,8 @@ def _estimate_ev_demand_profile(
         CSV path for peak EV demand
     year : int
         Year used in the modelling
+    ev_params: dict[str, float]
+        Dictionary containing EV profile adjustment parameters
 
     Returns
     -------
@@ -691,18 +706,10 @@ def _estimate_ev_demand_profile(
             ev_demand_shape[bus],
             peak,
             annual,
-            relative_peak_tolerance=snakemake.params.ev_profile_config[
-                "relative_peak_tolerance"
-            ],
-            relative_energy_tolerance=snakemake.params.ev_profile_config[
-                "relative_energy_tolerance"
-            ],
-            upper_optimization_bound=snakemake.params.ev_profile_config[
-                "upper_optimization_bound"
-            ],
-            lower_optimization_bound=snakemake.params.ev_profile_config[
-                "lower_optimization_bound"
-            ],
+            relative_peak_tolerance=ev_params["relative_peak_tolerance"],
+            relative_energy_tolerance=ev_params["relative_energy_tolerance"],
+            upper_optimization_bound=ev_params["upper_optimization_bound"],
+            lower_optimization_bound=ev_params["lower_optimization_bound"],
         )
 
     logger.info(
@@ -803,6 +810,7 @@ def compose_network(
     year: int,
     enable_chp: bool,
     ev_data: dict[str, str],
+    ev_params: dict[str, float],
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -847,6 +855,8 @@ def compose_network(
         Whether to enable CHP constraints
     ev_data : dict[str, str]
         Dictionary containing EV demand and flexibility data
+    ev_params : dict[str, float]
+        Dictionary containing EV profile adjustment parameters
     """
     network = pypsa.Network(network_path)
     max_hours = electricity_config["max_hours"]
@@ -905,7 +915,7 @@ def compose_network(
 
     add_load(network, demands, year)
 
-    add_EVs(network, ev_data, year)
+    add_EVs(network, ev_data, ev_params, year)
 
     finalise_composed_network(network, context)
 
@@ -939,7 +949,20 @@ if __name__ == "__main__":
         "ev_v2g": snakemake.input.regional_fes_ev_v2g,
         "ev_dsm_profile": snakemake.input.ev_dsm_profile,
     }
-
+    ev_params = {
+        "relative_peak_tolerance": snakemake.params.ev_profile_config[
+            "relative_peak_tolerance"
+        ],
+        "relative_energy_tolerance": snakemake.params.ev_profile_config[
+            "relative_energy_tolerance"
+        ],
+        "upper_optimization_bound": snakemake.params.ev_profile_config[
+            "upper_optimization_bound"
+        ],
+        "lower_optimization_bound": snakemake.params.ev_profile_config[
+            "lower_optimization_bound"
+        ],
+    }
     compose_network(
         network_path=snakemake.input.network,
         output_path=snakemake.output.network,
@@ -958,4 +981,5 @@ if __name__ == "__main__":
         year=int(snakemake.wildcards.year),
         enable_chp=snakemake.params.enable_chp,
         ev_data=ev_data,
+        ev_params=ev_params,
     )
