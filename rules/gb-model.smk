@@ -494,6 +494,20 @@ rule cluster_baseline_electricity_demand_timeseries:
         "../scripts/gb_model/cluster_baseline_electricity_demand_timeseries.py"
 
 
+rule process_cop_profiles:
+    message:
+        "Process COP profile for {wildcards.year} obtained from existing PyPSA-Eur rules"
+    params:
+        year=lambda wildcards: wildcards.year
+    input:
+        cop_profile=resources("cop_profiles_base_s_{clusters}_{year}.nc"),
+        clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
+        district_heat_share=resources("district_heat_share.csv"),
+    output:
+        csv=resources("ashp_cop_base_s_{clusters}_{year}.csv"),
+    script:
+        "../scripts/gb_model/process_cop_profiles.py"
+
 rule cluster_heat_demand_timeseries:
     message:
         "Cluster default PyPSA-Eur heat demand timeseries by bus"
