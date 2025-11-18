@@ -484,6 +484,9 @@ def add_EVs(
     )
 
     # Add the EV store to pypsa Network
+    ev_dsm_profile = pd.read_csv(
+        ev_data["ev_dsm_profile"], index_col=0, parse_dates=True
+    )
     n.add(
         "Store",
         ev_storage_capacity.index,
@@ -492,7 +495,7 @@ def add_EVs(
         e_nom=ev_storage_capacity["MWh"],
         e_cyclic=True,
         carrier="EV store",
-        # TODO: add e_min_pu to mimic DSR
+        e_min_pu=ev_dsm_profile.loc[n.snapshots, ev_storage_capacity.index],
     )
 
     # Load EV dsr and V2G data
@@ -934,6 +937,7 @@ if __name__ == "__main__":
         "ev_storage_capacity": snakemake.input.ev_storage_capacity,
         "ev_smart_charging": snakemake.input.regional_fes_ev_dsm,
         "ev_v2g": snakemake.input.regional_fes_ev_v2g,
+        "ev_dsm_profile": snakemake.input.ev_dsm_profile,
     }
 
     compose_network(

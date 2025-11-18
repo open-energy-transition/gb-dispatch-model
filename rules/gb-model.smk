@@ -590,6 +590,18 @@ def demands(w):
     }
 
 
+def flexibilities(w):
+    """Collate flexibility data into input of `compose_network`"""
+    return {
+        f"regional_{flexibility_type}": resources(
+            f"gb-model/regional_{flexibility_type}.csv"
+        )
+        for flexibility_type in config["fes"]["gb"]["flexibility"][
+            "Technology Detail"
+        ].keys()
+    }
+
+
 rule compose_network:
     params:
         countries=config["countries"],
@@ -603,14 +615,7 @@ rule compose_network:
     input:
         unpack(input_profile_tech),
         unpack(demands),
-        **{
-            f"regional_{flexibility_type}": resources(
-                f"gb-model/regional_{flexibility_type}.csv"
-            )
-            for flexibility_type in config["fes"]["gb"]["flexibility"][
-                "Technology Detail"
-            ].keys()
-        },
+        unpack(flexibilities),
         network=resources("networks/base_s_{clusters}.nc"),
         powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(
@@ -621,6 +626,7 @@ rule compose_network:
         ev_demand_shape=resources("gb-model/ev_demand_shape_s_{clusters}.csv"),
         ev_demand_peak=resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
         ev_storage_capacity=resources("gb-model/regional_fes_ev_storage.csv"),
+        ev_dsm_profile=resources("dsm_profile_s_{clusters}.csv"),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(
