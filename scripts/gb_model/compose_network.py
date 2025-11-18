@@ -468,10 +468,7 @@ def add_EVs(
     ev_storage_capacity = pd.read_csv(
         ev_data["ev_storage_capacity"], index_col=["bus", "year"]
     )
-    ev_storage_capacity = ev_storage_capacity.loc[
-        ev_storage_capacity.index.get_level_values("year") == year
-    ]
-    ev_storage_capacity = ev_storage_capacity.droplevel("year")
+    ev_storage_capacity = ev_storage_capacity.xs(year, level="year")
 
     # Add EV storage buses
     n.add(
