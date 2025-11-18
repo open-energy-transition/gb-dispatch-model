@@ -510,8 +510,29 @@ rule process_cop_profiles:
         district_heat_share=resources("district_heat_share.csv"),
     output:
         csv=resources("ashp_cop_base_s_{clusters}_{year}.csv"),
+    log:
+        logs("process_cop_profiles_{clusters}_{year}.log"),
     script:
         "../scripts/gb_model/process_cop_profiles.py"
+
+
+rule process_fes_heating_mix:
+    message:
+        "Process the share of electrified heating technologies from FES workbook"
+    params:
+        year=lambda wildcards: wildcards.year,
+        electrified_heating_technologies=config["fes"]["gb"]["demand"]["heat"]["electrified_heating_technologies"],
+        scenario=config["fes"]["gb"]["scenario"],
+    input:
+        fes_residential_heatmix=resources("gb-model/fes/2021/CV.16.csv"),
+        fes_commercial_heatmix=resources("gb-model/fes/2021/CV.55.csv")
+    output:
+        csv=resources("gb-model/fes/heating_mix_{year}.csv")
+    log:
+        logs("process_fes_heating_mix_{year}.log"),
+    script:
+        "../scripts/gb_model/process_fes_heating_mix.py"
+
 
 rule cluster_heat_demand_timeseries:
     message:
@@ -529,7 +550,6 @@ rule cluster_heat_demand_timeseries:
         district_heat_share=resources("district_heat_share.csv"),
         fes_residential_heatmix=resources("gb-model/fes/2021/CV.16.csv"),
         fes_commercial_heatmix=resources("gb-model/fes/2021/CV.55.csv")
-
     output:
         csv_file=resources("heat_demand_s_{clusters}.csv"),
     log:

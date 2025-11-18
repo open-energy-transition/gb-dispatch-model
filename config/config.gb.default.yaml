@@ -498,7 +498,7 @@ fes-sheet-config:
       index_col: [0,1]
       header: 0
       rename:
-        index: ["Type","2020"]
+        index: ["Type",2020]
     
     
     CV.55:
@@ -507,7 +507,7 @@ fes-sheet-config:
       index_col: [0,1]
       header: 0
       rename:
-        index: ["Type","2020"]
+        index: ["Type",2020]
  
   2023:
     WS1:
@@ -599,6 +599,8 @@ fes:
         fes_baseline_electricity: ["baseline demand"]
         fes_transport: ["ev demand 1", "ev demand 2"]
         fes_heat: ["residential hp demand","i&c hp demand"]
+      heat:
+        electrified_heating_technologies: ["Electric resistive","ASHP","GSHP"]
 
     flexibility:
       Technology Detail:
