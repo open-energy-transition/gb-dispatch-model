@@ -10,6 +10,11 @@ from pathlib import Path
 import numpy as np
 
 
+wildcard_constraints:
+    flexibility_type="fes_ev_dsm|fes_ev_v2g|fes_residential_dsr|fes_services_dsr",
+    ev_data_type="storage|unmanaged_charging",
+
+
 # Rule to download and extract ETYS boundary data
 rule download_data:
     message:
@@ -545,18 +550,37 @@ rule create_ev_storage_table:
         "../scripts/gb_model/create_ev_storage_table.py"
 
 
-rule process_regional_ev_storage:
+rule process_regional_ev_data:
     message:
-        "Process regional EV storage data into CSV format"
+        "Process regional EV {wildcards.ev_data_type} data into CSV format"
     input:
-        storage=resources("gb-model/fes_ev_storage.csv"),
-        flexibility=resources("gb-model/regional_fes_ev_v2g.csv"),
+        input_csv=resources("gb-model/fes_ev_{ev_data_type}.csv"),
+        reference_data=lambda wildcards: {
+            "unmanaged_charging": resources("gb-model/fes_transport_demand.csv"),
+            "storage": resources("gb-model/regional_fes_ev_v2g.csv"),
+        }[wildcards.ev_data_type],
     output:
-        regional_storage=resources("gb-model/regional_fes_ev_storage.csv"),
+        regional_output=resources("gb-model/regional_fes_ev_{ev_data_type}.csv"),
     log:
-        logs("process_regional_ev_storage.log"),
+        logs("process_regional_ev_{ev_data_type}.log"),
     script:
-        "../scripts/gb_model/process_regional_ev_storage.py"
+        "../scripts/gb_model/process_regional_ev_data.py"
+
+
+rule create_ev_unmanaged_charging_table:
+    message:
+        "Process EV unmanaged charging demand from FES workbook into CSV format"
+    params:
+        scenario=config["fes"]["gb"]["scenario"],
+        year_range=config["fes"]["year_range_incl"],
+    input:
+        unmanaged_charging_sheet=resources("gb-model/fes/2021/FL.11.csv"),
+    output:
+        unmanaged_charging=resources("gb-model/fes_ev_unmanaged_charging.csv"),
+    log:
+        logs("create_ev_unmanaged_charging_table.log"),
+    script:
+        "../scripts/gb_model/create_ev_unmanaged_charging_table.py"
 
 
 rule create_chp_p_min_pu_profile:
@@ -609,6 +633,9 @@ rule compose_network:
         ),
         hydro_capacities=ancient("data/hydro_capacities.csv"),
         chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
+        ev_demand_shape=resources("gb-model/ev_demand_shape_s_{clusters}.csv"),
+        ev_demand_peak=resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
+        ev_storage_capacity=resources("gb-model/regional_fes_ev_storage.csv"),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(
@@ -640,7 +667,6 @@ rule compose_network:
                     "Technology Detail"
                 ].keys(),
             ),
-            resources("gb-model/regional_fes_ev_storage.csv"),
         ],
     output:
         network=resources("networks/composed_{clusters}_{year}.nc"),
