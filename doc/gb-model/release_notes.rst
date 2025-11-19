@@ -12,6 +12,7 @@ Release Notes
 Upcoming Release
 ================
 
+* Limit GB model to ``clustered`` clusters.
 * Add EV to pypsa Network (#114)
 * Tablulated regional unmanaged EV charging demand data (#112).
 * Add demands to pypsa Network (#102)
