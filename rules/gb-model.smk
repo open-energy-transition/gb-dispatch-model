@@ -506,13 +506,13 @@ rule process_cop_profiles:
         year=lambda wildcards: wildcards.year,
         heat_pump_sources=config["sector"]["heat_pump_sources"]
     input:
-        cop_profile=resources("cop_profiles_base_s_{clusters}_{year}.nc"),
-        clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
+        cop_profile=resources("cop_profiles_base_s_clustered_{year}.nc"),
+        clustered_pop_layout=resources("pop_layout_base_s_clustered.csv"),
         district_heat_share=resources("district_heat_share.csv"),
     output:
-        csv=resources("cop_base_s_{clusters}_{year}.csv"),
+        csv=resources("cop_base_s_clustered_{year}.csv"),
     log:
-        logs("process_cop_profiles_{clusters}_{year}.log"),
+        logs("process_cop_profiles_clustered_{year}.log"),
     script:
         "../scripts/gb_model/process_cop_profiles.py"
 
@@ -541,15 +541,15 @@ rule process_heat_demand_shape:
     params:
         year=lambda wildcards: wildcards.year
     input:
-        load=resources("hourly_heat_demand_total_base_s_{clusters}.nc"),
-        cop_profile=resources("cop_base_s_{clusters}_{year}.csv"),
+        load=resources("hourly_heat_demand_total_base_s_clustered.nc"),
+        cop_profile=resources("cop_base_s_clustered_{year}.csv"),
         heating_mix=resources("gb-model/fes/heating_mix_{year}.csv")
     output:
-        residential_csv_file=resources("gb-model/residential_heat_demand_shape_s_{clusters}_{year}.csv"),
+        residential_csv_file=resources("gb-model/residential_heat_demand_shape_s_clustered_{year}.csv"),
         #Industry load is not generated in PyPSA-Eur, hence the same profile as services is considered to be applicable for c&i
-        commercial_csv_file=resources("gb-model/iandc_heat_demand_shape_s_{clusters}_{year}.csv"), 
+        commercial_csv_file=resources("gb-model/iandc_heat_demand_shape_s_clustered_{year}.csv"), 
     log:
-        logs("heat_demand_s_{clusters}_{year}.log"),
+        logs("heat_demand_s_clustered_{year}.log"),
     script:
         "../scripts/gb_model/process_heat_demand_shape.py"
 
@@ -762,9 +762,9 @@ rule compose_network:
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
         ],
     output:
-        network=resources("networks/composed_{clusters}_{year}.nc"),
+        network=resources("networks/composed_clustered_{year}.nc"),
     log:
-        logs("compose_network_{clusters}_{year}.log"),
+        logs("compose_network_clustered_{year}.log"),
     resources:
         mem_mb=4000,
     wildcard_constraints:
