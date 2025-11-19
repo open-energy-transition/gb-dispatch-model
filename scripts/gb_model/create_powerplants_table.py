@@ -101,15 +101,28 @@ def assign_technical_and_costs_defaults(
     """
     Enrich powerplants dataframe with cost and technical parameters.
 
-    Adds efficiency, marginal_cost, capital_cost, lifetime, build_year, and unique index.
-
     Args:
-        df (pd.DataFrame): powerplant data with bus, year, carrier, set, p_nom columns.
-        costs (pd.DataFrame): cost data indexed by carrier.
-        default_characteristics (dict): default values for technical and cost parameters
+        df: Powerplant data with bus, year, carrier, set, p_nom columns
+        tech_costs_path: Path to technology costs CSV file
+        fes_power_costs_path: Path to FES power costs CSV file
+        fes_carbon_costs_path: Path to FES carbon costs CSV file
+        default_characteristics: Default values for technical and cost parameters
+        costs_config: Configuration dict containing mappings and conversion rates
+        fes_scenario: FES scenario name (e.g., "leading the way")
 
     Returns:
-        pd.DataFrame: enriched powerplants data ready for PyPSA
+        Enriched powerplants DataFrame with efficiency, marginal_cost, VOM, fuel,
+        CO2 intensity, capital_cost, lifetime, build_year, and unique index
+
+    Steps:
+        1. Load technology costs, FES power costs, and FES carbon costs
+        2. Join technology costs on carrier
+        3. Fill CO2 intensity and fuel costs using carrier_fuel_mapping
+        4. Format bus and build_year columns
+        5. Integrate FES power costs (VOM and fuel)
+        6. Integrate FES carbon costs
+        7. Calculate marginal_cost from VOM, fuel, efficiency, CO2 intensity, and carbon_cost
+        8. Create unique index (bus carrier-year-idx)
     """
     # Load costs data
     costs = _load_costs(tech_costs_path, costs_config)
@@ -314,7 +327,6 @@ def _load_costs(
 
 def _load_fes_power_costs(
     fes_power_costs_path: str,
-    costs_config: dict[str, dict],
     fes_scenario: str,
 ) -> pd.DataFrame:
     """
@@ -324,21 +336,13 @@ def _load_fes_power_costs(
 
     Args:
         fes_power_costs_path (str): Path to FES power costs CSV file.
-        costs_config (dict): Configuration dict containing:
-            - fes_costs_connection_type: Connection type to filter (e.g., "Transmission", "Decentralised")
         fes_scenario (str): FES scenario name to filter (e.g., "leading the way").
 
     Returns:
         pd.DataFrame: Multi-indexed DataFrame with:
-            - Index: ["Sub Type", "year"]
+            - Index: ["technology", "year"]
             - Columns: ["fuel", "VOM"] (Variable Other Work Costs)
             - Values: Cost data in GBP
-
-    Notes:
-        - Filters for cost types: "variable other work costs" and "fuel cost"
-        - Selects only the specified connection type from costs_config
-        - Renames columns to match expected names (Fuel Cost -> fuel, etc.)
-        - Fills missing values with 0
     """
     # Load FES power costs
     fes_power_costs = pd.read_csv(fes_power_costs_path)
@@ -355,16 +359,9 @@ def _load_fes_power_costs(
         .isin(["variable other work costs", "fuel cost"])
     ]
 
-    # Synchronize technology name between VOM and fuel cost entries
-    # fes_power_costs.loc[:, "Sub Type"] = fes_power_costs["Sub Type"].replace(costs_config["carier_name_synchronization"])
-
     # Pivot to create multi-index with Cost Type as columns
     fes_power_costs.loc[:, "technology"] = (
-        fes_power_costs["Connection"]
-        + "-"
-        + fes_power_costs["Type"]
-        + "-"
-        + fes_power_costs["Sub Type"]
+        fes_power_costs["Type"] + "-" + fes_power_costs["Sub Type"]
     )
     fes_power_costs_pivoted = fes_power_costs.pivot_table(
         index=["technology", "year"],
