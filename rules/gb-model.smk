@@ -10,6 +10,11 @@ from pathlib import Path
 import numpy as np
 
 
+wildcard_constraints:
+    flexibility_type="fes_ev_dsm|fes_ev_v2g|fes_residential_dsr|fes_services_dsr",
+    ev_data_type="storage|unmanaged_charging",
+
+
 # Rule to download and extract ETYS boundary data
 rule download_data:
     message:
@@ -234,12 +239,12 @@ rule process_dukes_current_capacities:
         "Assign current capacities to GB model regions and PyPSA-Eur carriers"
     input:
         regions=resources("gb-model/merged_shapes.geojson"),
-        regions_offshore=resources("regions_offshore_base_s_{clusters}.geojson"),
+        regions_offshore=resources("regions_offshore_base_s_clustered.geojson"),
         dukes_data="data/gb-model/downloaded/dukes-5.11.xlsx",
     output:
-        csv=resources("gb-model/dukes-current-capacity-{clusters}.csv"),
+        csv=resources("gb-model/dukes-current-capacity.csv"),
     log:
-        logs("process_dukes_current_capacities_{clusters}.log"),
+        logs("process_dukes_current_capacities.log"),
     params:
         sheet_config=config["dukes-5.11"]["sheet-config"],
         target_crs=config["target_crs"],
@@ -283,7 +288,7 @@ rule create_powerplants_table:
         tech_costs=lambda w: resources(
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
-        dukes_data=resources("gb-model/dukes-current-capacity-clustered.csv"),
+        dukes_data=resources("gb-model/dukes-current-capacity.csv"),
     output:
         csv=resources("gb-model/fes_powerplants.csv"),
     log:
@@ -485,11 +490,11 @@ rule cluster_baseline_electricity_demand_timeseries:
         scaling_factor=config_provider("load", "scaling_factor"),
     input:
         load=resources("electricity_demand_base_s.nc"),
-        busmap=resources("busmap_base_s_{clusters}.csv"),
+        busmap=resources("busmap_base_s_clustered.csv"),
     output:
-        csv_file=resources("baseline_electricity_demand_s_{clusters}.csv"),
+        csv_file=resources("baseline_electricity_demand_s_clustered.csv"),
     log:
-        logs("baseline_electricity_demand_s_{clusters}.log"),
+        logs("cluster_baseline_electricity_demand_timeseries.log"),
     script:
         "../scripts/gb_model/cluster_baseline_electricity_demand_timeseries.py"
 
@@ -500,11 +505,11 @@ rule process_demand_shape:
     params:
         demand_sector=lambda wildcards: wildcards.demand_sector,
     input:
-        pypsa_eur_demand_timeseries=resources("{demand_sector}_demand_s_{clusters}.csv"),
+        pypsa_eur_demand_timeseries=resources("{demand_sector}_demand_s_clustered.csv"),
     output:
-        demand_shape=resources("gb-model/{demand_sector}_demand_shape_s_{clusters}.csv"),
+        demand_shape=resources("gb-model/{demand_sector}_demand_shape.csv"),
     log:
-        logs("{demand_sector}_demand_shape_s_{clusters}.log"),
+        logs("process_demand_shape_{demand_sector}.log"),
     script:
         "../scripts/gb_model/process_demand_shape.py"
 
@@ -518,12 +523,12 @@ rule process_ev_demand_shape:
         plug_in_offset=config["ev"]["plug_in_offset"],
         charging_duration=config["ev"]["charging_duration"],
     input:
-        clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
+        clustered_pop_layout=resources("pop_layout_base_s_clustered.csv"),
         traffic_data_KFZ="data/bundle/emobility/KFZ__count",
     output:
-        demand_shape=resources("gb-model/ev_demand_shape_s_{clusters}.csv"),
+        demand_shape=resources("gb-model/ev_demand_shape.csv"),
     log:
-        logs("ev_demand_shape_s_{clusters}.log"),
+        logs("process_ev_demand_shape.log"),
     script:
         "../scripts/gb_model/process_ev_demand_shape.py"
 
@@ -545,18 +550,37 @@ rule create_ev_storage_table:
         "../scripts/gb_model/create_ev_storage_table.py"
 
 
-rule process_regional_ev_storage:
+rule process_regional_ev_data:
     message:
-        "Process regional EV storage data into CSV format"
+        "Process regional EV {wildcards.ev_data_type} data into CSV format"
     input:
-        storage=resources("gb-model/fes_ev_storage.csv"),
-        flexibility=resources("gb-model/regional_fes_ev_v2g.csv"),
+        input_csv=resources("gb-model/fes_ev_{ev_data_type}.csv"),
+        reference_data=lambda wildcards: {
+            "unmanaged_charging": resources("gb-model/fes_transport_demand.csv"),
+            "storage": resources("gb-model/regional_fes_ev_v2g.csv"),
+        }[wildcards.ev_data_type],
     output:
-        regional_storage=resources("gb-model/regional_fes_ev_storage.csv"),
+        regional_output=resources("gb-model/regional_fes_ev_{ev_data_type}.csv"),
     log:
-        logs("process_regional_ev_storage.log"),
+        logs("process_regional_ev_{ev_data_type}.log"),
     script:
-        "../scripts/gb_model/process_regional_ev_storage.py"
+        "../scripts/gb_model/process_regional_ev_data.py"
+
+
+rule create_ev_unmanaged_charging_table:
+    message:
+        "Process EV unmanaged charging demand from FES workbook into CSV format"
+    params:
+        scenario=config["fes"]["gb"]["scenario"],
+        year_range=config["fes"]["year_range_incl"],
+    input:
+        unmanaged_charging_sheet=resources("gb-model/fes/2021/FL.11.csv"),
+    output:
+        unmanaged_charging=resources("gb-model/fes_ev_unmanaged_charging.csv"),
+    log:
+        logs("create_ev_unmanaged_charging_table.log"),
+    script:
+        "../scripts/gb_model/create_ev_unmanaged_charging_table.py"
 
 
 rule create_chp_p_min_pu_profile:
@@ -568,11 +592,11 @@ rule create_chp_p_min_pu_profile:
         shutdown_threshold=config["chp"]["shutdown_threshold"],
     input:
         regions=resources("gb-model/merged_shapes.geojson"),
-        heat_demand=resources("hourly_heat_demand_total_base_s_{clusters}.nc"),
+        heat_demand=resources("hourly_heat_demand_total_base_s_clustered.nc"),
     output:
-        chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu.csv"),
     log:
-        logs("create_chp_p_min_pu_profile_{clusters}.log"),
+        logs("create_chp_p_min_pu_profile.log"),
     script:
         "../scripts/gb_model/create_chp_p_min_pu_profile.py"
 
@@ -603,11 +627,22 @@ def demands(w):
     return {
         f"demand_{demand_type}": [
             resources(f"gb-model/{demand_type}_demand.csv"),
-            resources(
-                f"gb-model/{demand_type.replace('fes_', '')}_demand_shape_s_clustered.csv"
-            ),
+            resources(f"gb-model/{demand_type.replace('fes_', '')}_demand_shape.csv"),
         ]
         for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"]
+        if demand_type != "fes_transport"
+    }
+
+
+def flexibilities(w):
+    """Collate flexibility data into input of `compose_network`"""
+    return {
+        f"regional_{flexibility_type}": resources(
+            f"gb-model/regional_{flexibility_type}.csv"
+        )
+        for flexibility_type in config["fes"]["gb"]["flexibility"][
+            "Technology Detail"
+        ].keys()
     }
 
 
@@ -620,17 +655,24 @@ rule compose_network:
         renewable=config["renewable"],
         lines=config["lines"],
         enable_chp=config["chp"]["enable"],
+        ev_profile_config=config["ev"]["ev_demand_profile_transformation"],
     input:
         unpack(input_profile_tech),
         unpack(demands),
+        unpack(flexibilities),
         eur_demand=resources("gb-model/eur_annual_demand.csv"),
-        network=resources("networks/base_s_{clusters}.nc"),
+        network=resources("networks/base_s_clustered.nc"),
         powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
         hydro_capacities=ancient("data/hydro_capacities.csv"),
-        chp_p_min_pu=resources("gb-model/chp_p_min_pu_{clusters}.csv"),
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu.csv"),
+        ev_demand_shape=resources("gb-model/ev_demand_shape.csv"),
+        ev_demand_peak=resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
+        ev_demand_annual=resources("gb-model/fes_transport_demand.csv"),
+        ev_storage_capacity=resources("gb-model/regional_fes_ev_storage.csv"),
+        ev_dsm_profile=resources("dsm_profile_s_clustered.csv"),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(
@@ -649,20 +691,10 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_supply.csv"),
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
-            resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
-            resources("gb-model/transport_demand_shape_s_clustered.csv"),
+            resources("gb-model/baseline_electricity_demand_shape.csv"),
+            resources("gb-model/transport_demand_shape.csv"),
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
-            expand(
-                [
-                    resources("gb-model/{flexibility_type}_flexibility.csv"),
-                    resources("gb-model/regional_{flexibility_type}.csv"),
-                ],
-                flexibility_type=config["fes"]["gb"]["flexibility"][
-                    "Technology Detail"
-                ].keys(),
-            ),
-            resources("gb-model/regional_fes_ev_storage.csv"),
         ],
     output:
         network=resources("networks/composed_{clusters}_{year}.nc"),
@@ -670,6 +702,9 @@ rule compose_network:
         logs("compose_network_{clusters}_{year}.log"),
     resources:
         mem_mb=4000,
+    wildcard_constraints:
+        # We only accept clustered clusters
+        clusters="clustered",
     script:
         "../scripts/gb_model/compose_network.py"
 
@@ -680,7 +715,7 @@ year_range = config["fes"]["year_range_incl"]
 rule compose_networks:
     input:
         expand(
-            resources("networks/composed_{clusters}_{year}.nc"),
+            resources("networks/composed_clustered_{year}.nc"),
             **config["scenario"],
             run=config["run"]["name"],
             year=list(np.arange(year_range[0], year_range[1])),
