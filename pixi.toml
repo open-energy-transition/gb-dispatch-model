@@ -163,7 +163,7 @@ gurobi = "<13.0"
 shapely = ">=2.1.2"
 
 [feature.gb-model.pypi-dependencies]
-pdfplumber = ">=0.11.8"
+pdfplumber = "==0.9.0"
 
 [environments]
 doc = { features = ["doc"], no-default-feature = true }

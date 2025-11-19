@@ -668,6 +668,7 @@ rule compose_network:
         ev_demand_annual=resources("gb-model/fes_transport_demand.csv"),
         ev_storage_capacity=resources("gb-model/regional_fes_ev_storage.csv"),
         ev_dsm_profile=resources("dsm_profile_s_clustered.csv"),
+        line_s_max_pu=resources("gb-model/line_s_max_pu.csv"),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(

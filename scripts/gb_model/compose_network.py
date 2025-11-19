@@ -792,6 +792,24 @@ def attach_chp_constraints(n: pypsa.Network, p_min_pu: pd.DataFrame) -> None:
     _add_timeseries_data_to_network(n.generators_t, p_min_pu_for_gens, "p_min_pu")
 
 
+def update_line_s_max_pu(network: pypsa.Network, line_s_max_pu_path: str) -> None:
+    """
+    Update the s_max_pu attribute for lines in the network.
+
+    Args:
+        network (pypsa.Network): The PyPSA network
+        s_max_pu (pd.Series): Series containing s_max_pu values indexed by line names
+    """
+    s_max_pu = pd.read_csv(line_s_max_pu_path, index_col="line", squeeze=True)
+    lines_in_network = network.lines.index.intersection(s_max_pu.index)
+    if lines_in_network.empty:
+        logger.warning("No matching lines found in the network for s_max_pu update.")
+        return
+
+    logger.info(f"Updating s_max_pu for {len(lines_in_network)} lines.")
+    network.lines.loc[lines_in_network, "s_max_pu"] = s_max_pu.loc[lines_in_network]
+
+
 def compose_network(
     network_path: str,
     output_path: str,
@@ -799,6 +817,7 @@ def compose_network(
     powerplants_path: str,
     hydro_capacities_path: str | None,
     chp_p_min_pu_path: str,
+    line_s_max_pu_path: str,
     renewable_profiles: dict[str, str],
     countries: list[str],
     costs_config: dict[str, Any],
@@ -827,6 +846,10 @@ def compose_network(
         Path to powerplants CSV file
     hydro_capacities_path : str or None
         Path to hydro capacities CSV file
+    chp_p_min_pu_path : str
+        Path to CHP minimum operation profile CSV file
+    line_s_max_pu_path : str
+        Path to line s_max_pu profile CSV file
     renewable_profiles : dict
         Mapping of carrier names to profile file paths
     heat_demand_path : str
@@ -917,6 +940,7 @@ def compose_network(
 
     add_EVs(network, ev_data, ev_params, year)
 
+    update_line_s_max_pu(network, line_s_max_pu_path)
     finalise_composed_network(network, context)
 
     network.export_to_netcdf(output_path)
@@ -971,6 +995,7 @@ if __name__ == "__main__":
         hydro_capacities_path=snakemake.input.hydro_capacities,
         renewable_profiles=renewable_profiles,
         chp_p_min_pu_path=snakemake.input.chp_p_min_pu,
+        line_s_max_pu_path=snakemake.input.line_s_max_pu,
         countries=snakemake.params.countries,
         costs_config=snakemake.params.costs_config,
         electricity_config=snakemake.params.electricity,

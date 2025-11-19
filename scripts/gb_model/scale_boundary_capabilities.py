@@ -19,37 +19,68 @@ from scripts._helpers import configure_logging, set_scenario_config
 logger = logging.getLogger(__name__)
 
 
-def _get_lines(lines: pd.DataFrame, bus1: str, bus0: str) -> pd.Series:
+def _get_lines(lines: pd.DataFrame, bus1: str | int, bus0: str | int) -> pd.Series:
+    """
+    Get a boolean mask of lines connecting bus0 and bus1.
+    This accounts for cases where bus0 and bus1 may be swapped.
+    """
     all_lines = set(lines["bus0"]).union(set(lines["bus1"]))
     for bus in (bus0, bus1):
-        if "GB " + bus not in all_lines:
+        if f"GB {bus}" not in all_lines:
             logger.warning(f"Bus 'GB {bus}' not found in network lines")
-    return ((lines["bus0"] == "GB " + bus0) & (lines["bus1"] == "GB " + bus1)) | (
-        (lines["bus0"] == "GB " + bus1) & (lines["bus1"] == "GB " + bus0)
+    return ((lines["bus0"] == f"GB {bus0}") & (lines["bus1"] == f"GB {bus1}")) | (
+        (lines["bus0"] == f"GB {bus1}") & (lines["bus1"] == f"GB {bus0}")
     )
 
 
 def get_boundary_s_noms(
-    network: pypsa.Network, etys_boundaries: dict[str, list[dict[str, str]]]
-) -> dict[str, list[float]]:
+    lines: pd.DataFrame, etys_boundaries: dict[str, list[dict[str, str]]]
+) -> pd.Series:
+    """
+    Calculate total boundary `s_nom` by summing all lines crossing each boundary.
+
+    Args:
+        lines (pd.DataFrame): PyPSA network lines DataFrame
+        etys_boundaries (dict[str, list[dict[str, str]]]): PyPSA bus to ETYS boundaries mapping
+
+    Returns:
+        pd.Series: boundary name to total s_nom mapping
+    """
     s_noms: dict[str, list[float]] = {}
     for boundary, bus_groups in etys_boundaries.items():
         s_noms[boundary] = []
         for buses in bus_groups:
-            lines = _get_lines(network.lines, buses["bus0"], buses["bus1"])
-            s_nom = network.lines[lines].s_nom.sum()
+            lines_mask = _get_lines(lines, buses["bus0"], buses["bus1"])
+            s_nom = lines[lines_mask].s_nom.sum()
             if s_nom == 0:
-                print(boundary, buses)
+                logger.warning(
+                    f"No lines found for boundary '{boundary}' between "
+                    f"buses '{buses['bus0']}' and '{buses['bus1']}'"
+                )
             s_noms[boundary].append(s_nom)
-    return s_noms
+    s_noms_df = pd.Series(s_noms).apply(lambda x: sum(x) if x else float("nan"))
+    return s_noms_df
 
 
 def get_s_max_pu(
     network: pypsa.Network,
-    s_noms: dict[str, list[float]],
+    s_noms: pd.Series,
     etys_caps: pd.DataFrame,
     etys_boundaries: dict[str, list[dict[str, str]]],
 ) -> pd.Series:
+    """
+    Get our best guess of scaling factors for `s_nom` for each PyPSA network line,
+    based on the target of the ETYS boundary capabilities.
+
+    Args:
+        network (pypsa.Network): PyPSA network object
+        s_noms (pd.Series): boundary name to total s_nom values
+        etys_caps (pd.DataFrame): ETYS boundary capabilities DataFrame
+        etys_boundaries (dict[str, list[dict[str, str]]]):  PyPSA bus to ETYS boundaries mapping
+
+    Returns:
+        pd.Series: Series of s_max_pu values for relevant lines
+    """
     merged_df = (
         pd.Series(s_noms)
         .apply(lambda x: sum(x) if x else float("nan"))
@@ -69,7 +100,7 @@ def get_s_max_pu(
                     lines, f"s_max_pu_{lim}"
                 ].map(lambda x: getattr(np, lim)([x, s_max_pu[boundary]]))
 
-    # Optimization: find s_max_pu for each line that minimizes error to target capabilities
+    # Optimisation: find s_max_pu for each line that minimizes error to target capabilities
     # Build mapping from lines to boundaries they contribute to
     all_lines = []
     for boundary, bus_groups in etys_boundaries.items():
@@ -93,52 +124,45 @@ def get_s_max_pu(
     ]
 
     # Objective function: sum of squared errors between target and achieved boundary capacities
-    def objective(x):
+    def _objective(x):
         # Apply s_max_pu values to network temporarily
-        network.lines.loc[relevant_lines, "s_max_pu"] = x
-
+        lines_copy = network.lines.copy(deep=True)
+        lines_copy.loc[relevant_lines, "s_nom"] *= x
         # Recalculate boundary s_noms with updated s_max_pu
-        current_s_noms = get_boundary_s_noms(network, etys_boundaries)
-        boundary_totals = pd.Series(current_s_noms).apply(
-            lambda vals: sum(vals) if vals else 0
-        )
+        boundary_totals = get_boundary_s_noms(lines_copy, etys_boundaries)
         df_ = boundary_totals.to_frame("s_nom").merge(
             etys_caps, left_index=True, right_on="boundary_name"
         )
-        # Calculate error for each boundary
-        total_error = sum(abs(df_.s_nom - df_.capability_mw))
-
+        # Calculate relative error for each boundary
+        total_error = np.sqrt(
+            sum((df_.s_nom - df_.capability_mw).div(df_.capability_mw) ** 2)
+        )
+        logger.info(f"Current total error: {total_error:.2f}")
         return total_error
 
     # Optimize
     logger.info(
         f"Optimizing s_max_pu for {relevant_lines.sum()} lines across {len(etys_boundaries)} boundaries"
     )
-    result = minimize(
-        objective,
-        x0,
-        method="SLSQP",
-        bounds=bounds[0],
-        options={"maxiter": 10000, "ftol": 1e-6},
-    )
+    result = minimize(_objective, x0, bounds=bounds[0])
 
     if not result.success:
-        logger.warning(f"Optimization did not fully converge: {result.message}")
+        logger.warning(f"Optimisation did not fully converge: {result.message}")
     else:
         logger.info(
-            f"Optimization converged successfully with final error: {result.fun:.2f} MW²"
+            f"Optimisation converged successfully with final error: {result.fun:.2f} MW²"
         )
 
-    # Create series with optimized s_max_pu values
+    # Create series with optimised s_max_pu values
     s_max_pu_optimised = pd.Series(result.x, index=relevant_lines[relevant_lines].index)
 
     # Log the results
-    network.lines.loc[relevant_lines, "s_max_pu"] = result.x
-    final_s_noms = get_boundary_s_noms(network, etys_boundaries)
-    final_totals = pd.Series(final_s_noms).apply(lambda vals: sum(vals) if vals else 0)
+    lines_copy = network.lines.copy(deep=True)
+    lines_copy.loc[relevant_lines, "s_nom"] *= result.x
+    final_s_noms = get_boundary_s_noms(lines_copy, etys_boundaries)
 
     for boundary in etys_boundaries.keys():
-        scaled_capacity = final_totals.get(boundary, 0)
+        scaled_capacity = final_s_noms.get(boundary, 0)
         target_capacity = merged_df.loc[boundary, "capability_mw"]
         error_pct = 100 * (scaled_capacity - target_capacity) / target_capacity
         logger.info(
@@ -162,7 +186,7 @@ if __name__ == "__main__":
     etys_boundaries = snakemake.params.etys_boundaries_to_lines
     etys_caps = pd.read_csv(snakemake.input.etys_caps)
 
-    boundary_s_noms = get_boundary_s_noms(network, etys_boundaries)
+    boundary_s_noms = get_boundary_s_noms(network.lines, etys_boundaries)
 
     s_max_pu_optimised = get_s_max_pu(
         network, boundary_s_noms, etys_caps, etys_boundaries

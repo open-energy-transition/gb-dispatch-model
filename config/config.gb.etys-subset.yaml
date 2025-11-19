@@ -11,16 +11,6 @@ urls:
   gb-etys-boundaries: https://api.neso.energy/dataset/997f4820-1ad4-499b-b1fe-4b8d3d7fbc72/resource/e914fcec-1dc9-4f1f-97e7-59c0d9521bea/download/etys-boundary-gis-data-mar25.zip
   etys: https://www.neso.energy/document/223046/download # ETYS November 2021
 
-clustering:
-  simplify_network:
-    to_substations: false
-    remove_stubs: false
-    remove_stubs_across_borders: false
-# docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
-electricity:
-  voltages: [132, 220., 300., 330., 380., 400., 500., 750.]
-  base_network: osm-raw
-
 # Manual region merging configuration
 region_operations:
   filter_boundaries_using_capabilities: true
@@ -202,9 +192,9 @@ region_operations:
       bus1: NW3-NW2
     - bus0: NW3-NW2
       bus1: B9-B8-NW3
-      # maybe not?
-    - bus0: B8-NW3-B7a
-      bus1: NW2-NW1
+      # Better convergence without this entry (it leapfrogs the boundary)
+    #- bus0: B8-NW3-B7a
+    #  bus1: NW2-NW1
     B14:
     - bus0: B14
       bus1: B9-SW1-EC5-B13-LE1-SC1.5
