@@ -509,7 +509,7 @@ rule process_cop_profiles:
         clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
         district_heat_share=resources("district_heat_share.csv"),
     output:
-        csv=resources("ashp_cop_base_s_{clusters}_{year}.csv"),
+        csv=resources("cop_base_s_{clusters}_{year}.csv"),
     log:
         logs("process_cop_profiles_{clusters}_{year}.log"),
     script:
@@ -534,28 +534,23 @@ rule process_fes_heating_mix:
         "../scripts/gb_model/process_fes_heating_mix.py"
 
 
-rule cluster_heat_demand_timeseries:
+rule process_heat_demand_shape:
     message:
-        "Cluster default PyPSA-Eur heat demand timeseries by bus"
+        "Cluster default PyPSA-Eur heat demand shape by bus"
     params:
-        scenario=config["fes"]["gb"]["scenario"],
+        year=lambda wildcards: wildcards.year
     input:
         load=resources("hourly_heat_demand_total_base_s_{clusters}.nc"),
-        busmap=resources("busmap_base_s_{clusters}.csv"),
-        cop_profile=expand(
-            resources("cop_profiles_base_s_{clusters}_{planning_horizons}.nc"),
-            **config["scenario"]
-        ),
-        clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
-        district_heat_share=resources("district_heat_share.csv"),
-        fes_residential_heatmix=resources("gb-model/fes/2021/CV.16.csv"),
-        fes_commercial_heatmix=resources("gb-model/fes/2021/CV.55.csv")
+        cop_profile=resources("cop_base_s_{clusters}_{year}.csv"),
+        heating_mix=resources("gb-model/fes/heating_mix_{year}.csv")
     output:
-        csv_file=resources("heat_demand_s_{clusters}.csv"),
+        residential_csv_file=resources("residential_heat_demand_shape_s_{clusters}_{year}.csv"),
+        #Industry load is not generated in PyPSA-Eur, hence the same profile as services is considered to be applicable for c&i
+        commercial_csv_file=resources("candi_heat_demand_shape_s_{clusters}_{year}.csv"), 
     log:
-        logs("heat_demand_s_{clusters}.log"),
+        logs("heat_demand_s_{clusters}_{year}.log"),
     script:
-        "../scripts/gb_model/cluster_heat_demand_timeseries.py"
+        "../scripts/gb_model/process_heat_demand_shape.py"
 
 
 rule process_demand_shape:
@@ -750,8 +745,6 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_supply.csv"),
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
-            #resources("gb-model/baseline_electricity_demand_shape_s_clustered.csv"),
-            #resources("gb-model/transport_demand_shape_s_clustered.csv"),
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
         ],

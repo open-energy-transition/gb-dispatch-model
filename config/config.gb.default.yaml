@@ -598,7 +598,8 @@ fes:
       Technology Detail:
         fes_baseline_electricity: ["baseline demand"]
         fes_transport: ["ev demand 1", "ev demand 2"]
-        fes_heat: ["residential hp demand","i&c hp demand"]
+        fes_residential_heat: ["residential hp demand"]
+        fes_iandc_heat: ["i&c hp demand"]
       heat:
         electrified_heating_technologies: ["Electric resistive","ASHP","GSHP"]
 
