@@ -84,37 +84,47 @@ costs:
   carrier_fuel_mapping:
     CCGT: gas
     OCGT: gas
-    biomass: biomass
-    coal: coal
-    gas: gas
-    oil: oil
-    lignite: lignite
-    nuclear: nuclear
-  fes_costs_carrier_mapping:
-    battery Store: Battery
-    biomass PP: Biomass # does not have value in FES
-    biomass CHP: Biomass CHP
-    coal PP: Coal
-    coal CHP: Coal CHP
-    CCGT PP: CCGT
-    CCGT CHP: CCGT CHP
-    gas CHP: Gas CHP
-    gas PP: Gas Reciprocating Engines
-    # geothermal PP: # no geothermal costs in FES
-    hydro PP: Hydro
-    hydrogen PP: Hydrogen
-    hydrogen CHP: Hydrogen # there is no hydrogen CHP costs in FES
-    marine PP: Marine
-    OCGT PP: OCGT
-    offwind PP: Offshore Wind
-    oil PP: Steam Oil
-    onwind PP: Onshore Wind
-    nuclear PP: Nuclear
-    PHS Store: Pumped Hydro
-    ror PP: Hydro # there is no separate run-of-river costs in FES
-    solar PP: Solar PV
-    waste PP: Waste
-    waste CHP: Waste CHP
+  fes_VOM_carrier_mapping:
+    battery Store: Transmission-Storage-Battery
+    biomass PP: Transmission-Biomass-Biomass
+    biomass CHP: Transmission-Biomass-Biomass CHP
+    CCGT PP: Transmission-Gas-CCGT
+    CCGT CHP: Transmission-Gas-CCGT # there is no CCGT CHP VOM costs in FES
+    coal PP: Transmission-Coal-Coal
+    coal CHP: Decentralised-Coal-Coal CHP
+    gas CHP: Transmission-Gas-Gas CHP
+    gas PP: Transmission-Gas-Gas Reciprocating Engines
+    hydro PP: Transmission-Hydro-Hydro
+    hydrogen PP: Transmission-Low Carbon-Hydrogen
+    hydrogen CHP: Transmission-Low Carbon-Hydrogen CHP # there is no hydrogen CHP costs in FES
+    marine PP: Transmission-Marine-Marine
+    OCGT PP: Transmission-Gas-OCGT
+    offwind PP: Transmission-Offshore Wind-Offshore Wind
+    oil PP: Transmission-Other Thermal-Fuel Oil
+    onwind PP: Transmission-Onshore Wind-Onshore Wind
+    nuclear PP: Transmission-Nuclear-Nuclear
+    PHS Store: Transmission-Storage-Pumped Hydro
+    ror PP: Transmission-Hydro-Hydro # there is no separate run-of-river costs in FES
+    solar PP: Transmission-Solar-Solar PV
+    waste PP: Transmission-Waste-Waste
+    waste CHP: Transmission-Waste-Waste CHP
+  fes_fuel_carrier_mapping:
+    biomass PP: Transmission-Biomass-Biomass
+    biomass CHP: Transmission-Biomass-Biomass CHP
+    CCGT PP: Transmission-Gas-CCGT
+    CCGT CHP: Transmission-Gas-CCGT CHP
+    coal PP: Transmission-Coal-Coal
+    coal CHP: Transmission-Coal-Coal CHP
+    gas CHP: Transmission-Gas-GT CHP
+    gas PP: Transmission-Gas-Gas Reciprocating Engines
+    hydrogen PP: Transmission-Hydrogen-CCGT
+    hydrogen CHP: Transmission-Hydrogen-CCGT # there is no hydrogen CHP fuel costs in FES
+    OCGT PP: Transmission-Gas-OCGT
+    oil PP: Transmission-Gasoil-Steam Oil
+    waste PP: Transmission-WoodPellets-Waste
+    waste CHP: Transmission-Gas-Waste CHP
+  carier_name_synchronization:
+    GT CHP: Gas CHP
   fes_costs_connection_type: Transmission
 
 
@@ -577,6 +587,15 @@ fes:
     marginal_cost:
       data: 0.0
       unit: ""
+    VOM:
+      data: 0.0
+      unit: ""
+    fuel:
+      data: 0.0
+      unit: ""
+    CO2 intensity:
+      data: 0.0
+      unit: "tCO2/MWh_th"
   gb:
     scenario: leading the way   # fes workbook
     scenario_abbreviations:

@@ -112,45 +112,45 @@ def assign_technical_and_costs_defaults(
         pd.DataFrame: enriched powerplants data ready for PyPSA
     """
     # Load costs data
-    costs = load_costs(tech_costs_path, costs_config)
-    # fes_power_costs = load_fes_power_costs(fes_power_costs_path, costs_config, fes_scenario)
-    # fes_carbon_costs = load_fes_carbon_costs(fes_carbon_costs_path, fes_scenario)
+    costs = _load_costs(tech_costs_path, costs_config)
+    fes_power_costs = _load_fes_power_costs(
+        fes_power_costs_path, costs_config, fes_scenario
+    )
+    fes_carbon_costs = _load_fes_carbon_costs(fes_carbon_costs_path, fes_scenario)
     logger.info("Loaded technology costs and FES power and carbon costs data")
 
     # Join cost data
     df = df.join(costs[costs_config["marginal_cost_columns"]], on="carrier")
 
-    # Fill CO2 intensities and fuel costs using carrier_fuel_mapping
-    df["CO2 intensity"] = (
+    # Fill CO2 intensities and fuel costs using carrier_fuel_mapping because fuel names might differ (Eg. CCGT uses gas)
+    df["CO2 intensity"] = df["CO2 intensity"].fillna(
         df["carrier"]
         .map(costs_config["carrier_fuel_mapping"])
         .map(costs["CO2 intensity"])
     )
-    df["fuel"] = (
+    df["fuel"] = df["fuel"].fillna(
         df["carrier"].map(costs_config["carrier_fuel_mapping"]).map(costs["fuel"])
     )
 
+    # Format bus and build_year columns
     df["bus"] = df["bus"].astype(str)
     df["build_year"] = df["year"].astype(int)
 
-    # Join cost data if available
-    cost_columns = ["VOM", "FOM", "efficiency", "capital_cost", "fuel", "lifetime"]
-    available_cost_cols = [col for col in cost_columns if col in costs.columns]
+    # Integrate FES power costs
+    df = _integrate_fes_power_costs(
+        df, fes_power_costs, costs_config, default_characteristics
+    )
 
-    if available_cost_cols:
-        df = df.join(costs[available_cost_cols], on="carrier")
-    else:
-        logger.warning("No cost columns found in costs dataframe")
+    # Integrate FES carbon costs
+    df = df.join(fes_carbon_costs, on="year")
 
     # Calculate marginal cost if possible
-    if all(col in df.columns for col in ["VOM", "fuel", "efficiency"]):
+    if all(col in df.columns for col in ["VOM", "fuel", "efficiency", "carbon_cost"]):
         df["marginal_cost"] = (
-            df["carrier"].map(costs["VOM"])
-            + df["carrier"].map(costs["fuel"]) / df["efficiency"]
+            df["VOM"]
+            + df["fuel"] / df["efficiency"]
+            + df["CO2 intensity"] * df["carbon_cost"] / df["efficiency"]
         )
-
-    for name, config in default_characteristics.items():
-        df = _ensure_column_with_default(df, name, config["data"], config["unit"])
 
     # Create unique index: "bus carrier-year-idx"
     df["idx_counter"] = df.groupby(["bus", "carrier", "year"]).cumcount()
@@ -163,7 +163,7 @@ def assign_technical_and_costs_defaults(
         + "-"
         + df["idx_counter"].astype(str)
     )
-    df = df.drop(columns=["idx_counter"])
+    df = df.drop(columns=["idx_counter", "carbon_cost"])
 
     return df
 
@@ -284,7 +284,7 @@ def distribute_direct_data(
     return df_capacity_gb_final.to_frame("p_nom").reset_index()
 
 
-def load_costs(
+def _load_costs(
     tech_costs_path: str,
     costs_config: dict[str, dict],
 ) -> pd.DataFrame:
@@ -312,7 +312,7 @@ def load_costs(
     return costs
 
 
-def load_fes_power_costs(
+def _load_fes_power_costs(
     fes_power_costs_path: str,
     costs_config: dict[str, dict],
     fes_scenario: str,
@@ -355,30 +355,35 @@ def load_fes_power_costs(
         .isin(["variable other work costs", "fuel cost"])
     ]
 
+    # Synchronize technology name between VOM and fuel cost entries
+    # fes_power_costs.loc[:, "Sub Type"] = fes_power_costs["Sub Type"].replace(costs_config["carier_name_synchronization"])
+
     # Pivot to create multi-index with Cost Type as columns
+    fes_power_costs.loc[:, "technology"] = (
+        fes_power_costs["Connection"]
+        + "-"
+        + fes_power_costs["Type"]
+        + "-"
+        + fes_power_costs["Sub Type"]
+    )
     fes_power_costs_pivoted = fes_power_costs.pivot_table(
-        index=["Sub Type", "year", "Connection"],
+        index=["technology", "year"],
         columns="Cost Type",
         values="data",
     )
 
-    # Select Connection type
-    fes_power_costs_pivoted = fes_power_costs_pivoted.xs(
-        costs_config["fes_costs_connection_type"], level="Connection"
-    )
-
-    # Rename columns to match expected names and fill missing with 0
+    # Rename columns to match expected names
     fes_power_costs_pivoted = fes_power_costs_pivoted.rename(
         columns={
             "Fuel Cost": "fuel",
             "Variable Other Work Costs": "VOM",
         }
-    ).fillna(0)
+    )
 
     return fes_power_costs_pivoted
 
 
-def load_fes_carbon_costs(
+def _load_fes_carbon_costs(
     fes_carbon_costs_path: str,
     fes_scenario: str,
 ) -> pd.DataFrame:
@@ -415,6 +420,73 @@ def load_fes_carbon_costs(
     return fes_carbon_costs
 
 
+def _integrate_fes_power_costs(
+    df: pd.DataFrame,
+    fes_power_costs: pd.DataFrame,
+    costs_config: dict[str, dict],
+    default_characteristics: dict[str, dict],
+) -> pd.DataFrame:
+    """
+    Integrate FES power costs into the powerplants DataFrame.
+
+    Args:
+        df (pd.DataFrame): Powerplants DataFrame with 'carrier', 'set', and 'year' columns.
+        fes_power_costs (pd.DataFrame): FES power costs DataFrame with multi-index
+            (Sub Type, year) and columns for each Cost Type (fuel, VOM).
+        costs_config (dict): Configuration dict containing:
+            - fes_costs_carrier_mapping: Mapping from carrier names to FES Sub Type name.
+        default_characteristics (dict): Default characteristics for filling missing values.
+
+    Returns:
+        pd.DataFrame: Updated powerplants DataFrame with integrated FES power costs.
+    """
+    # Create a carrier_set column for mapping
+    df["carrier_set"] = df["carrier"] + " " + df["set"]
+
+    # Map carrier_set to FES costs technology name to merge VOM data
+    df["fes_VOM_techs"] = df["carrier_set"].map(costs_config["fes_VOM_carrier_mapping"])
+
+    # Merge FES VOM data using technology name and year
+    df = df.merge(
+        fes_power_costs[["VOM"]],
+        left_on=["fes_VOM_techs", "year"],
+        right_index=True,
+        how="left",
+        suffixes=("_pypsa", ""),
+    )
+
+    # Map carrier_set to FES costs technology name to merge fuel cost data
+    df["fes_fuel_techs"] = df["carrier_set"].map(
+        costs_config["fes_fuel_carrier_mapping"]
+    )
+
+    # Merge FES fuel cost data using technology name and year
+    df = df.merge(
+        fes_power_costs[["fuel"]],
+        left_on=["fes_fuel_techs", "year"],
+        right_index=True,
+        how="left",
+        suffixes=("_pypsa", ""),
+    )
+
+    # Fill VOM, fuel costs, efficiency, and CO2 intensity with default characteristics from config where FES data is missing
+    for col in ["VOM", "fuel", "efficiency", "CO2 intensity"]:
+        df.loc[df[col].isna(), col] = default_characteristics[col]["data"]
+
+    # Drop temporary columns
+    df = df.drop(
+        columns=[
+            "carrier_set",
+            "VOM_pypsa",
+            "fuel_pypsa",
+            "fes_VOM_techs",
+            "fes_fuel_techs",
+        ]
+    )
+
+    return df
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
@@ -436,6 +508,7 @@ if __name__ == "__main__":
     eur_config = snakemake.params.eur_config
     dukes_config = snakemake.params.dukes_config
     default_set = snakemake.params.default_set
+    default_characteristics = snakemake.params.default_characteristics
     costs_config = snakemake.params.costs_config
     fes_scenario = snakemake.params.fes_scenario
 
@@ -475,7 +548,7 @@ if __name__ == "__main__":
         tech_costs_path=snakemake.input.tech_costs,
         fes_power_costs_path=snakemake.input.fes_power_costs,
         fes_carbon_costs_path=snakemake.input.fes_carbon_costs,
-        default_characteristics=snakemake.params.default_characteristics,
+        default_characteristics=default_characteristics,
         costs_config=costs_config,
         fes_scenario=fes_scenario,
     )
