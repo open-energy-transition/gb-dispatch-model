@@ -22,6 +22,7 @@ from scripts._helpers import configure_logging, set_scenario_config
 
 logger = logging.getLogger(__name__)
 
+
 def process_cop_profiles(
     cop_path: str,
     clustered_population_layout_path: str,
@@ -93,7 +94,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
 
-        snakemake = mock_snakemake(Path(__file__).stem, clusters="clustered",year=2022)
+        snakemake = mock_snakemake(Path(__file__).stem,year=2022)
     configure_logging(snakemake)
     set_scenario_config(snakemake)
 

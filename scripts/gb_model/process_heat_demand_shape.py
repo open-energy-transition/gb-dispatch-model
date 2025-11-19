@@ -9,14 +9,11 @@ This script generates the heat demand shape for each sector.
 """
 
 import logging
-
 from pathlib import Path
 
-import pandas as pd
-
-import xarray as xr
-
 import numpy as np
+import pandas as pd
+import xarray as xr
 
 from scripts._helpers import configure_logging, set_scenario_config
 
@@ -24,10 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def process_demand_timeseries(
-    load_path: str,
-    cop_profile_path: str,
-    heating_mix_path: str,
-    sector: str
+    load_path: str, cop_profile_path: str, heating_mix_path: str, sector: str
 ) -> pd.DataFrame:
     """
     Generate load profile shape for heat pump demands in each sector
@@ -88,17 +82,18 @@ if __name__ == "__main__":
     configure_logging(snakemake)
     set_scenario_config(snakemake)
 
-    sectors=['residential','commercial']
+    sectors = ["residential", "commercial"]
 
     for sector in sectors:
         load_profile = process_demand_timeseries(
-            load_path=snakemake.input.load, 
+            load_path=snakemake.input.load,
             cop_profile_path=snakemake.input.cop_profile,
             heating_mix_path=snakemake.input.heating_mix,
-            sector=sector)
+            sector=sector,
+        )
 
         # Save the heat demand load profile
         load_profile.to_csv(snakemake.output[f"{sector}_csv_file"])
         logger.info(
-            f"{sector} heat demand profile saved to {snakemake.output[f"{sector}_csv_file"]}"
+            f"{sector} heat demand profile saved to {snakemake.output[f'{sector}_csv_file']}"
         )

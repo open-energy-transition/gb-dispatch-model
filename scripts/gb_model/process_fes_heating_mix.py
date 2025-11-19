@@ -32,8 +32,8 @@ def process_fes_heatmix(
     fes_data_heatmix_path: str,
     electrified_heating_technologies: list[str],
     scenario: str,
-    year: int
-) -> pd.DataFrame :
+    year: int,
+) -> pd.DataFrame:
     """
     Process heating technology mix
 
@@ -49,27 +49,28 @@ def process_fes_heatmix(
     """
 
     # Read the FES data
-    fes_data=pd.read_csv(fes_data_heatmix_path,index_col=[0,1,2])
+    fes_data = pd.read_csv(fes_data_heatmix_path, index_col=[0, 1, 2])
 
     # Filter the data
     mask = fes_data.index.get_level_values(2).str.contains(scenario, case=False)
-    fes_data_filtered=(
-        fes_data
-        .loc[mask]
+    fes_data_filtered = (
+        fes_data.loc[mask]
         .loc[electrified_heating_technologies]
         .reset_index()
         .assign(
             data=lambda df: df["data"].astype(float),
             data_2020=lambda df: df["2020"].astype(float),
-            **{"2050": lambda df: df["data"],"2020": lambda df: df["data_2020"]}
+            **{"2050": lambda df: df["data"], "2020": lambda df: df["data_2020"]},
         )
     )
 
     # Compute the share for the required year by interpolating the shares between 2020 and 2050
-    fes_data_filtered[year]=fes_data_filtered.apply(lambda x: _interpolation(x, year),axis=1)
+    fes_data_filtered[year] = fes_data_filtered.apply(
+        lambda x: _interpolation(x, year), axis=1
+    )
 
     # Calculate % of homes supplied by each type of technology
-    fes_data_filtered["share"]=fes_data_filtered[year]/fes_data_filtered[year].sum() 
+    fes_data_filtered["share"] = fes_data_filtered[year] / fes_data_filtered[year].sum()
 
     return fes_data_filtered["share"]
 
@@ -82,33 +83,31 @@ if __name__ == "__main__":
     configure_logging(snakemake)
     set_scenario_config(snakemake)
 
-    electrified_heating_technologies=snakemake.params.electrified_heating_technologies,
-    heating_mix=pd.DataFrame(index=electrified_heating_technologies[0],columns=['residential','commercial'])
+    electrified_heating_technologies = (
+        snakemake.params.electrified_heating_technologies,
+    )
+    heating_mix = pd.DataFrame(
+        index=electrified_heating_technologies[0], columns=["residential", "commercial"]
+    )
 
-    residential_share=process_fes_heatmix(
+    residential_share = process_fes_heatmix(
         fes_data_heatmix_path=snakemake.input.fes_residential_heatmix,
         electrified_heating_technologies=electrified_heating_technologies,
         scenario=snakemake.params.scenario,
-        year=int(snakemake.params.year)
+        year=int(snakemake.params.year),
     )
-    logger.info(
-        "Heating technology mix calculated for residential sector"
-    )
+    logger.info("Heating technology mix calculated for residential sector")
 
-    commercial_share=process_fes_heatmix(
+    commercial_share = process_fes_heatmix(
         fes_data_heatmix_path=snakemake.input.fes_commercial_heatmix,
         electrified_heating_technologies=electrified_heating_technologies,
         scenario=snakemake.params.scenario,
-        year=int(snakemake.params.year)
+        year=int(snakemake.params.year),
     )
-    logger.info(
-        "Heating technology mix calculated for commercial sector"
-    )
+    logger.info("Heating technology mix calculated for commercial sector")
 
-    heating_mix["residential"]=residential_share.tolist()
-    heating_mix["commercial"]=commercial_share.tolist()
+    heating_mix["residential"] = residential_share.tolist()
+    heating_mix["commercial"] = commercial_share.tolist()
     # Save the heating technology mix for residential and commercial sectors
     heating_mix.to_csv(snakemake.output.csv)
-    logger.info(
-        f"Heating technology mix saved to {snakemake.output.csv}"
-    )
+    logger.info(f"Heating technology mix saved to {snakemake.output.csv}")

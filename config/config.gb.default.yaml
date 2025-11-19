@@ -491,6 +491,7 @@ fes-sheet-config:
       rename:
         columns: Parameter
     
+
     # Overall heating technology mix in homes (residential) in 2050
     CV.16:
       usecols: "K:P"
@@ -499,7 +500,6 @@ fes-sheet-config:
       header: 0
       rename:
         index: ["Type",2020]
-    
     
     CV.55:
       usecols: "K:P"
@@ -601,7 +601,11 @@ fes:
         fes_residential_heat: ["residential hp demand"]
         fes_iandc_heat: ["i&c hp demand"]
       heat:
+<<<<<<< HEAD
         electrified_heating_technologies: ["Electric resistive","ASHP","GSHP"]
+=======
+        electrified_heating_technologies: ["Electric resistive", "ASHP", "GSHP"]
+>>>>>>> origin/feat/add_heat_demands
 
     flexibility:
       Technology Detail:
