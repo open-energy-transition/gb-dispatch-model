@@ -61,19 +61,19 @@ def process_cop_profiles(
 
     # Calculate COP as a weighted average with population densities as the weight
     # ASHP - weighted average of COP across urban central, urban decentral and rural
-    # GSHP - Present only at rural (so no averaging done)
+    # GSHP - Present only at rural
     heat_source=["air","ground"]
     heat_system=["urban central","urban decentral","rural"]
 
     cop_wt_avg=pd.DataFrame(index=cop_profiles.index)
     for source in heat_source:
         cop_profile_filter=cop_profiles[source]
-        cop_wt_avg[source] = (cop_profile_filter * clustered_population_layout[heat_system]).sum(axis=1) 
         if source == "air":
-            cop_wt_avg[source] /= clustered_population_layout["total"]
+            cop_wt_avg[source] = (cop_profile_filter * clustered_population_layout[heat_system]).sum(axis=1) 
+            cop_wt_avg[source] = cop_wt_avg[source].div(clustered_population_layout["total"]).fillna(0)
         else:
-            cop_wt_avg[source] /= clustered_population_layout["rural"]
-
+            cop_wt_avg[source] = cop_profile_filter.dropna(axis=1)  #not performing weighted average to avoid issues when total population at a region is 0 (rural population at GB 8 is 0)
+    
     # To match the naming convention in FES data
     cop_wt_avg.rename(columns={'air':'ASHP','ground':'GSHP'},inplace=True)
 
