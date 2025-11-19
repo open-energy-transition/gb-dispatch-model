@@ -11,6 +11,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 import pypsa
 from scipy.optimize import minimize
 
@@ -34,7 +36,9 @@ def _get_lines(lines: pd.DataFrame, bus1: str | int, bus0: str | int) -> pd.Seri
 
 
 def get_boundary_s_noms(
-    lines: pd.DataFrame, etys_boundaries: dict[str, list[dict[str, str]]]
+    lines: pd.DataFrame,
+    etys_boundaries: dict[str, list[dict[str, str]]],
+    s_max_pu: pd.Series | int = 1,
 ) -> pd.Series:
     """
     Calculate total boundary `s_nom` by summing all lines crossing each boundary.
@@ -51,7 +55,7 @@ def get_boundary_s_noms(
         s_noms[boundary] = []
         for buses in bus_groups:
             lines_mask = _get_lines(lines, buses["bus0"], buses["bus1"])
-            s_nom = lines[lines_mask].s_nom.sum()
+            s_nom = lines.s_nom.mul(s_max_pu)[lines_mask].sum()
             if s_nom == 0:
                 logger.warning(
                     f"No lines found for boundary '{boundary}' between "
@@ -60,6 +64,16 @@ def get_boundary_s_noms(
             s_noms[boundary].append(s_nom)
     s_noms_df = pd.Series(s_noms).apply(lambda x: sum(x) if x else float("nan"))
     return s_noms_df
+
+
+def _s_noms_compare(s_noms: pd.Series, etys_caps: pd.DataFrame) -> pd.DataFrame:
+    merged_df = (
+        pd.Series(s_noms)
+        .to_frame("pypsa_etys")
+        .merge(etys_caps, left_index=True, right_on="boundary_name")
+        .set_index("boundary_name")
+    )
+    return merged_df
 
 
 def get_s_max_pu(
@@ -81,13 +95,7 @@ def get_s_max_pu(
     Returns:
         pd.Series: Series of s_max_pu values for relevant lines
     """
-    merged_df = (
-        pd.Series(s_noms)
-        .apply(lambda x: sum(x) if x else float("nan"))
-        .to_frame("s_nom")
-        .merge(etys_caps, left_index=True, right_on="boundary_name")
-        .set_index("boundary_name")
-    )
+    merged_df = _s_noms_compare(s_noms, etys_caps).set_index("boundary_name")
     s_max_pu = merged_df["capability_mw"] / merged_df["s_nom"]
 
     # Assign min/max bounds for each line based on all boundaries it belongs to
@@ -125,14 +133,11 @@ def get_s_max_pu(
 
     # Objective function: sum of squared errors between target and achieved boundary capacities
     def _objective(x):
-        # Apply s_max_pu values to network temporarily
-        lines_copy = network.lines.copy(deep=True)
-        lines_copy.loc[relevant_lines, "s_nom"] *= x
         # Recalculate boundary s_noms with updated s_max_pu
-        boundary_totals = get_boundary_s_noms(lines_copy, etys_boundaries)
-        df_ = boundary_totals.to_frame("s_nom").merge(
-            etys_caps, left_index=True, right_on="boundary_name"
+        boundary_totals = get_boundary_s_noms(
+            network.lines, etys_boundaries, s_max_pu=x
         )
+        df_ = _s_noms_compare(boundary_totals, etys_caps)
         # Calculate relative error for each boundary
         total_error = np.sqrt(
             sum((df_.s_nom - df_.capability_mw).div(df_.capability_mw) ** 2)
@@ -157,9 +162,9 @@ def get_s_max_pu(
     s_max_pu_optimised = pd.Series(result.x, index=relevant_lines[relevant_lines].index)
 
     # Log the results
-    lines_copy = network.lines.copy(deep=True)
-    lines_copy.loc[relevant_lines, "s_nom"] *= result.x
-    final_s_noms = get_boundary_s_noms(lines_copy, etys_boundaries)
+    final_s_noms = get_boundary_s_noms(
+        network.lines, etys_boundaries, s_max_pu=result.x
+    )
 
     for boundary in etys_boundaries.keys():
         scaled_capacity = final_s_noms.get(boundary, 0)
@@ -171,6 +176,46 @@ def get_s_max_pu(
         )
 
     return s_max_pu_optimised
+
+
+def plot_compare_s_nom(
+    s_noms: pd.Series, etys_caps: pd.DataFrame, s_max_pu_optimised: pd.Series
+) -> go.Figure:
+    df_original = _s_noms_compare(s_noms, etys_caps)
+    df_scaled = _s_noms_compare(s_noms.mul(s_max_pu_optimised), etys_caps)
+    df_plot = pd.concat(
+        [
+            df_original.assign(type="Original"),
+            df_scaled.assign(type="Scaled"),
+        ]
+    )
+    max_val = df_plot[["s_nom", "capability_mw"]].max().max()
+    fig = px.scatter(
+        df_plot, x="s_nom", y="capability_mw", text="boundary_name", color="type"
+    )
+    fig = fig.add_scatter(
+        x=[0, max_val],
+        y=[0, max_val],
+        marker={"opacity": 0},
+        opacity=0.5,
+        showlegend=False,
+    )
+    fig = fig.update_layout(
+        yaxis={
+            "title": {"text": "ETYS boundary capability (MW)", "font": {"size": 20}}
+        },
+        xaxis={
+            "title": {
+                "text": "PyPSA-Eur boundary capability (MW)",
+                "font": {"size": 20},
+            }
+        },
+        font={"size": 15},
+        width=1100,
+        height=900,
+    )
+    fig = fig.update_traces(marker={"size": 10}, textposition="top center")
+    return fig
 
 
 if __name__ == "__main__":
@@ -191,5 +236,8 @@ if __name__ == "__main__":
     s_max_pu_optimised = get_s_max_pu(
         network, boundary_s_noms, etys_caps, etys_boundaries
     )
+
+    fig = plot_compare_s_nom(boundary_s_noms, etys_caps, s_max_pu_optimised)
+    fig.write_html(snakemake.output.html)
 
     s_max_pu_optimised.to_csv(snakemake.output.csv)
