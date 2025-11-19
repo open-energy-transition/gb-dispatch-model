@@ -503,7 +503,8 @@ rule process_cop_profiles:
     message:
         "Process COP profile for {wildcards.year} obtained from existing PyPSA-Eur rules"
     params:
-        year=lambda wildcards: wildcards.year
+        year=lambda wildcards: wildcards.year,
+        heat_pump_sources=config["sector"]["heat_pump_sources"]
     input:
         cop_profile=resources("cop_profiles_base_s_{clusters}_{year}.nc"),
         clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
