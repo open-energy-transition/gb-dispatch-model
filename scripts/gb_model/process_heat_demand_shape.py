@@ -75,6 +75,8 @@ def process_demand_timeseries(
             + load_normalized * heating_mix.loc['Electric resistive',sector]
         )    
 
+        pump_load.replace([np.inf, -np.inf],0,inplace=True)
+
     return pump_load
 
 

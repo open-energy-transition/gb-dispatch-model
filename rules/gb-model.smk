@@ -539,9 +539,9 @@ rule process_heat_demand_shape:
         cop_profile=resources("cop_base_s_{clusters}_{year}.csv"),
         heating_mix=resources("gb-model/fes/heating_mix_{year}.csv")
     output:
-        residential_csv_file=resources("residential_heat_demand_shape_s_{clusters}_{year}.csv"),
+        residential_csv_file=resources("gb-model/residential_heat_demand_shape_s_{clusters}_{year}.csv"),
         #Industry load is not generated in PyPSA-Eur, hence the same profile as services is considered to be applicable for c&i
-        commercial_csv_file=resources("candi_heat_demand_shape_s_{clusters}_{year}.csv"), 
+        commercial_csv_file=resources("gb-model/iandc_heat_demand_shape_s_{clusters}_{year}.csv"), 
     log:
         logs("heat_demand_s_{clusters}_{year}.log"),
     script:
@@ -639,8 +639,15 @@ def demands(w):
             resources(
                 f"gb-model/{demand_type.replace('fes_', '')}_demand_shape_s_clustered.csv"
             ),
+        ] if "heat" not in demand_type else
+        [
+            resources(f"gb-model/{demand_type}_demand.csv"),
+            resources(
+                f"gb-model/{demand_type.replace('fes_', '')}_demand_shape_s_clustered_{w.year}.csv"
+            ),
         ]
-        for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"]
+        for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"] 
+
     }
 
 
