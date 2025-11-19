@@ -36,40 +36,37 @@ def process_demand_timeseries(
         pd.DataFrame : electrified heat demand profile for the sector
     """
 
-    cop_profile=pd.read_csv(cop_profile_path,index_col=[0,1],parse_dates=['time'])
-    heating_mix=pd.read_csv(heating_mix_path,index_col=0)
+    cop_profile = pd.read_csv(cop_profile_path, index_col=[0, 1], parse_dates=["time"])
+    heating_mix = pd.read_csv(heating_mix_path, index_col=0)
 
     # Read the electricity demand base .nc file
-    load = (
-        xr.open_dataset(load_path)
-        .to_dataframe()
-        .squeeze(axis=1)
-        .unstack("node")
-    )
-    
-    system=["space","water"]
-    nodes=cop_profile.index.get_level_values(1).unique()
-    load_profile=pd.DataFrame(index=load.index,columns=nodes)
+    load = xr.open_dataset(load_path).to_dataframe().squeeze(axis=1).unstack("node")
 
-    load_profile[sector]=np.zeros(len(load.index))
+    system = ["space", "water"]
+    nodes = cop_profile.index.get_level_values(1).unique()
+    load_profile = pd.DataFrame(index=load.index, columns=nodes)
+
+    load_profile[sector] = np.zeros(len(load.index))
     for sys in system:
-        if sector=='commercial':
-            sector_key='services'
+        if sector == "commercial":
+            sector_key = "services"
         else:
-            sector_key=sector
-        load_sys=load[f"{sector_key} {sys}"]
+            sector_key = sector
+        load_sys = load[f"{sector_key} {sys}"]
 
         # Normalized the load profile
-        load_normalized=load_sys/load_sys.sum()
+        load_normalized = load_sys / load_sys.sum()
 
         # Compute the electrified heat demand by dividing the heat load by COP
-        pump_load=(
-            load_normalized.div(cop_profile['ASHP'].unstack('name')) * heating_mix.loc['ASHP',sector]
-            + load_normalized.div(cop_profile['GSHP'].unstack('name')) * heating_mix.loc['GSHP',sector]
-            + load_normalized * heating_mix.loc['Electric resistive',sector]
-        )    
+        pump_load = (
+            load_normalized.div(cop_profile["ASHP"].unstack("name"))
+            * heating_mix.loc["ASHP", sector]
+            + load_normalized.div(cop_profile["GSHP"].unstack("name"))
+            * heating_mix.loc["GSHP", sector]
+            + load_normalized * heating_mix.loc["Electric resistive", sector]
+        )
 
-        pump_load.replace([np.inf, -np.inf],0,inplace=True)
+        pump_load.replace([np.inf, -np.inf], 0, inplace=True)
 
     return pump_load
 

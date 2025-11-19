@@ -12,7 +12,6 @@ import logging
 from pathlib import Path
 
 import pandas as pd
-import xarray as xr
 
 from scripts._helpers import configure_logging, set_scenario_config
 
@@ -21,11 +20,11 @@ logger = logging.getLogger(__name__)
 
 def _interpolation(x, year):
     """
-        Interpolates the share of technology for the given year
+    Interpolates the share of technology for the given year
     """
-    num=(x["2050"]-x["2020"])*(2050-year)
-    den=2050-2020
-    return (x["2050"] - (num/den))
+    num = (x["2050"] - x["2020"]) * (2050 - year)
+    den = 2050 - 2020
+    return x["2050"] - (num / den)
 
 
 def process_fes_heatmix(
