@@ -114,7 +114,7 @@ def assign_technical_and_costs_defaults(
     # Load costs data
     costs = load_costs(tech_costs_path, costs_config)
     # fes_power_costs = load_fes_power_costs(fes_power_costs_path, costs_config, fes_scenario)
-    # fes_carbon_costs = pd.read_csv(fes_carbon_costs_path)
+    # fes_carbon_costs = load_fes_carbon_costs(fes_carbon_costs_path, fes_scenario)
     logger.info("Loaded technology costs and FES power and carbon costs data")
 
     # Join cost data
@@ -317,7 +317,29 @@ def load_fes_power_costs(
     costs_config: dict[str, dict],
     fes_scenario: str,
 ) -> pd.DataFrame:
-    """Load FES power costs data."""
+    """
+    Loads FES power cost data, filters by scenario and relevant cost types,
+    then pivots to create a DataFrame with multi-index (Sub Type, year)
+    and columns for each Cost Type (fuel, VOM).
+
+    Args:
+        fes_power_costs_path (str): Path to FES power costs CSV file.
+        costs_config (dict): Configuration dict containing:
+            - fes_costs_connection_type: Connection type to filter (e.g., "Transmission", "Decentralised")
+        fes_scenario (str): FES scenario name to filter (e.g., "leading the way").
+
+    Returns:
+        pd.DataFrame: Multi-indexed DataFrame with:
+            - Index: ["Sub Type", "year"]
+            - Columns: ["fuel", "VOM"] (Variable Other Work Costs)
+            - Values: Cost data in GBP
+
+    Notes:
+        - Filters for cost types: "variable other work costs" and "fuel cost"
+        - Selects only the specified connection type from costs_config
+        - Renames columns to match expected names (Fuel Cost -> fuel, etc.)
+        - Fills missing values with 0
+    """
     # Load FES power costs
     fes_power_costs = pd.read_csv(fes_power_costs_path)
 
@@ -354,6 +376,43 @@ def load_fes_power_costs(
     ).fillna(0)
 
     return fes_power_costs_pivoted
+
+
+def load_fes_carbon_costs(
+    fes_carbon_costs_path: str,
+    fes_scenario: str,
+) -> pd.DataFrame:
+    """
+    Load FES carbon costs data.
+
+    Args:
+        fes_carbon_costs_path: Path to FES carbon costs CSV
+        fes_scenario: FES scenario name (e.g., "leading the way")
+
+    Returns:
+        DataFrame with year index and carbon_cost column (£/tCO2)
+
+    Steps:
+        1. Load FES carbon costs CSV
+        2. Filter by scenario
+        3. Select year and data columns, set year as index
+        4. Rename data column to carbon_cost
+    """
+    # Load FES carbon costs
+    fes_carbon_costs = pd.read_csv(fes_carbon_costs_path)
+
+    # Filter for the selected FES scenario
+    fes_carbon_costs = fes_carbon_costs[
+        fes_carbon_costs["Scenario"].str.lower() == fes_scenario
+    ]
+
+    # Select relevant columns
+    fes_carbon_costs = fes_carbon_costs[["year", "data"]].set_index("year")
+
+    # Rename columns to match expected names
+    fes_carbon_costs.rename(columns={"data": "carbon_cost"}, inplace=True)
+
+    return fes_carbon_costs
 
 
 if __name__ == "__main__":
