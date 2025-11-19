@@ -88,6 +88,35 @@ costs:
     coal: coal
     gas: gas
     oil: oil
+    lignite: lignite
+    nuclear: nuclear
+  fes_costs_carrier_mapping:
+    battery Store: Battery
+    biomass PP: Biomass # does not have value in FES
+    biomass CHP: Biomass CHP
+    coal PP: Coal
+    coal CHP: Coal CHP
+    CCGT PP: CCGT
+    CCGT CHP: CCGT CHP
+    gas CHP: Gas CHP
+    gas PP: Gas Reciprocating Engines
+    # geothermal PP: # no geothermal costs in FES
+    hydro PP: Hydro
+    hydrogen PP: Hydrogen
+    hydrogen CHP: Hydrogen # there is no hydrogen CHP costs in FES
+    marine PP: Marine
+    OCGT PP: OCGT
+    offwind PP: Offshore Wind
+    oil PP: Steam Oil
+    onwind PP: Onshore Wind
+    nuclear PP: Nuclear
+    PHS Store: Pumped Hydro
+    ror PP: Hydro # there is no separate run-of-river costs in FES
+    solar PP: Solar PV
+    waste PP: Waste
+    waste CHP: Waste CHP
+  fes_costs_connection_type: Transmission
+
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#solving
 solving:

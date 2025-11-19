@@ -283,6 +283,7 @@ rule create_powerplants_table:
         dukes_config=config["dukes-5.11"],
         default_set=config["fes"]["default_set"],
         costs_config=config["costs"],
+        fes_scenario=config["fes"]["gb"]["scenario"],
     input:
         gsp_data=resources("gb-model/regional_gb_data.csv"),
         eur_data=resources("gb-model/national_eur_data.csv"),

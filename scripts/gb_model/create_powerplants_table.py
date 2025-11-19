@@ -96,6 +96,7 @@ def assign_technical_and_costs_defaults(
     fes_carbon_costs_path: str,
     default_characteristics: dict[str, dict],
     costs_config: dict[str, dict],
+    fes_scenario: str,
 ) -> pd.DataFrame:
     """
     Enrich powerplants dataframe with cost and technical parameters.
@@ -112,7 +113,7 @@ def assign_technical_and_costs_defaults(
     """
     # Load costs data
     costs = load_costs(tech_costs_path, costs_config)
-    # fes_power_costs = pd.read_csv(fes_power_costs_path)
+    # fes_power_costs = load_fes_power_costs(fes_power_costs_path, costs_config, fes_scenario)
     # fes_carbon_costs = pd.read_csv(fes_carbon_costs_path)
     logger.info("Loaded technology costs and FES power and carbon costs data")
 
@@ -311,6 +312,50 @@ def load_costs(
     return costs
 
 
+def load_fes_power_costs(
+    fes_power_costs_path: str,
+    costs_config: dict[str, dict],
+    fes_scenario: str,
+) -> pd.DataFrame:
+    """Load FES power costs data."""
+    # Load FES power costs
+    fes_power_costs = pd.read_csv(fes_power_costs_path)
+
+    # Filter for the selected FES scenario
+    fes_power_costs = fes_power_costs[
+        (fes_power_costs["Scenario"].str.lower().isin([fes_scenario, "all scenarios"]))
+    ]
+
+    # Keep relevant cost types
+    fes_power_costs = fes_power_costs[
+        fes_power_costs["Cost Type"]
+        .str.lower()
+        .isin(["variable other work costs", "fuel cost"])
+    ]
+
+    # Pivot to create multi-index with Cost Type as columns
+    fes_power_costs_pivoted = fes_power_costs.pivot_table(
+        index=["Sub Type", "year", "Connection"],
+        columns="Cost Type",
+        values="data",
+    )
+
+    # Select Connection type
+    fes_power_costs_pivoted = fes_power_costs_pivoted.xs(
+        costs_config["fes_costs_connection_type"], level="Connection"
+    )
+
+    # Rename columns to match expected names and fill missing with 0
+    fes_power_costs_pivoted = fes_power_costs_pivoted.rename(
+        columns={
+            "Fuel Cost": "fuel",
+            "Variable Other Work Costs": "VOM",
+        }
+    ).fillna(0)
+
+    return fes_power_costs_pivoted
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
@@ -333,6 +378,7 @@ if __name__ == "__main__":
     dukes_config = snakemake.params.dukes_config
     default_set = snakemake.params.default_set
     costs_config = snakemake.params.costs_config
+    fes_scenario = snakemake.params.fes_scenario
 
     df_capacity_gb_gsp = capacity_table(
         df_gsp[df_gsp.bus.notnull()], gb_config, default_set
@@ -372,6 +418,7 @@ if __name__ == "__main__":
         fes_carbon_costs_path=snakemake.input.fes_carbon_costs,
         default_characteristics=snakemake.params.default_characteristics,
         costs_config=costs_config,
+        fes_scenario=fes_scenario,
     )
     logger.info("Enriched powerplants with cost and technical parameters")
 
