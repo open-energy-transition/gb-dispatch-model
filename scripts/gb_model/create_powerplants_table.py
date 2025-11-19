@@ -126,9 +126,7 @@ def assign_technical_and_costs_defaults(
     """
     # Load costs data
     costs = _load_costs(tech_costs_path, costs_config)
-    fes_power_costs = _load_fes_power_costs(
-        fes_power_costs_path, costs_config, fes_scenario
-    )
+    fes_power_costs = _load_fes_power_costs(fes_power_costs_path, fes_scenario)
     fes_carbon_costs = _load_fes_carbon_costs(fes_carbon_costs_path, fes_scenario)
     logger.info("Loaded technology costs and FES power and carbon costs data")
 
@@ -164,6 +162,13 @@ def assign_technical_and_costs_defaults(
             + df["fuel"] / df["efficiency"]
             + df["CO2 intensity"] * df["carbon_cost"] / df["efficiency"]
         )
+
+    # Set capital costs from default_characteristics
+    df = _ensure_column_with_default(
+        df,
+        "capital_cost",
+        default_characteristics["capital_cost"]["data"],
+    )
 
     # Create unique index: "bus carrier-year-idx"
     df["idx_counter"] = df.groupby(["bus", "carrier", "year"]).cumcount()
