@@ -594,11 +594,32 @@ rule create_chp_p_min_pu_profile:
         regions=resources("gb-model/merged_shapes.geojson"),
         heat_demand=resources("hourly_heat_demand_total_base_s_clustered.nc"),
     output:
-        chp_p_min_pu=resources("gb-model/chp_p_min_pu_clustered.csv"),
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu.csv"),
     log:
         logs("create_chp_p_min_pu_profile.log"),
     script:
         "../scripts/gb_model/create_chp_p_min_pu_profile.py"
+
+
+rule distribute_eur_demands:
+    message:
+        "Distribute total European neighbour annual demands into base electricity, heating, and transport"
+    input:
+        eur_data=resources("gb-model/national_eur_data.csv"),
+        energy_totals=resources("energy_totals.csv"),
+        demands=[
+            resources("gb-model/fes_baseline_electricity_demand.csv"),
+            resources("gb-model/fes_transport_demand.csv"),
+        ],
+    params:
+        totals_to_demands=config["fes"]["eur"]["totals_to_demand_groups"],
+        base_year=config["energy"]["energy_totals_year"],
+    output:
+        csv=resources("gb-model/eur_annual_demand.csv"),
+    log:
+        logs("distribute_eur_demands.log"),
+    script:
+        "../scripts/gb_model/distribute_eur_demands.py"
 
 
 def demands(w):
@@ -639,14 +660,15 @@ rule compose_network:
         unpack(input_profile_tech),
         unpack(demands),
         unpack(flexibilities),
+        eur_demand=resources("gb-model/eur_annual_demand.csv"),
         network=resources("networks/base_s_clustered.nc"),
         powerplants=resources("gb-model/fes_powerplants.csv"),
         tech_costs=lambda w: resources(
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
         hydro_capacities=ancient("data/hydro_capacities.csv"),
-        chp_p_min_pu=resources("gb-model/chp_p_min_pu_clustered.csv"),
-        ev_demand_shape=resources("gb-model/ev_demand_shape_s_clustered.csv"),
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu.csv"),
+        ev_demand_shape=resources("gb-model/ev_demand_shape.csv"),
         ev_demand_peak=resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
         ev_demand_annual=resources("gb-model/fes_transport_demand.csv"),
         ev_storage_capacity=resources("gb-model/regional_fes_ev_storage.csv"),
