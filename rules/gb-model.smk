@@ -601,6 +601,23 @@ rule create_chp_p_min_pu_profile:
         "../scripts/gb_model/create_chp_p_min_pu_profile.py"
 
 
+rule scale_boundary_capabilities:
+    message:
+        "Get scaling factors for boundary capabilities to align with the ETYS"
+    input:
+        network=resources("networks/base_s_clustered.nc"),
+        boundaries="data/gb-model/downloaded/gb-etys-boundaries.zip",
+        etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),
+    params:
+        etys_boundaries_to_lines=config["region_operations"]["etys_boundaries"],
+    output:
+        csv=resources("gb-model/line_s_max_pu.csv"),
+    log:
+        logs("scale_boundary_capabilities.log"),
+    script:
+        "../scripts/gb_model/scale_boundary_capabilities.py"
+
+
 def demands(w):
     """Collate annual demands and their profiles into individual inputs for `compose_network`"""
     return {
