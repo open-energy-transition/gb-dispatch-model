@@ -498,7 +498,7 @@ rule process_cop_profiles:
     message:
         "Process COP profile for {wildcards.year} obtained from existing PyPSA-Eur rules"
     params:
-        year=lambda wildcards: wildcards.year
+        year=lambda wildcards: wildcards.year,
     input:
         cop_profile=resources("cop_profiles_base_s_{clusters}_{year}.nc"),
         clustered_pop_layout=resources("pop_layout_base_s_{clusters}.csv"),
@@ -516,13 +516,15 @@ rule process_fes_heating_mix:
         "Process the share of electrified heating technologies from FES workbook"
     params:
         year=lambda wildcards: wildcards.year,
-        electrified_heating_technologies=config["fes"]["gb"]["demand"]["heat"]["electrified_heating_technologies"],
+        electrified_heating_technologies=config["fes"]["gb"]["demand"]["heat"][
+            "electrified_heating_technologies"
+        ],
         scenario=config["fes"]["gb"]["scenario"],
     input:
         fes_residential_heatmix=resources("gb-model/fes/2021/CV.16.csv"),
-        fes_commercial_heatmix=resources("gb-model/fes/2021/CV.55.csv")
+        fes_commercial_heatmix=resources("gb-model/fes/2021/CV.55.csv"),
     output:
-        csv=resources("gb-model/fes/heating_mix_{year}.csv")
+        csv=resources("gb-model/fes/heating_mix_{year}.csv"),
     log:
         logs("process_fes_heating_mix_{year}.log"),
     script:
@@ -533,15 +535,17 @@ rule process_heat_demand_shape:
     message:
         "Cluster default PyPSA-Eur heat demand shape by bus"
     params:
-        year=lambda wildcards: wildcards.year
+        year=lambda wildcards: wildcards.year,
     input:
         load=resources("hourly_heat_demand_total_base_s_{clusters}.nc"),
         cop_profile=resources("cop_base_s_{clusters}_{year}.csv"),
-        heating_mix=resources("gb-model/fes/heating_mix_{year}.csv")
+        heating_mix=resources("gb-model/fes/heating_mix_{year}.csv"),
     output:
-        residential_csv_file=resources("residential_heat_demand_shape_s_{clusters}_{year}.csv"),
+        residential_csv_file=resources(
+            "residential_heat_demand_shape_s_{clusters}_{year}.csv"
+        ),
         #Industry load is not generated in PyPSA-Eur, hence the same profile as services is considered to be applicable for c&i
-        commercial_csv_file=resources("candi_heat_demand_shape_s_{clusters}_{year}.csv"), 
+        commercial_csv_file=resources("candi_heat_demand_shape_s_{clusters}_{year}.csv"),
     log:
         logs("heat_demand_s_{clusters}_{year}.log"),
     script:
