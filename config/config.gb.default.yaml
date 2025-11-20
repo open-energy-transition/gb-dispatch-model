@@ -577,7 +577,7 @@ fes:
   default_characteristics:
     # Ensure all required columns exist with defaults
     efficiency:
-      data: 0.4
+      data: 1
       unit: ""
     capital_cost:
       data: 0.0
