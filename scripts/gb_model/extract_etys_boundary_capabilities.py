@@ -57,7 +57,9 @@ def extract_etys_boundary_capabilities(
     logger.info(f"Loaded {len(expected_boundaries)} expected boundaries from shapefile")
 
     # Create regex pattern from expected boundary names
-    boundary_names_escaped = [re.escape(b) for b in expected_boundaries]
+    boundary_names_escaped = [
+        re.escape(b) for b in sorted(expected_boundaries, reverse=True)
+    ]
     boundary_pattern = r"\b(" + "|".join(boundary_names_escaped) + r")\b"
 
     gw_pattern = r"([\d,]+\.?\d*)\s*GW"
@@ -79,7 +81,6 @@ def extract_etys_boundary_capabilities(
             )
             if not boundary_name:
                 continue
-
             page_cache[boundary_name] = page
 
             # Search bottom-right corner

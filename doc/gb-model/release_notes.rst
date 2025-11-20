@@ -17,7 +17,7 @@ Upcoming Release
 * Add EV to pypsa Network (#114)
 * Tablulated regional unmanaged EV charging demand data (#112).
 * Add demands to pypsa Network (#102)
-* Added ETYS report boundary capabilities extractor (#9).
+* Added ETYS report boundary capabilities extractor & scaled line `s_nom` to match these values (#9).
 * Added config version for updating the system boundaries to the subset defined in the ETYS report.
 * Prepared unmanaged EV charging demand profile shape based on traffic data (#104).
 * Tabulated regional EV storage data (#101).
