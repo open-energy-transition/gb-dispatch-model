@@ -211,6 +211,9 @@ def _integrate_fes_power_costs(
     # Fill VOM, fuel costs, efficiency, and CO2 intensity with default characteristics from config where FES data is missing
     for col in ["VOM", "fuel", "efficiency", "CO2 intensity"]:
         df.loc[df[col].isna(), col] = default_characteristics[col]["data"]
+        logger.info(
+            f"Filling missing {col} values with default: {default_characteristics[col]['data']}"
+        )
 
     # Drop temporary columns
     df = df.drop(
