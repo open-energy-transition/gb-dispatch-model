@@ -469,6 +469,20 @@ fes-sheet-config:
       add_index:
         scenario: leading the way
 
+    # Annual unmanaged EV charging demand profile shape for 2015-2050
+    # Sheet contains multiple tables, one for each scenario
+    FL.11:
+    - usecols: "L:AV"
+      skiprows: 58
+      nrows: 3
+      index_col: 0
+      header: 0
+      rename:
+        columns: year
+        index: demand type
+      add_index:
+        scenario: leading the way
+
     BB2:
       usecols: "A:E"
       skiprows: 2
@@ -656,6 +670,10 @@ fes:
         Peat CHP: CHP
         Reservoir Hydro with pumping: Store
 
+    totals_to_demand_groups:
+      fes_transport: [total road]
+      fes_baseline_electricity: [electricity residential, electricity services, electricity rail]
+
   hydrogen:
     demand:
       annual_demand_sheets:
@@ -689,6 +707,11 @@ fes:
 ev:
   plug_in_offset: 2 # hours after the traffic/activity peak when most EVs are expected to plug in for charging
   charging_duration: 4 # duration of active charging period in hours
+  ev_demand_profile_transformation:
+    lower_optimization_bound: 0.001 # lower bound for gamma optimization
+    upper_optimization_bound: 100 # upper bound for gamma optimization
+    relative_peak_tolerance: 0.05 # 5% tolerance for peaks
+    relative_energy_tolerance: 0.05 # 5% tolerance for total energy
 
 interconnectors:
   # lat/lon values are approximate.
