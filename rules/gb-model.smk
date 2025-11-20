@@ -755,11 +755,6 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_supply.csv"),
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
-<<<<<<< HEAD
-=======
-            resources("gb-model/baseline_electricity_demand_shape.csv"),
-            resources("gb-model/transport_demand_shape.csv"),
->>>>>>> master
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
         ],

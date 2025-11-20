@@ -490,25 +490,22 @@ fes-sheet-config:
       header: 0
       rename:
         columns: Parameter
-    
+
     # Overall heating technology mix in homes (residential) in 2050
     CV.16:
       usecols: "K:P"
       skiprows: 3
-      index_col: [0,1]
+      index_col: [0, 1]
       header: 0
       rename:
-        index: ["Type",2020]
-    
-    
+        index: ["Type", 2020]
     CV.55:
       usecols: "K:P"
       skiprows: 3
-      index_col: [0,1]
+      index_col: [0, 1]
       header: 0
       rename:
-        index: ["Type",2020]
- 
+        index: ["Type", 2020]
   2023:
     WS1:
       usecols: "A:D,H:AM" # Ignore columns: "Baseline (2022)", "Share of GSP" (empty), "DNO License Area"
@@ -601,7 +598,7 @@ fes:
         fes_residential_heat: ["residential hp demand"]
         fes_iandc_heat: ["i&c hp demand"]
       heat:
-        electrified_heating_technologies: ["Electric resistive","ASHP","GSHP"]
+        electrified_heating_technologies: ["Electric resistive", "ASHP", "GSHP"]
 
     flexibility:
       Technology Detail:

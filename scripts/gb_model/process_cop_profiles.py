@@ -9,26 +9,24 @@ This script computes the ASHP and GSHP COP profiles weighted by population densi
 """
 
 import logging
-
+from itertools import chain
 from pathlib import Path
 
 import pandas as pd
-
 import xarray as xr
-
-from itertools import chain
 
 from scripts._helpers import configure_logging, set_scenario_config
 
 logger = logging.getLogger(__name__)
+
 
 def process_cop_profiles(
     cop_path: str,
     clustered_population_layout_path: str,
     district_heat_share_path: str,
     year: int,
-    heat_pump_sources: list[str]
-) -> pd.DataFrame :
+    heat_pump_sources: list[str],
+) -> pd.DataFrame:
     """
     Process PyPSA-Eur COP profiles across urban and rural areas to obtain ASHP and GSHP profiles weighted by population
 
@@ -42,49 +40,68 @@ def process_cop_profiles(
     Returns:
         pd.DataFrame : pandas dataframe containing the weighted average COP profiles
     """
-    clustered_population_layout=pd.read_csv(clustered_population_layout_path,index_col="name")
+    clustered_population_layout = pd.read_csv(
+        clustered_population_layout_path, index_col="name"
+    )
 
-    district_heat_share_data=pd.read_csv(district_heat_share_path,index_col="country")
-    #Current data exists from 1990-2021, Choosing 2021 to project data for all future years
+    district_heat_share_data = pd.read_csv(
+        district_heat_share_path, index_col="country"
+    )
+    # Current data exists from 1990-2021, Choosing 2021 to project data for all future years
     if int(year) >= 1990 and int(year) <= 2021:
-        district_heat_share=district_heat_share_data.loc[:,year]
+        district_heat_share = district_heat_share_data.loc[:, year]
     else:
-        logger.warning(f"District heat share data unavailable for the year {year}. The latest available data from 2021 is used")
-        district_heat_share=district_heat_share_data.loc[:,"2021"]
-    
+        logger.warning(
+            f"District heat share data unavailable for the year {year}. The latest available data from 2021 is used"
+        )
+        district_heat_share = district_heat_share_data.loc[:, "2021"]
+
     # Map district heat share to population densities
-    clustered_population_layout['urban central'] = clustered_population_layout["ct"].map(district_heat_share) * clustered_population_layout["urban"]
-    clustered_population_layout['urban decentral'] = (1 - clustered_population_layout["ct"].map(district_heat_share)) * clustered_population_layout["urban"]
+    clustered_population_layout["urban central"] = (
+        clustered_population_layout["ct"].map(district_heat_share)
+        * clustered_population_layout["urban"]
+    )
+    clustered_population_layout["urban decentral"] = (
+        1 - clustered_population_layout["ct"].map(district_heat_share)
+    ) * clustered_population_layout["urban"]
 
     # Process COP profiles from PyPSA-Eur
-    cop_profiles=(
+    cop_profiles = (
         xr.open_dataset(cop_path)
         .to_dataframe()
         .squeeze(axis=1)
-        .unstack(level=["heat_source","heat_system"])
+        .unstack(level=["heat_source", "heat_system"])
     )
-    cop_profiles.reset_index().set_index(["name","time"],inplace=True)
+    cop_profiles.reset_index().set_index(["name", "time"], inplace=True)
 
     # Calculate COP as a weighted average with population densities as the weight
     # ASHP - weighted average of COP across urban central, urban decentral and rural
     # GSHP - Present only at rural
     # heat_source=["air","ground"]
     # heat_system=["urban central","urban decentral","rural"]
-    heat_source=sorted(set(chain.from_iterable(heat_pump_sources.values())))
-    heat_system=heat_pump_sources.keys()
+    heat_source = sorted(set(chain.from_iterable(heat_pump_sources.values())))
+    heat_system = heat_pump_sources.keys()
 
-    cop_wt_avg=pd.DataFrame(index=cop_profiles.index)
+    cop_wt_avg = pd.DataFrame(index=cop_profiles.index)
     for source in heat_source:
-        cop_profile_filter=cop_profiles[source]
+        cop_profile_filter = cop_profiles[source]
         if source == "air":
-            cop_wt_avg[source] = (cop_profile_filter * clustered_population_layout[heat_system]).sum(axis=1) 
-            cop_wt_avg[source] = cop_wt_avg[source].div(clustered_population_layout["total"]).fillna(0)
+            cop_wt_avg[source] = (
+                cop_profile_filter * clustered_population_layout[heat_system]
+            ).sum(axis=1)
+            cop_wt_avg[source] = (
+                cop_wt_avg[source].div(clustered_population_layout["total"]).fillna(0)
+            )
         else:
-            cop_wt_avg[source] = cop_profile_filter.dropna(axis=1)  #not performing weighted average to avoid issues when total population at a region is 0 (rural population at GB 8 is 0)
-    
+            cop_wt_avg[source] = cop_profile_filter.dropna(
+                axis=1
+            )  # not performing weighted average to avoid issues when total population at a region is 0 (rural population at GB 8 is 0)
+
     # To match the naming convention in FES data
-    cop_wt_avg.rename(columns={'air':'ASHP','ground':'GSHP'},inplace=True)
-    logger.info(f"COP profiles were computed with the average COP: \n {cop_wt_avg.mean()}")
+    cop_wt_avg.rename(columns={"air": "ASHP", "ground": "GSHP"}, inplace=True)
+    logger.info(
+        f"COP profiles were computed with the average COP: \n {cop_wt_avg.mean()}"
+    )
 
     return cop_wt_avg
 
@@ -93,20 +110,18 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
 
-        snakemake = mock_snakemake(Path(__file__).stem, clusters="clustered",year=2022)
+        snakemake = mock_snakemake(Path(__file__).stem, clusters="clustered", year=2022)
     configure_logging(snakemake)
     set_scenario_config(snakemake)
 
-    cop_profile=process_cop_profiles(
-        cop_path=snakemake.input.cop_profile, 
-        clustered_population_layout_path=snakemake.input.clustered_pop_layout, 
+    cop_profile = process_cop_profiles(
+        cop_path=snakemake.input.cop_profile,
+        clustered_population_layout_path=snakemake.input.clustered_pop_layout,
         district_heat_share_path=snakemake.input.district_heat_share,
         year=snakemake.params.year,
-        heat_pump_sources=snakemake.params.heat_pump_sources
+        heat_pump_sources=snakemake.params.heat_pump_sources,
     )
 
     # Save the COP profiles
     cop_profile.to_csv(snakemake.output.csv)
-    logger.info(
-        f"ASHP & GSHP COP profile saved to {snakemake.output.csv}"
-    )
+    logger.info(f"ASHP & GSHP COP profile saved to {snakemake.output.csv}")
