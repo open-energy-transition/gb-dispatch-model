@@ -164,11 +164,12 @@ def assign_technical_and_costs_defaults(
         )
 
     # Set capital costs from default_characteristics
-    df = _ensure_column_with_default(
-        df,
-        "capital_cost",
-        default_characteristics["capital_cost"]["data"],
-    )
+    for col in ["capital_cost", "lifetime"]:
+        df = _ensure_column_with_default(
+            df,
+            col,
+            default_characteristics[col]["data"],
+        )
 
     # Create unique index: "bus carrier-year-idx"
     df["idx_counter"] = df.groupby(["bus", "carrier", "year"]).cumcount()

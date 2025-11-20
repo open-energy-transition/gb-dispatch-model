@@ -687,7 +687,6 @@ rule compose_network:
                 business_type=config["entsoe_unavailability"]["business_types"],
             ),
             resources("gb-model/merged_shapes.geojson"),
-            resources("gb-model/fes_powerplants.csv"),
             resources("gb-model/interconnectors_p_nom.csv"),
             resources("gb-model/GB_generator_monthly_unavailability.csv"),
             resources("gb-model/fes_hydrogen_demand.csv"),

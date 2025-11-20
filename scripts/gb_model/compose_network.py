@@ -21,15 +21,16 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import pypsa
+import xarray as xr
 from scipy.optimize import minimize_scalar
 
 from scripts._helpers import configure_logging, set_scenario_config
 from scripts.add_electricity import (
+    add_missing_carriers,
     attach_conventional_generators,
     attach_hydro,
-    attach_wind_and_solar,
+    flatten,
     load_and_aggregate_powerplants,
-    load_costs,
     sanitize_carriers,
     sanitize_locations,
 )
@@ -161,7 +162,7 @@ def integrate_renewables(
     line_length_factor: float,
     costs: pd.DataFrame,
     renewable_profiles: dict[str, str],
-    powerplants_path: str,
+    ppl: pd.DataFrame,
     hydro_capacities_path: str | None,
 ) -> None:
     """
@@ -205,16 +206,7 @@ def integrate_renewables(
         k: v for k, v in renewable_profiles.items() if k != "profile_hydro"
     }
 
-    # Load FES powerplants data (already enriched with costs from create_powerplants_table)
-    ppl = pd.read_csv(powerplants_path, index_col=0, dtype={"bus": "str"})
-
     if renewable_profiles:
-        landfall_lengths = {
-            tech: settings["landfall_length"]
-            for tech, settings in renewable_config.items()
-            if isinstance(settings, dict) and "landfall_length" in settings
-        }
-
         attach_wind_and_solar(
             n,
             costs,
@@ -222,8 +214,6 @@ def integrate_renewables(
             non_hydro_profiles,
             non_hydro_carriers,
             extendable_carriers,
-            line_length_factor,
-            landfall_lengths,
         )
 
     if "hydro" not in renewable_profiles:
@@ -800,6 +790,100 @@ def attach_chp_constraints(n: pypsa.Network, p_min_pu: pd.DataFrame) -> None:
     _add_timeseries_data_to_network(n.generators_t, p_min_pu_for_gens, "p_min_pu")
 
 
+def attach_wind_and_solar(
+    n: pypsa.Network,
+    costs: pd.DataFrame,
+    ppl: pd.DataFrame,
+    profile_filenames: dict,
+    carriers: list | set,
+    extendable_carriers: list | set,
+) -> None:
+    """
+    Attach wind and solar generators to the network.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        The PyPSA network to attach the generators to.
+    costs : pd.DataFrame
+        DataFrame containing the cost data.
+    ppl : pd.DataFrame
+        DataFrame containing the power plant data.
+    profile_filenames : dict
+        Dictionary containing the paths to the wind and solar profiles.
+    carriers : list | set
+        List of renewable energy carriers to attach.
+    extendable_carriers : list | set
+        List of extendable renewable energy carriers.
+    """
+    add_missing_carriers(n, carriers)
+
+    for car in carriers:
+        if car == "hydro":
+            continue
+
+        with xr.open_dataset(profile_filenames["profile_" + car]) as ds:
+            if ds.indexes["bus"].empty:
+                continue
+
+            # if-statement for compatibility with old profiles
+            if "year" in ds.indexes:
+                ds = ds.sel(year=ds.year.min(), drop=True)
+
+            ds = ds.stack(bus_bin=["bus", "bin"])
+
+            supcar = car.split("-", 2)[0]
+            capital_cost = costs.at[supcar, "capital_cost"]
+
+            buses = ds.indexes["bus_bin"].get_level_values("bus")
+            bus_bins = ds.indexes["bus_bin"].map(flatten)
+
+            p_nom_max = ds["p_nom_max"].to_pandas()
+            p_nom_max.index = p_nom_max.index.map(flatten)
+
+            p_max_pu = ds["profile"].to_pandas()
+            p_max_pu.columns = p_max_pu.columns.map(flatten)
+
+            if not ppl.query("carrier == @supcar").empty:
+                caps = ppl.query("carrier == @supcar").groupby("bus").p_nom.sum()
+                caps = caps.reindex(buses).fillna(0)
+                caps = pd.Series(data=caps.values, index=bus_bins)
+            else:
+                caps = pd.Series(index=bus_bins).fillna(0)
+
+            n.add(
+                "Generator",
+                bus_bins,
+                suffix=" " + supcar,
+                bus=buses,
+                carrier=supcar,
+                p_nom=caps,
+                p_nom_min=caps,
+                p_nom_extendable=car in extendable_carriers["Generator"],
+                p_nom_max=p_nom_max,
+                marginal_cost=costs.at[supcar, "marginal_cost"],
+                capital_cost=capital_cost,
+                efficiency=costs.at[supcar, "efficiency"],
+                p_max_pu=p_max_pu,
+                lifetime=costs.at[supcar, "lifetime"],
+            )
+
+
+def prepare_costs(
+    ppl: pd.DataFrame,
+    year: int,
+) -> pd.DataFrame:
+    """
+    Prepare costs DataFrame from powerplant data.
+    """
+    costs = ppl[ppl.build_year == year]
+    costs = costs[~costs.set_index("carrier").index.duplicated(keep="first")].set_index(
+        "carrier"
+    )
+    costs = costs[["set", "capital_cost", "marginal_cost", "lifetime", "efficiency"]]
+    return costs
+
+
 def compose_network(
     network_path: str,
     output_path: str,
@@ -874,16 +958,12 @@ def compose_network(
     )
     add_gb_components(network, context)
 
-    costs = None
-    if context.costs_path.exists():
-        weights = network.snapshot_weightings.objective
-        nyears = float(weights.sum()) / 8760.0
-        costs = load_costs(
-            str(context.costs_path),
-            context.costs_config,
-            max_hours=context.max_hours,
-            nyears=nyears,
-        )
+    # Load FES powerplants data (already enriched with costs from create_powerplants_table)
+    ppl = pd.read_csv(powerplants_path, index_col=0, dtype={"bus": "str"})
+    ppl = ppl[ppl.build_year == year]
+
+    # Define costs file
+    costs = prepare_costs(ppl, year)
 
     line_length_factor = lines_config["length_factor"]
     integrate_renewables(
@@ -894,13 +974,12 @@ def compose_network(
         line_length_factor,
         costs,
         renewable_profiles,
-        powerplants_path,
+        ppl,
         hydro_capacities_path,
     )
 
     conventional_carriers = list(electricity_config["conventional_carriers"])
-    # Load FES powerplants data (already enriched with costs from create_powerplants_table)
-    ppl = pd.read_csv(powerplants_path, index_col=0, dtype={"bus": "str"})
+
     attach_conventional_generators(
         network,
         costs,

@@ -135,6 +135,11 @@ solving:
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:
   powerplants_filter: (DateOut >= 2020 or DateOut != DateOut) and not (Country == 'Germany' and Fueltype == 'Nuclear')
+  extendable_carriers:
+    Generator: []
+    Store: []
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]
+  renewable_carriers: [solar, onwind, offwind-dc, hydro]
 
 # Simplified CHP configuration for GB model (electricity-only)
 # CHPs are modeled as generators with minimum operation constraints based on heat demand
