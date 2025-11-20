@@ -158,8 +158,6 @@ def integrate_renewables(
     n: pypsa.Network,
     electricity_config: dict[str, Any],
     renewable_config: dict[str, Any],
-    clustering_config: dict[str, Any],
-    line_length_factor: float,
     costs: pd.DataFrame,
     renewable_profiles: dict[str, str],
     ppl: pd.DataFrame,
@@ -216,26 +214,19 @@ def integrate_renewables(
             extendable_carriers,
         )
 
-    if "hydro" not in renewable_profiles:
-        logger.warning("Hydro profile not available; skipping hydro integration")
-        return
+    if "hydro" in renewable_carriers:
+        hydro_cfg = copy.deepcopy(renewable_config["hydro"])
+        carriers = hydro_cfg.pop("carriers")
 
-    if hydro_capacities_path is None:
-        logger.warning("Hydro capacities file missing; skipping hydro integration")
-        return
-
-    hydro_cfg = copy.deepcopy(renewable_config["hydro"])
-    carriers = hydro_cfg.pop("carriers")
-
-    attach_hydro(
-        n,
-        costs,
-        ppl,
-        renewable_profiles["profile_hydro"],
-        hydro_capacities_path,
-        carriers,
-        **hydro_cfg,
-    )
+        attach_hydro(
+            n,
+            costs,
+            ppl,
+            renewable_profiles["profile_hydro"],
+            hydro_capacities_path,
+            carriers,
+            **hydro_cfg,
+        )
 
 
 def add_gb_components(
@@ -869,7 +860,7 @@ def attach_wind_and_solar(
             )
 
 
-def prepare_costs(
+def _prepare_costs(
     ppl: pd.DataFrame,
     year: int,
 ) -> pd.DataFrame:
@@ -880,7 +871,16 @@ def prepare_costs(
     costs = costs[~costs.set_index("carrier").index.duplicated(keep="first")].set_index(
         "carrier"
     )
-    costs = costs[["set", "capital_cost", "marginal_cost", "lifetime", "efficiency"]]
+    costs = costs[
+        [
+            "set",
+            "capital_cost",
+            "marginal_cost",
+            "lifetime",
+            "efficiency",
+            "CO2 intensity",
+        ]
+    ]
     return costs
 
 
@@ -961,17 +961,15 @@ def compose_network(
     # Load FES powerplants data (already enriched with costs from create_powerplants_table)
     ppl = pd.read_csv(powerplants_path, index_col=0, dtype={"bus": "str"})
     ppl = ppl[ppl.build_year == year]
+    ppl["max_hours"] = 0  # Initialize max_hours column
 
     # Define costs file
-    costs = prepare_costs(ppl, year)
+    costs = _prepare_costs(ppl, year)
 
-    line_length_factor = lines_config["length_factor"]
     integrate_renewables(
         network,
         electricity_config,
         renewable_config,
-        clustering_config,
-        line_length_factor,
         costs,
         renewable_profiles,
         ppl,

@@ -147,6 +147,9 @@ def assign_technical_and_costs_defaults(
     df["bus"] = df["bus"].astype(str)
     df["build_year"] = df["year"].astype(int)
 
+    # Add country columns
+    df["country"] = df["bus"].str[:2]
+
     # Integrate FES power costs
     df = _integrate_fes_power_costs(
         df, fes_power_costs, costs_config, default_characteristics
