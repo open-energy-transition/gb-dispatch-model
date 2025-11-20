@@ -138,7 +138,7 @@ electricity:
   extendable_carriers:
     Generator: []
     Store: []
-  conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, gas, coal, waste, geothermal, biomass]
   renewable_carriers: [solar, onwind, offwind-dc, hydro]
 
 # Simplified CHP configuration for GB model (electricity-only)
