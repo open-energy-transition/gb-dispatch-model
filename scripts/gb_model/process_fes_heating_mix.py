@@ -5,7 +5,7 @@
 """
 Heating technology mix calculator.
 
-This script extracts the heating techology mix from FES workbook and calculates the share of each technology in the final demand.
+This script extracts the heating technology mix from FES workbook and calculates the share of each technology in the final demand.
 """
 
 import logging
