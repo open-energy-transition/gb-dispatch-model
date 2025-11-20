@@ -551,9 +551,7 @@ rule process_heat_demand_shape:
             "gb-model/residential_heat_demand_shape_{year}.csv"
         ),
         #Industry load is not generated in PyPSA-Eur, hence the same profile as services is considered to be applicable for c&i
-        commercial_csv_file=resources(
-            "gb-model/iandc_heat_demand_shape_{year}.csv"
-        ),
+        commercial_csv_file=resources("gb-model/iandc_heat_demand_shape_{year}.csv"),
     log:
         logs("heat_demand_s_clustered_{year}.log"),
     script:
@@ -685,24 +683,28 @@ rule distribute_eur_demands:
 
 def demands(w):
     """Collate annual demands and their profiles into individual inputs for `compose_network`"""
-    def add_year_suffix(path,type,year):
+
+    def add_year_suffix(path, type, year):
         if "heat" in type:
-            path=path.replace(".csv",f"_{year}.csv")
+            path = path.replace(".csv", f"_{year}.csv")
         return path
 
     return {
         f"demand_{demand_type}": (
             [
                 resources(f"gb-model/{demand_type}_demand.csv"),
-                add_year_suffix(resources(
-                    f"gb-model/{demand_type.replace('fes_', '')}_demand_shape.csv"),demand_type,w.year
+                add_year_suffix(
+                    resources(
+                        f"gb-model/{demand_type.replace('fes_', '')}_demand_shape.csv"
+                    ),
+                    demand_type,
+                    w.year,
                 ),
             ]
         )
         for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"]
         if demand_type != "fes_transport"
     }
-     
 
 
 def flexibilities(w):
