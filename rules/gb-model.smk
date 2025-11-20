@@ -610,6 +610,7 @@ rule scale_boundary_capabilities:
         etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),
     params:
         etys_boundaries_to_lines=config["region_operations"]["etys_boundaries"],
+        prune_lines=config["region_operations"]["prune_lines"],
     output:
         csv=resources("gb-model/line_s_max_pu.csv"),
         html=resources("gb-model/line_s_nom_compare.html"),

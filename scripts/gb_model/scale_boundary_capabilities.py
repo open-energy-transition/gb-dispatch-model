@@ -142,7 +142,6 @@ def get_s_max_pu(
         total_error = np.sqrt(
             sum((df_.s_nom - df_.capability_mw).div(df_.capability_mw) ** 2)
         )
-        logger.info(f"Current total error: {total_error:.2f}")
         return total_error
 
     # Optimize
@@ -155,7 +154,7 @@ def get_s_max_pu(
         logger.warning(f"Optimisation did not fully converge: {result.message}")
     else:
         logger.info(
-            f"Optimisation converged successfully with final error: {result.fun:.2f} MW²"
+            f"Optimisation converged successfully with final error: {result.fun:.2f}"
         )
 
     # Create series with optimised s_max_pu values
@@ -233,7 +232,19 @@ if __name__ == "__main__":
     s_max_pu_optimised = get_s_max_pu(
         network, boundary_s_noms, etys_caps, etys_boundaries
     )
-
+    for line in snakemake.params.prune_lines:
+        mask = _get_lines(network.lines, line["bus0"], line["bus1"])
+        if mask.any():
+            s_max_pu_optimised = pd.concat(
+                [s_max_pu_optimised, pd.Series(0, index=mask[mask].index)]
+            )
+            logger.info(
+                f"Pruned line between bus {line['bus0']} and bus {line['bus1']}"
+            )
+        else:
+            logger.warning(
+                f"No line found to prune between bus {line['bus0']} and bus {line['bus1']}"
+            )
     fig = plot_compare_s_nom(
         get_boundary_s_noms(network.lines, etys_boundaries, network.lines.s_max_pu),
         etys_caps,

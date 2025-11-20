@@ -259,11 +259,15 @@ region_operations:
       bus1: 15
     - bus0: 20
       bus1: 16
+    - bus0: 16
+      bus1: 21
     B8:
     - bus0: 14
       bus1: 17
     - bus0: 14
       bus1: 15
+    - bus0: 14
+      bus1: 16
     - bus0: 13
       bus1: 16
     B9:
@@ -271,9 +275,15 @@ region_operations:
       bus1: 6
     - bus0: 14
       bus1: 7
+    - bus0: 14
+      bus1: 5
+    - bus0: 13
+      bus1: 6
     # not a perfect match as 12 intersects the boundary
     - bus0: 12
       bus1: 13
+    - bus0: 12
+      bus1: 14
     B0:
     - bus0: 29
       bus1: 27
@@ -287,6 +297,8 @@ region_operations:
       bus1: 6
     - bus0: 9
       bus1: 2
+    - bus0: 4
+      bus1: 8
     B13:
     - bus0: 1
       bus1: 2
@@ -326,6 +338,8 @@ region_operations:
       bus1: 3
     - bus0: 2
       bus1: 4
+    - bus0: 2
+      bus1: 5
     - bus0: 9
       bus1: 8
     # not a perfect match as 10 intersects the boundary
@@ -334,9 +348,14 @@ region_operations:
     NW2:
     - bus0: 22
       bus1: 18
+    # leapfrogs NW3 - consider adding to NW3, too.
+    - bus0: 17
+      bus1: 22
     NW3:
     - bus0: 18
       bus1: 17
+    - bus0: 15
+      bus1: 18
     B14:
     - bus0: 8
       bus1: 9
@@ -357,6 +376,14 @@ region_operations:
       bus1: 25
     - bus0: 27
       bus1: 25
+  # These are manually selected spurious lines originating from not removing stubs earlier
+  prune_lines:
+  - bus0: 10
+    bus1: 11
+  - bus0: 26
+    bus1: 29
+  - bus0: 11
+    bus1: 16
 
 # Note: Set ENTSO_E_API_KEY in your .env file or environment variables
 # Register at https://transparency.entsoe.eu/ to get API key
