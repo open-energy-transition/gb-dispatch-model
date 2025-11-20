@@ -30,7 +30,6 @@ from scripts.add_electricity import (
     attach_conventional_generators,
     attach_hydro,
     flatten,
-    load_and_aggregate_powerplants,
     sanitize_carriers,
     sanitize_locations,
 )
@@ -119,42 +118,33 @@ def _add_timeseries_data_to_network(
     )
 
 
-def load_powerplants(
+def _load_powerplants(
     powerplants_path: str,
-    costs: pd.DataFrame | None,
-    clustering_config: dict[str, Any],
+    year: int,
 ) -> pd.DataFrame:
     """
-    Load and aggregate powerplant data.
+    Load powerplant data.
 
     Parameters
     ----------
     powerplants_path : str
         Path to powerplants CSV file
-    costs : pd.DataFrame or None
-        Cost data DataFrame
-    clustering_config : dict
-        Clustering configuration dictionary
+    year : int
+        Year to filter powerplants
 
     Returns
     -------
     pd.DataFrame
-        Aggregated powerplant data
+        Powerplant data filtered by year
     """
-    consider_efficiency = clustering_config["consider_efficiency_classes"]
-    aggregation_strategies = clustering_config["aggregation_strategies"]
-    exclude_carriers = clustering_config["exclude_carriers"]
+    ppl = pd.read_csv(powerplants_path, index_col=0, dtype={"bus": "str"})
+    ppl = ppl[ppl.build_year == year]
+    ppl["max_hours"] = 0  # Initialize max_hours column
 
-    return load_and_aggregate_powerplants(
-        powerplants_path,
-        costs,
-        consider_efficiency_classes=consider_efficiency,
-        aggregation_strategies=aggregation_strategies,
-        exclude_carriers=exclude_carriers,
-    )
+    return ppl
 
 
-def integrate_renewables(
+def _integrate_renewables(
     n: pypsa.Network,
     electricity_config: dict[str, Any],
     renewable_config: dict[str, Any],
@@ -959,14 +949,12 @@ def compose_network(
     add_gb_components(network, context)
 
     # Load FES powerplants data (already enriched with costs from create_powerplants_table)
-    ppl = pd.read_csv(powerplants_path, index_col=0, dtype={"bus": "str"})
-    ppl = ppl[ppl.build_year == year]
-    ppl["max_hours"] = 0  # Initialize max_hours column
+    ppl = _load_powerplants(powerplants_path, year)
 
     # Define costs file
     costs = _prepare_costs(ppl, year)
 
-    integrate_renewables(
+    _integrate_renewables(
         network,
         electricity_config,
         renewable_config,
