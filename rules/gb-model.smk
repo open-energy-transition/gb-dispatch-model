@@ -504,7 +504,7 @@ rule process_cop_profiles:
         "Process COP profile for {wildcards.year} obtained from existing PyPSA-Eur rules"
     params:
         year=lambda wildcards: wildcards.year,
-        heat_pump_sources=config["sector"]["heat_pump_sources"]
+        heat_pump_sources=config["sector"]["heat_pump_sources"],
     input:
         cop_profile=resources("cop_profiles_base_s_clustered_{year}.nc"),
         clustered_pop_layout=resources("pop_layout_base_s_clustered.csv"),
@@ -522,13 +522,15 @@ rule process_fes_heating_mix:
         "Process the share of electrified heating technologies from FES workbook"
     params:
         year=lambda wildcards: wildcards.year,
-        electrified_heating_technologies=config["fes"]["gb"]["demand"]["heat"]["electrified_heating_technologies"],
+        electrified_heating_technologies=config["fes"]["gb"]["demand"]["heat"][
+            "electrified_heating_technologies"
+        ],
         scenario=config["fes"]["gb"]["scenario"],
     input:
         fes_residential_heatmix=resources("gb-model/fes/2021/CV.16.csv"),
-        fes_commercial_heatmix=resources("gb-model/fes/2021/CV.55.csv")
+        fes_commercial_heatmix=resources("gb-model/fes/2021/CV.55.csv"),
     output:
-        csv=resources("gb-model/fes/heating_mix_{year}.csv")
+        csv=resources("gb-model/fes/heating_mix_{year}.csv"),
     log:
         logs("process_fes_heating_mix_{year}.log"),
     script:
@@ -539,15 +541,19 @@ rule process_heat_demand_shape:
     message:
         "Cluster default PyPSA-Eur heat demand shape by bus"
     params:
-        year=lambda wildcards: wildcards.year
+        year=lambda wildcards: wildcards.year,
     input:
         load=resources("hourly_heat_demand_total_base_s_clustered.nc"),
         cop_profile=resources("cop_base_s_clustered_{year}.csv"),
-        heating_mix=resources("gb-model/fes/heating_mix_{year}.csv")
+        heating_mix=resources("gb-model/fes/heating_mix_{year}.csv"),
     output:
-        residential_csv_file=resources("gb-model/residential_heat_demand_shape_s_clustered_{year}.csv"),
+        residential_csv_file=resources(
+            "gb-model/residential_heat_demand_shape_s_clustered_{year}.csv"
+        ),
         #Industry load is not generated in PyPSA-Eur, hence the same profile as services is considered to be applicable for c&i
-        commercial_csv_file=resources("gb-model/iandc_heat_demand_shape_s_clustered_{year}.csv"), 
+        commercial_csv_file=resources(
+            "gb-model/iandc_heat_demand_shape_s_clustered_{year}.csv"
+        ),
     log:
         logs("heat_demand_s_clustered_{year}.log"),
     script:
@@ -681,20 +687,23 @@ def demands(w):
     """Collate annual demands and their profiles into individual inputs for `compose_network`"""
 
     return {
-        f"demand_{demand_type}": [
-            resources(f"gb-model/{demand_type}_demand.csv"),
-            resources(
-                f"gb-model/{demand_type.replace('fes_', '')}_demand_shape_s_clustered.csv"
-            ),
-        ] if demand_type == 'fes_baseline_electricity' else
-        [
-            resources(f"gb-model/{demand_type}_demand.csv"),
-            resources(
-                f"gb-model/{demand_type.replace('fes_', '')}_demand_shape_s_clustered_{w.year}.csv"
-            ),
-        ] 
-        for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"] 
-        if demand_type != 'fes_transport'
+        f"demand_{demand_type}": (
+            [
+                resources(f"gb-model/{demand_type}_demand.csv"),
+                resources(
+                    f"gb-model/{demand_type.replace('fes_', '')}_demand_shape_s_clustered.csv"
+                ),
+            ]
+            if demand_type == "fes_baseline_electricity"
+            else [
+                resources(f"gb-model/{demand_type}_demand.csv"),
+                resources(
+                    f"gb-model/{demand_type.replace('fes_', '')}_demand_shape_s_clustered_{w.year}.csv"
+                ),
+            ]
+        )
+        for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"]
+        if demand_type != "fes_transport"
     }
 
 
