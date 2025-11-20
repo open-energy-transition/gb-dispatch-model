@@ -323,6 +323,7 @@ def add_pypsaeur_components(
 def process_demand_data(
     annual_demand: str,
     clustered_demand_profile: str,
+    eur_demand: pd.DataFrame,
     year: int,
 ) -> pd.DataFrame:
     """
@@ -336,34 +337,41 @@ def process_demand_data(
         CSV paths for demand data for each demand type
     clustered_demand_profile_list: list[str]
         CSV paths for demand shape for each demand type
-    demand_type:
-        demand type for which data is to be processed
+    eur_demand: pd.DataFrame
+        European annual demand data
     year:
         Year used in the modelling
     """
 
     # Read the files
-    demand = pd.read_csv(annual_demand)
-    demand_profile = pd.read_csv(clustered_demand_profile, index_col=[0])
+    demand = pd.read_csv(annual_demand, index_col=["bus", "year"])
+    demand_all = pd.concat([demand, eur_demand])
+    demand_profile = pd.read_csv(
+        clustered_demand_profile, index_col=[0], parse_dates=True
+    )
 
     # Group demand data by year and bus and filter the data for required year
-    demand_grouped = demand.groupby(["year", "bus"]).sum().loc[year]
+    demand_this_year = demand_all.xs(year, level="year")
 
     # Filtering those buses that are present in both the dataframes
-    list_of_buses = list(set(demand["bus"]) & set(demand_profile.columns))
+    if diff_bus := set(
+        demand_this_year.index.get_level_values("bus")
+    ).symmetric_difference(set(demand_profile.columns)):
+        logger.warning(
+            "The following buses are missing demand profile or annual demand data and will be ignored: %s",
+            diff_bus,
+        )
 
     # Scale the profile by the annual demand from FES
-    load = demand_profile[list_of_buses].mul(demand_grouped["p_set"])
-
-    # Convert load index to datetime dtype to avoid flagging an assertion error from pypsa
-    load.index = pd.to_datetime(load.index)
-
+    load = demand_profile.drop(columns=diff_bus).mul(demand_this_year["p_set"])
+    assert not load.isnull().values.any(), "NaN values found in processed load data"
     return load
 
 
 def add_load(
     n: pypsa.Network,
     demands: dict[str, list[str]],
+    eur_demand: str,
     year: int,
 ):
     """
@@ -373,20 +381,20 @@ def add_load(
     ----------
     n : pypsa.Network
         Network to finalize
-    demand_list: list[str]
-        CSV paths for demand data for each demand type
-    clustered_demand_profile_list: list[str]
-        CSV paths for demand shape for each demand type
-    demand_types:
-        Keywords to map the demand files to each demand type
+    demands: dict[str, list[str]]
+        Mapping of demand types to list of CSV paths for demand data (GB annual demand, profile shapes)
+    eur_demand: str
+        Path to European annual demand data CSV
     year:
         Year used in the modelling
     """
-
+    eur_demand_df = pd.read_csv(eur_demand, index_col=["load_type", "bus", "year"])
     # Iterate through each demand type
     for demand_type, (annual_demand, clustered_demand_profile) in demands.items():
         # Process data for the demand type
-        load = process_demand_data(annual_demand, clustered_demand_profile, year)
+        load = process_demand_data(
+            annual_demand, clustered_demand_profile, eur_demand_df.xs(demand_type), year
+        )
 
         # Add the load to pypsa Network
         suffix = f" {demand_type}"
@@ -826,6 +834,7 @@ def compose_network(
     renewable_config: dict[str, Any],
     lines_config: dict[str, Any],
     demands: dict[str, list[str]],
+    eur_demand: str,
     year: int,
     enable_chp: bool,
     ev_data: dict[str, str],
@@ -936,7 +945,7 @@ def compose_network(
 
     add_pypsaeur_components(network, electricity_config, context, costs)
 
-    add_load(network, demands, year)
+    add_load(network, demands, eur_demand, year)
 
     add_EVs(network, ev_data, ev_params, year)
 
@@ -996,6 +1005,7 @@ if __name__ == "__main__":
         renewable_profiles=renewable_profiles,
         chp_p_min_pu_path=snakemake.input.chp_p_min_pu,
         line_s_max_pu_path=snakemake.input.line_s_max_pu,
+        eur_demand=snakemake.input.eur_demand,
         countries=snakemake.params.countries,
         costs_config=snakemake.params.costs_config,
         electricity_config=snakemake.params.electricity,
