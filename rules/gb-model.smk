@@ -277,7 +277,6 @@ rule create_powerplants_table:
     message:
         "Tabulate powerplant data GSP-wise from FES workbook sheet BB1 and EU supply data"
     params:
-        default_characteristics=config["fes"]["default_characteristics"],
         gb_config=config["fes"]["gb"],
         eur_config=config["fes"]["eur"],
         dukes_config=config["dukes-5.11"],
@@ -285,9 +284,6 @@ rule create_powerplants_table:
     input:
         gsp_data=resources("gb-model/regional_gb_data.csv"),
         eur_data=resources("gb-model/national_eur_data.csv"),
-        tech_costs=lambda w: resources(
-            f"costs_{config_provider('costs', 'year')(w)}.csv"
-        ),
         dukes_data=resources("gb-model/dukes-current-capacity.csv"),
     output:
         csv=resources("gb-model/fes_powerplants.csv"),
@@ -681,6 +677,28 @@ rule distribute_eur_demands:
         "../scripts/gb_model/distribute_eur_demands.py"
 
 
+rule assign_costs:
+    message:
+        "Prepares costs file from technology-data of PyPSA-Eur and FES and assigns to powerplants"
+    params:
+        default_characteristics=config["fes"]["default_characteristics"],
+        costs_config=config["costs"],
+        fes_scenario=config["fes"]["gb"]["scenario"],
+    input:
+        tech_costs=lambda w: resources(
+            f"costs_{config_provider('costs', 'year')(w)}.csv"
+        ),
+        fes_power_costs=resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
+        fes_carbon_costs=resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
+        fes_powerplants=resources("gb-model/fes_powerplants.csv"),
+    output:
+        enriched_powerplants=resources("gb-model/fes_powerplants_processed.csv"),
+    log:
+        logs("assign_costs.log"),
+    script:
+        "../scripts/gb_model/assign_costs.py"
+
+
 def demands(w):
     """Collate annual demands and their profiles into individual inputs for `compose_network`"""
 
@@ -735,7 +753,7 @@ rule compose_network:
         unpack(flexibilities),
         eur_demand=resources("gb-model/eur_annual_demand.csv"),
         network=resources("networks/base_s_clustered.nc"),
-        powerplants=resources("gb-model/fes_powerplants.csv"),
+        powerplants=resources("gb-model/fes_powerplants_processed.csv"),
         tech_costs=lambda w: resources(
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
@@ -756,7 +774,6 @@ rule compose_network:
                 business_type=config["entsoe_unavailability"]["business_types"],
             ),
             resources("gb-model/merged_shapes.geojson"),
-            resources("gb-model/fes_powerplants.csv"),
             resources("gb-model/interconnectors_p_nom.csv"),
             resources("gb-model/GB_generator_monthly_unavailability.csv"),
             resources("gb-model/fes_hydrogen_demand.csv"),
