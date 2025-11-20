@@ -662,10 +662,10 @@ rule distribute_eur_demands:
     input:
         eur_data=resources("gb-model/national_eur_data.csv"),
         energy_totals=resources("energy_totals.csv"),
-        demands=[
-            resources("gb-model/fes_baseline_electricity_demand.csv"),
-            resources("gb-model/fes_transport_demand.csv"),
-        ],
+        demands=expand(
+            resources("gb-model/{demand_type}_demand.csv"),
+            demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),
+        ),
     params:
         totals_to_demands=config["fes"]["eur"]["totals_to_demand_groups"],
         base_year=config["energy"]["energy_totals_year"],

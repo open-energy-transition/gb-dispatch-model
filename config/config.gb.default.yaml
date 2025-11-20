@@ -732,6 +732,8 @@ fes:
     totals_to_demand_groups:
       fes_transport: [total road]
       fes_baseline_electricity: [electricity residential, electricity services, electricity rail]
+      fes_residential_heat: [total residential space, total residential water]
+      fes_iandc_heat: [total services space, total services water]
 
   hydrogen:
     demand:
