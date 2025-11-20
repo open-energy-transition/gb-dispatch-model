@@ -613,11 +613,31 @@ rule scale_boundary_capabilities:
         prune_lines=config["region_operations"]["prune_lines"],
     output:
         csv=resources("gb-model/line_s_max_pu.csv"),
-        html=resources("gb-model/line_s_nom_compare.html"),
+        html=resources("gb-model/plots/line_s_nom_compare.html"),
     log:
         logs("scale_boundary_capabilities.log"),
     script:
         "../scripts/gb_model/scale_boundary_capabilities.py"
+
+
+rule plot_etys_boundaries:
+    message:
+        "Plot ETYS boundary capabilities with interactive map"
+    input:
+        shapes=resources("gb-model/merged_shapes.geojson"),
+        etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),
+        boundaries="data/gb-model/downloaded/gb-etys-boundaries.zip",
+        osm_dir=resources("osm-raw/build/geojson"),
+    params:
+        voltages=config["electricity"]["voltages"],
+    output:
+        html=resources("gb-model/plots/etys_boundaries.html"),
+    log:
+        logs("plot_etys_boundaries.log"),
+    resources:
+        mem_mb=2000,
+    script:
+        "../scripts/gb_model/plot_etys_boundaries.py"
 
 
 def demands(w):
