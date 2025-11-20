@@ -272,10 +272,7 @@ region_operations:
     merge: [22, 23, 24, 26, 27, 28, 29, 30, 25, 83, 84]
     TO: SHETL
   - id: 29
-    merge: [34, 35, 36]
-    TO: SHETL
-  - id: 30
-    merge: [92]
+    merge: [34, 35, 36, 92]
     TO: SHETL
 
   # TODO: add this to Ireland
