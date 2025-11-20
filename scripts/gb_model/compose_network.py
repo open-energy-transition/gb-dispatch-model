@@ -985,7 +985,7 @@ def compose_network(
         )
         attach_chp_constraints(network, chp_p_min_pu)
 
-    add_pypsaeur_components(network, electricity_config, context, costs)
+    # add_pypsaeur_components(network, electricity_config, context, costs)
 
     add_load(network, demands, eur_demand, year)
 
