@@ -30,10 +30,7 @@ from scripts.add_electricity import (
     attach_conventional_generators,
     attach_hydro,
     flatten,
-    sanitize_carriers,
-    sanitize_locations,
 )
-from scripts.prepare_sector_network import add_electricity_grid_connection
 
 logger = logging.getLogger(__name__)
 
@@ -249,45 +246,6 @@ def add_gb_components(
     if context.countries:
         meta["countries"] = list(context.countries)
 
-    return n
-
-
-def add_pypsaeur_components(
-    n: pypsa.Network,
-    electricity_config: dict[str, Any],
-    context: CompositionContext,
-    costs: pd.DataFrame | None,
-) -> pypsa.Network:
-    """
-    Add PyPSA-Eur components like grid connections and sanitize network.
-
-    Parameters
-    ----------
-    n : pypsa.Network
-        Network to modify
-    electricity_config : dict
-        Electricity configuration dictionary
-    context : CompositionContext
-        Composition context
-    costs : pd.DataFrame or None
-        Cost data
-
-    Returns
-    -------
-    pypsa.Network
-        Modified network
-    """
-    if costs is not None:
-        add_electricity_grid_connection(n, costs)
-        n.meta.setdefault("gb_model", {})["costs_path"] = str(context.costs_path)
-
-    sanitize_locations(n)
-    try:
-        # Pass full config dict for sanitize_carriers (it needs various config sections)
-        full_config = {"electricity": electricity_config}
-        sanitize_carriers(n, full_config)
-    except KeyError as exc:  # pragma: no cover - tolerate partial configs
-        logger.debug("Skipping carrier sanitisation due to missing config: %s", exc)
     return n
 
 
@@ -984,8 +942,6 @@ def compose_network(
             chp_p_min_pu_path, index_col="snapshot", parse_dates=True
         )
         attach_chp_constraints(network, chp_p_min_pu)
-
-    # add_pypsaeur_components(network, electricity_config, context, costs)
 
     add_load(network, demands, eur_demand, year)
 
