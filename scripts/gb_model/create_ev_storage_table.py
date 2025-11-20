@@ -138,6 +138,9 @@ def interpolate_storage_data(
     # Convert GWh to MWh
     df_storage_interp["data"] = df_storage_interp["data"] * 1000
 
+    # Set -0.0 to 0 with abs
+    df_storage_interp["data"] = df_storage_interp["data"].abs()
+
     # Set name as MWh
     df_storage_interp = df_storage_interp.rename(columns={"data": "MWh"}).set_index(
         "year"
