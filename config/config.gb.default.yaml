@@ -544,6 +544,21 @@ fes-sheet-config:
       rename:
         columns: Parameter
 
+    # Overall heating technology mix in homes (residential) in 2050
+    CV.16:
+      usecols: "K:P"
+      skiprows: 3
+      index_col: [0, 1]
+      header: 0
+      rename:
+        index: ["Type", 2020]
+    CV.55:
+      usecols: "K:P"
+      skiprows: 3
+      index_col: [0, 1]
+      header: 0
+      rename:
+        index: ["Type", 2020]
   2023:
     WS1:
       usecols: "A:D,H:AM" # Ignore columns: "Baseline (2022)", "Share of GSP" (empty), "DNO License Area"
@@ -642,6 +657,10 @@ fes:
       Technology Detail:
         fes_baseline_electricity: ["baseline demand"]
         fes_transport: ["ev demand 1", "ev demand 2"]
+        fes_residential_heat: ["residential hp demand"]
+        fes_iandc_heat: ["i&c hp demand"]
+      heat:
+        electrified_heating_technologies: ["Electric resistive", "ASHP", "GSHP"]
 
     flexibility:
       Technology Detail:
@@ -713,6 +732,8 @@ fes:
     totals_to_demand_groups:
       fes_transport: [total road]
       fes_baseline_electricity: [electricity residential, electricity services, electricity rail]
+      fes_residential_heat: [total residential space, total residential water]
+      fes_iandc_heat: [total services space, total services water]
 
   hydrogen:
     demand:

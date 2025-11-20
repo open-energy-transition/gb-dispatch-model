@@ -495,6 +495,65 @@ rule cluster_baseline_electricity_demand_timeseries:
         "../scripts/gb_model/cluster_baseline_electricity_demand_timeseries.py"
 
 
+rule process_cop_profiles:
+    message:
+        "Process COP profile for {wildcards.year} obtained from existing PyPSA-Eur rules"
+    params:
+        year=lambda wildcards: wildcards.year,
+        heat_pump_sources=config["sector"]["heat_pump_sources"],
+    input:
+        cop_profile=resources("cop_profiles_base_s_clustered_{year}.nc"),
+        clustered_pop_layout=resources("pop_layout_base_s_clustered.csv"),
+        district_heat_share=resources("district_heat_share.csv"),
+    output:
+        csv=resources("cop_base_s_clustered_{year}.csv"),
+    log:
+        logs("process_cop_profiles_clustered_{year}.log"),
+    script:
+        "../scripts/gb_model/process_cop_profiles.py"
+
+
+rule process_fes_heating_mix:
+    message:
+        "Process the share of electrified heating technologies from FES workbook"
+    params:
+        year=lambda wildcards: wildcards.year,
+        electrified_heating_technologies=config["fes"]["gb"]["demand"]["heat"][
+            "electrified_heating_technologies"
+        ],
+        scenario=config["fes"]["gb"]["scenario"],
+    input:
+        fes_residential_heatmix=resources("gb-model/fes/2021/CV.16.csv"),
+        fes_commercial_heatmix=resources("gb-model/fes/2021/CV.55.csv"),
+    output:
+        csv=resources("gb-model/fes/heating_mix_{year}.csv"),
+    log:
+        logs("process_fes_heating_mix_{year}.log"),
+    script:
+        "../scripts/gb_model/process_fes_heating_mix.py"
+
+
+rule process_heat_demand_shape:
+    message:
+        "Cluster default PyPSA-Eur heat demand shape by bus"
+    params:
+        year=lambda wildcards: wildcards.year,
+    input:
+        load=resources("hourly_heat_demand_total_base_s_clustered.nc"),
+        cop_profile=resources("cop_base_s_clustered_{year}.csv"),
+        heating_mix=resources("gb-model/fes/heating_mix_{year}.csv"),
+    output:
+        residential_csv_file=resources(
+            "gb-model/residential_heat_demand_shape_{year}.csv"
+        ),
+        #Industry load is not generated in PyPSA-Eur, hence the same profile as services is considered to be applicable for c&i
+        commercial_csv_file=resources("gb-model/iandc_heat_demand_shape_{year}.csv"),
+    log:
+        logs("heat_demand_s_clustered_{year}.log"),
+    script:
+        "../scripts/gb_model/process_heat_demand_shape.py"
+
+
 rule process_demand_shape:
     message:
         "Process {wildcards.demand_sector} demand profile shape into CSV format"
@@ -603,10 +662,10 @@ rule distribute_eur_demands:
     input:
         eur_data=resources("gb-model/national_eur_data.csv"),
         energy_totals=resources("energy_totals.csv"),
-        demands=[
-            resources("gb-model/fes_baseline_electricity_demand.csv"),
-            resources("gb-model/fes_transport_demand.csv"),
-        ],
+        demands=expand(
+            resources("gb-model/{demand_type}_demand.csv"),
+            demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),
+        ),
     params:
         totals_to_demands=config["fes"]["eur"]["totals_to_demand_groups"],
         base_year=config["energy"]["energy_totals_year"],
@@ -642,11 +701,25 @@ rule assign_costs:
 
 def demands(w):
     """Collate annual demands and their profiles into individual inputs for `compose_network`"""
+
+    def add_year_suffix(path, type, year):
+        if "heat" in type:
+            path = path.replace(".csv", f"_{year}.csv")
+        return path
+
     return {
-        f"demand_{demand_type}": [
-            resources(f"gb-model/{demand_type}_demand.csv"),
-            resources(f"gb-model/{demand_type.replace('fes_', '')}_demand_shape.csv"),
-        ]
+        f"demand_{demand_type}": (
+            [
+                resources(f"gb-model/{demand_type}_demand.csv"),
+                add_year_suffix(
+                    resources(
+                        f"gb-model/{demand_type.replace('fes_', '')}_demand_shape.csv"
+                    ),
+                    demand_type,
+                    w.year,
+                ),
+            ]
+        )
         for demand_type in config["fes"]["gb"]["demand"]["Technology Detail"]
         if demand_type != "fes_transport"
     }
@@ -708,8 +781,6 @@ rule compose_network:
             resources("gb-model/fes_hydrogen_supply.csv"),
             resources("gb-model/fes_off_grid_electrolysis_electricity_demand.csv"),
             resources("gb-model/fes_hydrogen_storage.csv"),
-            resources("gb-model/baseline_electricity_demand_shape.csv"),
-            resources("gb-model/transport_demand_shape.csv"),
             resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
             resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
         ],
