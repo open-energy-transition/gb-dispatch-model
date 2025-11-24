@@ -647,7 +647,9 @@ rule plot_etys_boundaries:
         shapes=resources("gb-model/merged_shapes.geojson"),
         etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),
         boundaries="data/gb-model/downloaded/gb-etys-boundaries.zip",
-        osm_dir=resources("osm-raw/build/geojson"),
+        lines=resources("osm-raw/build/geojson/lines.geojson"),
+        buses=resources("osm-raw/build/geojson/buses.geojson"),
+        links=resources("osm-raw/build/geojson/links.geojson"),
     params:
         voltages=config["electricity"]["voltages"],
     output:

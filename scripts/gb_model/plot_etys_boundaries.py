@@ -11,8 +11,6 @@ Creates an interactive Plotly map showing:
 - Toggleable OSM infrastructure layers
 """
 
-from pathlib import Path
-
 import geopandas as gpd
 import pandas as pd
 import plotly.colors as pc
@@ -36,11 +34,13 @@ def get_voltage_color(voltage):
     return "#CCCCCC"
 
 
-def load_osm_infrastructure(osm_dir, gb_shapes, allowed_voltages):
+def load_osm_infrastructure(
+    lines_path, buses_path, links_path, gb_shapes, allowed_voltages
+):
     """Load and filter OSM infrastructure data for GB."""
-    osm_lines = gpd.read_file(osm_dir / "lines.geojson")
-    osm_buses = gpd.read_file(osm_dir / "buses.geojson")
-    osm_links = gpd.read_file(osm_dir / "links.geojson")
+    osm_lines = gpd.read_file(lines_path)
+    osm_buses = gpd.read_file(buses_path)
+    osm_links = gpd.read_file(links_path)
 
     # Filter for GB
     osm_buses_gb = osm_buses[osm_buses["country"] == "GB"].copy()
@@ -388,9 +388,14 @@ if __name__ == "__main__":
     allowed_voltages = set(snakemake.params.voltages)
 
     # Load data
-    osm_dir = Path(snakemake.input.osm_dir)
     gb_shapes = gpd.read_file(snakemake.input.shapes)
-    osm_data = load_osm_infrastructure(osm_dir, gb_shapes, allowed_voltages)
+    osm_data = load_osm_infrastructure(
+        snakemake.input.lines,
+        snakemake.input.buses,
+        snakemake.input.links,
+        gb_shapes,
+        allowed_voltages,
+    )
 
     boundary_data = load_boundary_data(
         snakemake.input.shapes,
