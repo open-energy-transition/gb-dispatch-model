@@ -324,3 +324,148 @@ This simplified approach does not model:
 - Heat provision for ancillary services
 
 For applications requiring detailed heat sector modeling, use PyPSA-Eur's full sector-coupling approach with explicit heat buses and Links.
+
+.. _boundary-capability-scaling:
+
+===============================================
+Transmission Boundary Capability Scaling
+===============================================
+
+Overview
+========
+
+The GB model scales transmission line capacities (``s_nom``) to match the boundary capabilities defined in NESO's Electricity Ten Year Statement (ETYS) report.
+This ensures that inter-regional power transfer limits in the model align with real-world transmission constraints.
+
+PyPSA-Eur's base network, derived from OpenStreetMap (OSM) transmission infrastructure, provides detailed line-by-line representation of the GB transmission system.
+However, these individual line ratings may not aggregate to match the official boundary transfer capabilities that result from detailed power flow modelling.
+The scaling process adjusts line capacities to match baseline capabilities defined in the ETYS while respecting the physical network topology.
+
+Problem Statement
+=================
+
+**ETYS Boundaries**: NESO defines transmission boundaries—interfaces between major regions of the GB network—with specific power transfer capabilities in MW.
+These represent operational limits for managing power flows across regions.
+
+**PyPSA-Eur Lines**: The base network contains many individual transmission lines crossing each boundary, each with its own ``s_nom`` (nominal capacity) derived from OSM voltage data and standard assumptions.
+
+**Mismatch**: The sum of PyPSA line capacities across a boundary rarely matches the ETYS boundary capability exactly, due to:
+
+- Simplified assumptions in OSM data processing
+- Network topology differences (actual vs. modeled)
+- Operational vs. nominal rating differences
+- Missing or incomplete OSM infrastructure data
+
+**Solution**: Scale individual line capacities using ``s_max_pu`` multipliers to achieve target boundary capabilities while maintaining relative line importance.
+
+Methodology
+===========
+
+Boundary-to-Line Mapping
+-------------------------
+
+ETYS boundaries are mapped to PyPSA network buses in the configuration::
+
+    region_operations:
+      etys_boundaries:
+        B6:                    # Boundary name from ETYS report
+        - bus0: 23             # PyPSA bus IDs
+          bus1: 21
+        B7a:
+        - bus0: 20
+          bus1: 15
+        - bus0: 20             # Multiple line groups can compose
+          bus1: 16             # a single ETYS boundary
+        - bus0: 16
+          bus1: 21
+
+Each boundary is defined by one or more bus pairs.
+All transmission lines connecting those bus pairs contribute to the boundary's total capacity.
+
+Capacity Calculation
+--------------------
+
+For each ETYS boundary, the baseline PyPSA capacity is calculated by summing all contributing lines::
+
+    boundary_capacity = sum(line.s_nom for line in boundary_lines)
+
+This is compared against the ETYS target capability extracted from the ETYS PDF report (see ``extract_etys_boundary_capabilities.py``).
+
+Optimization Problem
+--------------------
+
+The scaling process finds ``s_max_pu`` values (capacity multipliers) for each line by solving an optimization problem:
+
+**Objective**: Minimize total relative error across all boundaries
+
+.. math::
+
+    \min_{x_i} \sqrt{\sum_{b \in \text{boundaries}} \left( \frac{\sum_{i \in b} s_{nom,i} \cdot x_i - C_b}{C_b} \right)^2}
+
+Where:
+
+- :math:`x_i` = ``s_max_pu`` for line :math:`i`
+- :math:`s_{nom,i}` = nominal capacity of line :math:`i`
+- :math:`C_b` = ETYS target capability for boundary :math:`b`
+- :math:`i \in b` = lines that contribute to boundary :math:`b`
+
+**Constraints**: Each line's ``s_max_pu`` is bounded by all boundaries it belongs to
+
+.. math::
+
+    \min_{b: i \in b}(\text{scaling}_b) \leq x_i \leq \max_{b: i \in b}(\text{scaling}_b)
+
+Where :math:`\text{scaling}_b = C_b / \sum_{i \in b} s_{nom,i}` is the simple scaling factor for boundary :math:`b`.
+
+This ensures:
+
+1. Lines belonging to multiple boundaries satisfy constraints from all
+2. No line is scaled beyond what any of its boundaries require
+3. Relative line importance within boundaries is preserved
+
+**Method**: Scipy's ``minimize``
+
+**Initial Guess**: Midpoint of min/max range for each line
+
+Special Cases
+-------------
+
+**Line Pruning**: Some lines are manually removed (set ``s_max_pu = 0``) because they represent:
+
+- Spurious connections from network building errors
+- Stubs that should have been removed earlier (but we didn't want to accidentally remove stubs that represent real connections)
+
+These are defined in configuration::
+
+    region_operations:
+      prune_lines:
+      - bus0: 10
+        bus1: 11
+      - bus0: 26
+        bus1: 29
+
+File Structure
+==============
+
+::
+
+    scripts/gb_model/
+    └── scale_boundary_capabilities.py    # Optimization implementation
+
+    rules/
+    └── gb-model.smk                       # Snakemake rule definition
+
+    config/
+    └── config.gb.default.yaml             # Boundary mappings
+
+    results/{run}/resources/gb-model/
+    ├── line_s_max_pu.csv                  # Output scaling factors
+    └── line_s_nom_compare.html            # Validation visualization
+
+Limitations
+===========
+
+- **Topology Constraints**: Some boundary definitions may not perfectly match network topology, requiring approximations (noted in config comments)
+- **Optimization Convergence**: Highly constrained problems (many overlapping boundaries) may not achieve perfect matches for all boundaries simultaneously
+- **Static Capacities**: Scaling factors are constant; seasonal or dynamic ratings are not modeled
+- **Bus Numbering**: Requires manual mapping between ETYS geographical boundaries and PyPSA bus IDs

@@ -78,6 +78,54 @@ clustering:
     remove_stubs: false
     remove_stubs_across_borders: false
 
+costs:
+  GBP_to_EUR: 1.1632 # average in 2021: https://www.exchangerates.org.uk/GBP-EUR-spot-exchange-rates-history-2021.html#:~:text=This%20is%20the%20British%20Pound,rate%20in%202021%3A%201.1632%20EUR.
+  GBP_to_USD: 1.3757 # average in 2021: https://www.exchangerates.org.uk/GBP-USD-spot-exchange-rates-history-2021.html#:~:text=Average%20exchange%20rate%20in%202021,USD%20on%2008%20Dec%202021.
+  relevant_cost_columns: ["CO2 intensity", "VOM", "FOM", "investment", "efficiency", "lifetime", "discount rate", "fuel"]
+  marginal_cost_columns: ["CO2 intensity", "VOM", "efficiency", "fuel"]
+  carrier_fuel_mapping:
+    CCGT: gas
+    OCGT: gas
+  fes_VOM_carrier_mapping:
+    battery Store: Storage-Battery
+    biomass PP: Biomass-Biomass
+    biomass CHP: Biomass-Biomass CHP
+    CCGT PP: Gas-CCGT
+    CCGT CHP: Gas-CCGT # there is no CCGT CHP VOM costs in FES
+    coal PP: Coal-Coal
+    coal CHP: Coal-Coal CHP
+    gas CHP: Gas-Gas CHP
+    gas PP: Gas-Gas Reciprocating Engines
+    hydro PP: Hydro-Hydro
+    hydrogen PP: Low Carbon-Hydrogen
+    hydrogen CHP: Low Carbon-Hydrogen CHP # there is no hydrogen CHP costs in FES
+    marine PP: Marine-Marine
+    OCGT PP: Gas-OCGT
+    offwind PP: Offshore Wind-Offshore Wind
+    oil PP: Other Thermal-Fuel Oil
+    onwind PP: Onshore Wind-Onshore Wind
+    nuclear PP: Nuclear-Nuclear
+    PHS Store: Storage-Pumped Hydro
+    ror PP: Hydro-Hydro # there is no separate run-of-river costs in FES
+    solar PP: Solar-Solar PV
+    waste PP: Waste-Waste
+    waste CHP: Waste-Waste CHP
+  fes_fuel_carrier_mapping:
+    biomass PP: Biomass-Biomass
+    biomass CHP: Biomass-Biomass CHP
+    CCGT PP: Gas-CCGT
+    CCGT CHP: Gas-CCGT CHP
+    coal PP: Coal-Coal
+    coal CHP: Coal-Coal CHP
+    gas CHP: Gas-GT CHP
+    gas PP: Gas-Gas Reciprocating Engines
+    hydrogen PP: Low Carbon-Hydrogen
+    hydrogen CHP: Low Carbon-Hydrogen CHP # there is no hydrogen CHP fuel costs in FES
+    OCGT PP: Gas-OCGT
+    oil PP: Other Thermal-Fuel Oil
+    waste PP: Waste-WoodPellets-Waste
+    waste CHP: Waste-Gas-Waste CHP
+
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#solving
 solving:
   options:
@@ -91,6 +139,11 @@ electricity:
   voltages: [132, 220., 275., 300., 330., 380., 400., 500., 750.]
   base_network: osm-raw
   powerplants_filter: (DateOut >= 2020 or DateOut != DateOut) and not (Country == 'Germany' and Fueltype == 'Nuclear')
+  extendable_carriers:
+    Generator: []
+    Store: []
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, gas, coal, waste, geothermal, biomass]
+  renewable_carriers: [solar, onwind, offwind-dc, hydro]
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 lines:
@@ -228,10 +281,7 @@ region_operations:
     merge: [22, 23, 24, 26, 27, 28, 29, 30, 25, 83, 84]
     TO: SHETL
   - id: 29
-    merge: [34, 35, 36]
-    TO: SHETL
-  - id: 30
-    merge: [92]
+    merge: [34, 35, 36, 92]
     TO: SHETL
 
   # TODO: add this to Ireland
@@ -679,7 +729,7 @@ fes:
   default_characteristics:
     # Ensure all required columns exist with defaults
     efficiency:
-      data: 0.4
+      data: 1
       unit: ""
     capital_cost:
       data: 0.0
@@ -690,6 +740,15 @@ fes:
     marginal_cost:
       data: 0.0
       unit: ""
+    VOM:
+      data: 0.0
+      unit: ""
+    fuel:
+      data: 0.0
+      unit: ""
+    CO2 intensity:
+      data: 0.0
+      unit: "tCO2/MWh_th"
   gb:
     scenario: leading the way   # fes workbook
     scenario_abbreviations:
@@ -802,6 +861,10 @@ fes:
         Lignite CHP: CHP
         Peat CHP: CHP
         Reservoir Hydro with pumping: Store
+
+    totals_to_demand_groups:
+      fes_transport: [total road]
+      fes_baseline_electricity: [electricity residential, electricity services, electricity rail]
 
   hydrogen:
     demand:

@@ -277,7 +277,6 @@ rule create_powerplants_table:
     message:
         "Tabulate powerplant data GSP-wise from FES workbook sheet BB1 and EU supply data"
     params:
-        default_characteristics=config["fes"]["default_characteristics"],
         gb_config=config["fes"]["gb"],
         eur_config=config["fes"]["eur"],
         dukes_config=config["dukes-5.11"],
@@ -285,9 +284,6 @@ rule create_powerplants_table:
     input:
         gsp_data=resources("gb-model/regional_gb_data.csv"),
         eur_data=resources("gb-model/national_eur_data.csv"),
-        tech_costs=lambda w: resources(
-            f"costs_{config_provider('costs', 'year')(w)}.csv"
-        ),
         dukes_data=resources("gb-model/dukes-current-capacity.csv"),
     output:
         csv=resources("gb-model/fes_powerplants.csv"),
@@ -594,30 +590,54 @@ rule create_chp_p_min_pu_profile:
         regions=resources("gb-model/merged_shapes.geojson"),
         heat_demand=resources("hourly_heat_demand_total_base_s_clustered.nc"),
     output:
-        chp_p_min_pu=resources("gb-model/chp_p_min_pu_clustered.csv"),
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu.csv"),
     log:
         logs("create_chp_p_min_pu_profile.log"),
     script:
         "../scripts/gb_model/create_chp_p_min_pu_profile.py"
 
 
-rule scale_boundary_capabilities:
+rule distribute_eur_demands:
     message:
-        "Get scaling factors for boundary capabilities to align with the ETYS"
+        "Distribute total European neighbour annual demands into base electricity, heating, and transport"
     input:
-        network=resources("networks/base_s_clustered.nc"),
-        boundaries="data/gb-model/downloaded/gb-etys-boundaries.zip",
-        etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),
+        eur_data=resources("gb-model/national_eur_data.csv"),
+        energy_totals=resources("energy_totals.csv"),
+        demands=[
+            resources("gb-model/fes_baseline_electricity_demand.csv"),
+            resources("gb-model/fes_transport_demand.csv"),
+        ],
     params:
-        etys_boundaries_to_lines=config["region_operations"]["etys_boundaries"],
-        prune_lines=config["region_operations"]["prune_lines"],
+        totals_to_demands=config["fes"]["eur"]["totals_to_demand_groups"],
+        base_year=config["energy"]["energy_totals_year"],
     output:
-        csv=resources("gb-model/line_s_max_pu.csv"),
-        html=resources("gb-model/plots/line_s_nom_compare.html"),
+        csv=resources("gb-model/eur_annual_demand.csv"),
     log:
-        logs("scale_boundary_capabilities.log"),
+        logs("distribute_eur_demands.log"),
     script:
-        "../scripts/gb_model/scale_boundary_capabilities.py"
+        "../scripts/gb_model/distribute_eur_demands.py"
+
+
+rule assign_costs:
+    message:
+        "Prepares costs file from technology-data of PyPSA-Eur and FES and assigns to powerplants"
+    params:
+        default_characteristics=config["fes"]["default_characteristics"],
+        costs_config=config["costs"],
+        fes_scenario=config["fes"]["gb"]["scenario"],
+    input:
+        tech_costs=lambda w: resources(
+            f"costs_{config_provider('costs', 'year')(w)}.csv"
+        ),
+        fes_power_costs=resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
+        fes_carbon_costs=resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
+        fes_powerplants=resources("gb-model/fes_powerplants.csv"),
+    output:
+        enriched_powerplants=resources("gb-model/fes_powerplants_processed.csv"),
+    log:
+        logs("assign_costs.log"),
+    script:
+        "../scripts/gb_model/assign_costs.py"
 
 
 rule plot_etys_boundaries:
@@ -671,26 +691,25 @@ rule compose_network:
         electricity=config["electricity"],
         clustering=config["clustering"],
         renewable=config["renewable"],
-        lines=config["lines"],
         enable_chp=config["chp"]["enable"],
         ev_profile_config=config["ev"]["ev_demand_profile_transformation"],
     input:
         unpack(input_profile_tech),
         unpack(demands),
         unpack(flexibilities),
+        eur_demand=resources("gb-model/eur_annual_demand.csv"),
         network=resources("networks/base_s_clustered.nc"),
-        powerplants=resources("gb-model/fes_powerplants.csv"),
+        powerplants=resources("gb-model/fes_powerplants_processed.csv"),
         tech_costs=lambda w: resources(
             f"costs_{config_provider('costs', 'year')(w)}.csv"
         ),
         hydro_capacities=ancient("data/hydro_capacities.csv"),
-        chp_p_min_pu=resources("gb-model/chp_p_min_pu_clustered.csv"),
-        ev_demand_shape=resources("gb-model/ev_demand_shape_s_clustered.csv"),
+        chp_p_min_pu=resources("gb-model/chp_p_min_pu.csv"),
+        ev_demand_shape=resources("gb-model/ev_demand_shape.csv"),
         ev_demand_peak=resources("gb-model/regional_fes_ev_unmanaged_charging.csv"),
         ev_demand_annual=resources("gb-model/fes_transport_demand.csv"),
         ev_storage_capacity=resources("gb-model/regional_fes_ev_storage.csv"),
         ev_dsm_profile=resources("dsm_profile_s_clustered.csv"),
-        line_s_max_pu=resources("gb-model/line_s_max_pu.csv"),
         intermediate_data=[
             resources("gb-model/transmission_availability.csv"),
             expand(
@@ -701,7 +720,6 @@ rule compose_network:
                 business_type=config["entsoe_unavailability"]["business_types"],
             ),
             resources("gb-model/merged_shapes.geojson"),
-            resources("gb-model/fes_powerplants.csv"),
             resources("gb-model/interconnectors_p_nom.csv"),
             resources("gb-model/GB_generator_monthly_unavailability.csv"),
             resources("gb-model/fes_hydrogen_demand.csv"),
@@ -738,3 +756,20 @@ rule compose_networks:
             run=config["run"]["name"],
             year=list(np.arange(year_range[0], year_range[1])),
         ),
+
+
+rule constrain_lines_to_boundary_capabilities:
+    message:
+        "Constrain line flows according to ETYS boundary capabilities"
+    input:
+        network=resources("networks/composed_clustered_{year}.nc"),
+        etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),
+    params:
+        etys_boundaries_to_lines=config["region_operations"]["etys_boundaries"],
+        prune_lines=config["region_operations"]["prune_lines"],
+    output:
+        network=resources("networks/constrained_network_{year}.csv"),
+    log:
+        logs("constrain_lines_to_boundary_capabilities_{year}.log"),
+    script:
+        "../scripts/gb_model/constrain_lines_to_boundary_capabilities.py"
