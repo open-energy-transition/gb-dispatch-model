@@ -46,7 +46,8 @@ class OSMNameMapper:
             "substations_relation": substations_relation_path,
         }
 
-        self.name_to_id_map = self._create_name_to_id_map()
+        # Store the combined DataFrame for direct access
+        self.combined_df = self._create_combined_df()
 
     def _read_osm_file(self, file_path: Path, feature_type: str) -> pd.DataFrame:
         """
@@ -135,68 +136,20 @@ class OSMNameMapper:
             logger.info(f"Dropped {dropped_count} rows with empty names")
         return df_cleaned
 
-    def _aggregate_by_name(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _create_combined_df(self) -> pd.DataFrame:
         """
-        Aggregate OSM data by name, creating lists of IDs, types, and voltages.
+        Create a combined DataFrame from all OSM data files.
 
-        For each unique name, collect all associated IDs, feature types, and voltage levels.
-
-        Args:
-            df (pd.DataFrame): DataFrame with columns: id, name, voltage, type
+        Reads all OSM data files and creates a unified DataFrame with all entries.
 
         Returns:
-            pd.DataFrame: Aggregated DataFrame with columns:
-                - name: Feature name (index)
-                - ids: List of OSM IDs
-                - types: List of feature types
-                - voltages: List of voltage levels
-                - count: Number of occurrences
-        """
-        logger.info("Aggregating data by name")
-
-        aggregated = (
-            df.groupby("name")
-            .agg(
-                {
-                    "id": lambda x: x.tolist(),
-                    "type": lambda x: x.tolist(),
-                    "voltage": lambda x: x.tolist(),
-                }
-            )
-            .rename(columns={"id": "ids", "type": "types", "voltage": "voltages"})
-        )
-
-        # Add count column
-        aggregated["count"] = df.groupby("name").size()
-
-        # Reset index to make 'name' a column
-        aggregated = aggregated.reset_index()
-
-        logger.info(f"Aggregated to {len(aggregated)} unique names")
-
-        # Log some statistics
-        multiple_ids = aggregated[aggregated["count"] > 1]
-        if not multiple_ids.empty:
-            logger.info(f"Found {len(multiple_ids)} names with multiple entries")
-            logger.debug(f"Examples: {multiple_ids.head()['name'].tolist()}")
-
-        return aggregated
-
-    def _create_name_to_id_map(self) -> pd.DataFrame:
-        """
-        Create a mapping DataFrame from OSM names to their corresponding IDs.
-
-        Reads all OSM data files and creates a unified DataFrame.
-
-        Returns:
-            pd.DataFrame: DataFrame with columns:
+            pd.DataFrame: Combined DataFrame with columns:
+                - id: OSM ID
                 - name: Feature name
-                - ids: List of OSM IDs
-                - types: List of feature types
-                - voltages: List of voltage levels
-                - count: Number of occurrences
+                - voltage: Voltage level
+                - type: Feature type
         """
-        logger.info("Creating OSM name to ID mapping.")
+        logger.info("Creating combined OSM DataFrame.")
 
         dfs = []
         for feature_type, file_path in self.osm_files.items():
@@ -212,16 +165,40 @@ class OSMNameMapper:
 
             # Check for duplicate IDs
             self._check_duplicate_ids(combined_df)
+
+            # Drop entries with empty names
+            combined_df = self._drop_empty_names(combined_df)
+
+            return combined_df
         else:
             raise ValueError("No data found in any OSM files")
 
-        # Drop entries with empty names
-        combined_df = self._drop_empty_names(combined_df)
+    def get_id(self, name: str, component_type: str, voltage: int) -> pd.DataFrame:
+        """
+        Get OSM entries matching both name and component type.
 
-        # Aggregate by name
-        aggregated_df = self._aggregate_by_name(combined_df)
+        Args:
+            name (str): The name to search for.
+            component_type (str): The component type (e.g., 'cable', 'line', 'substation').
+            voltage (int): The voltage level in kV to filter by.
 
-        return aggregated_df
+        Returns:
+            pd.DataFrame: DataFrame with entries matching both name and type.
+        """
+        # Filter by component type
+        result = self.combined_df[self.combined_df["type"].str.contains(component_type)]
+
+        # Filter by name
+        result = result[result["name"] == name]
+
+        # Filter by voltage
+        result = result[result.voltage.str.contains(str(voltage))]
+
+        if result.empty:
+            logger.warning(
+                f"No entries found for name: {name} and type: {component_type}"
+            )
+        return result
 
 
 if __name__ == "__main__":
@@ -249,7 +226,13 @@ if __name__ == "__main__":
     )
 
     # Access the DataFrame
-    osm_mapping_df = mapper.name_to_id_map
+    osm_mapping_df = mapper.combined_df
+
+    # Get substation example
+    example_name = "Norwich Main"
+    substation_id = mapper.get_id(
+        name=example_name, component_type="substation", voltage=400
+    )
 
     # Save to CSV
     osm_mapping_df.to_csv(snakemake.output.osm_mapping, index=False)
