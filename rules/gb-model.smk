@@ -29,6 +29,23 @@ rule download_data:
         "curl -sSLo {output} {params.url}"
 
 
+rule osm_name_mapper:
+    message:
+        "Create name to ID mapper for OSM data"
+    input:
+        cables_way="data/osm-raw/GB/cables_way.json",
+        lines_way="data/osm-raw/GB/lines_way.json",
+        routes_relation="data/osm-raw/GB/routes_relation.json",
+        substations_way="data/osm-raw/GB/substations_way.json",
+        substations_relation="data/osm-raw/GB/substations_relation.json",
+    output:
+        osm_mapping=resources("gb-model/osm_name_mapping.csv"),
+    log:
+        logs("osm_name_mapper.log"),
+    script:
+        "../scripts/gb-model/osm_name_mapper.py"
+
+
 rule extract_etys_boundary_capabilities:
     message:
         "Extract boundary capability data from ETYS PDF report"
