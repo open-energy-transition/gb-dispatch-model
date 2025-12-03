@@ -33,11 +33,16 @@ rule osm_name_mapper:
     message:
         "Create name to ID mapper for OSM data"
     input:
-        cables_way="data/osm-raw/GB/cables_way.json",
-        lines_way="data/osm-raw/GB/lines_way.json",
-        routes_relation="data/osm-raw/GB/routes_relation.json",
-        substations_way="data/osm-raw/GB/substations_way.json",
-        substations_relation="data/osm-raw/GB/substations_relation.json",
+        raw_cables_way="data/osm-raw/GB/cables_way.json",
+        raw_lines_way="data/osm-raw/GB/lines_way.json",
+        raw_routes_relation="data/osm-raw/GB/routes_relation.json",
+        raw_substations_way="data/osm-raw/GB/substations_way.json",
+        raw_substations_relation="data/osm-raw/GB/substations_relation.json",
+        build_lines=resources("osm-raw/build/lines.csv"),
+        build_links=resources("osm-raw/build/links.csv"),
+        build_converters=resources("osm-raw/build/converters.csv"),
+        build_transformers=resources("osm-raw/build/transformers.csv"),
+        build_substations=resources("osm-raw/build/buses.csv"),
     output:
         osm_mapping=resources("gb-model/osm_name_mapping.csv"),
     log:

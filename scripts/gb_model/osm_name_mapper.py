@@ -15,36 +15,27 @@ from pathlib import Path
 import pandas as pd
 
 from scripts._helpers import configure_logging, set_scenario_config
+from scripts.clean_osm_data import _clean_voltage
 
 logger = logging.getLogger(__name__)
 
 
 class OSMNameMapper:
     def __init__(
-        self,
-        cables_way_path: Path,
-        lines_way_path: Path,
-        routes_relation_path: Path,
-        substations_way_path: Path,
-        substations_relation_path: Path,
+        self, osm_files: dict[str, Path], build_files: dict[str, Path]
     ) -> None:
         """
         Initialize the OSMNameMapper with paths to OSM data files.
 
         Args:
-            cables_way_path (Path): Path to the cables way OSM data.
-            lines_way_path (Path): Path to the lines way OSM data.
-            routes_relation_path (Path): Path to the routes relation OSM data.
-            substations_way_path (Path): Path to the substations way OSM data.
-            substations_relation_path (Path): Path to the substations relation OSM data.
+            osm_files (dict): Dictionary mapping OSM feature types to file paths.
+                Keys: 'cables_way', 'lines_way', 'routes_relation',
+                      'substations_way', 'substations_relation'
+            build_files (dict): Dictionary mapping build component types to file paths.
+                Keys: 'lines', 'links', 'converters', 'transformers', 'substations'
         """
-        self.osm_files = {
-            "cables_way": cables_way_path,
-            "lines_way": lines_way_path,
-            "routes_relation": routes_relation_path,
-            "substations_way": substations_way_path,
-            "substations_relation": substations_relation_path,
-        }
+        self.osm_files = osm_files
+        self.build_files = build_files
 
         # Store the combined DataFrame for direct access
         self.combined_df = self._create_combined_df()
@@ -169,11 +160,19 @@ class OSMNameMapper:
             # Drop entries with empty names
             combined_df = self._drop_empty_names(combined_df)
 
+            # Clean voltage data
+            combined_df["voltage"] = _clean_voltage(combined_df["voltage"])
+
+            # Split cells with multiple values
+            # combined_df = _split_cells(combined_df, ["voltage"])
+
             return combined_df
         else:
             raise ValueError("No data found in any OSM files")
 
-    def get_id(self, name: str, component_type: str, voltage: int) -> pd.DataFrame:
+    def get_raw_id(
+        self, name: str, component_type: str, voltage: int | str = ""
+    ) -> tuple[list[int], list[str]]:
         """
         Get OSM entries matching both name and component type.
 
@@ -188,17 +187,44 @@ class OSMNameMapper:
         # Filter by component type
         result = self.combined_df[self.combined_df["type"].str.contains(component_type)]
 
-        # Filter by name
-        result = result[result["name"] == name]
+        # Filter by name by simply checking if the name is contained (case-insensitive)
+        # TODO: Improve name matching if necessary with robust methods
+        result = result[result["name"].str.lower().str.contains(name.lower())]
 
-        # Filter by voltage
-        result = result[result.voltage.str.contains(str(voltage))]
+        # Filter by voltage only if provided
+        if voltage is not None:
+            result = result[result.voltage.str.contains(str(voltage))]
 
-        if result.empty:
+        if not result.empty:
+            ids = result["id"].tolist()
+            names = result["name"].tolist()
+
+            if len(ids) > 1:
+                voltage_info = f", voltage: {voltage}kV" if voltage is not None else ""
+                logger.warning(
+                    f"Multiple entries found for name: {name}, type: {component_type}{voltage_info}. IDs: {ids}, component names: {names}"
+                )
+            return ids, names
+        else:
+            voltage_info = f", voltage: {voltage}kV" if voltage is not None else ""
             logger.warning(
-                f"No entries found for name: {name} and type: {component_type}"
+                f"No entries found for name: {name} and type: {component_type}{voltage_info}"
             )
-        return result
+            return [], []
+
+    def get_network_id(self, raw_id: int, component_type: str) -> pd.Series:
+        """
+        Get the network component ID corresponding to a given OSM raw ID.
+
+        Args:
+            raw_id (int): The OSM raw ID.
+
+        Returns:
+            pd.Series: Series with network component IDs.
+        """
+        # This method would require access to the build files to map raw IDs to network IDs.
+        # Implementation would depend on the structure of the build files.
+        pass
 
 
 if __name__ == "__main__":
@@ -209,30 +235,70 @@ if __name__ == "__main__":
     configure_logging(snakemake)
     set_scenario_config(snakemake)
 
-    # Load input paths
-    cables_way_path = snakemake.input.cables_way
-    lines_way_path = snakemake.input.lines_way
-    routes_relation_path = snakemake.input.routes_relation
-    substations_way_path = snakemake.input.substations_way
-    substations_relation_path = snakemake.input.substations_relation
+    # Create dictionaries from snakemake inputs
+    osm_files = {
+        "cables_way": snakemake.input.raw_cables_way,
+        "lines_way": snakemake.input.raw_lines_way,
+        "routes_relation": snakemake.input.raw_routes_relation,
+        "substations_way": snakemake.input.raw_substations_way,
+        "substations_relation": snakemake.input.raw_substations_relation,
+    }
+
+    build_files = {
+        "lines": snakemake.input.build_lines,
+        "links": snakemake.input.build_links,
+        "converters": snakemake.input.build_converters,
+        "transformers": snakemake.input.build_transformers,
+        "substations": snakemake.input.build_substations,
+    }
 
     # Get mapping of names to IDs
     mapper = OSMNameMapper(
-        cables_way_path=cables_way_path,
-        lines_way_path=lines_way_path,
-        routes_relation_path=routes_relation_path,
-        substations_way_path=substations_way_path,
-        substations_relation_path=substations_relation_path,
+        osm_files=osm_files,
+        build_files=build_files,
     )
 
     # Access the DataFrame
     osm_mapping_df = mapper.combined_df
 
     # Get substation example
-    example_name = "Norwich Main"
-    substation_id = mapper.get_id(
-        name=example_name, component_type="substation", voltage=400
-    )
+    substation_list = snakemake.config["noa_options"]["substations_list"]
+
+    results = []
+
+    for substation_data in substation_list:
+        substation_data = [x.strip() for x in substation_data.split(",")]
+        raw_ids, raw_names = mapper.get_raw_id(
+            name=substation_data[0],
+            component_type="substation",
+            voltage=substation_data[2],
+        )
+        print(f"Results for substation: {substation_data[0]}")
+
+        if not raw_ids:
+            # Append entry for substations with no matches
+            print(f"No matches found for: {substation_data[0]}")
+            results.append(
+                {
+                    "substation_query": substation_data[0],
+                    "name": None,
+                    "id": None,
+                    "voltage": substation_data[2],
+                }
+            )
+        else:
+            for name, raw_id in zip(raw_names, raw_ids):
+                print(f"Name: {name}, OSM ID: {raw_id}, Voltage: {substation_data[2]}")
+                results.append(
+                    {
+                        "substation_query": substation_data[0],
+                        "name": name,
+                        "id": raw_id,
+                        "voltage": substation_data[2],
+                    }
+                )
+
+    df = pd.DataFrame(results)
 
     # Save to CSV
     osm_mapping_df.to_csv(snakemake.output.osm_mapping, index=False)
