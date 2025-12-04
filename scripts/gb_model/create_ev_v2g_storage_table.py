@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 """
-EV storage data processor.
+EV V2G storage data processor.
 
-This script processes required EV storage data from the FES workbook.
+This script processes required EV V2G storage data from the FES workbook.
 """
 
 import logging
@@ -19,17 +19,17 @@ from scripts.gb_model._helpers import pre_format
 logger = logging.getLogger(__name__)
 
 
-def parse_ev_storage_data(storage_sheet_path: str, scenario: str) -> pd.DataFrame:
+def parse_ev_v2g_storage_data(storage_sheet_path: str, scenario: str) -> pd.DataFrame:
     """
-    Parse the EV storage data from FES workbook to obtain storage capacity in the required format.
+    Parse the EV V2G storage data from FES workbook to obtain storage capacity in the required format.
 
     Args:
         storage_sheet_path (str): Filepath to the storage data CSV file containing
-                                 EV storage capacity data by technology and year
+                                 EV V2G storage capacity data by technology and year
         scenario (str): FES scenario name to filter the data for
 
     Returns:
-        pd.DataFrame: DataFrame containing EV storage capacity data indexed by year
+        pd.DataFrame: DataFrame containing EV V2G storage capacity data indexed by year
                      with 'data' column representing storage capacity in GWh for
                      V2G (Vehicle-to-Grid) technology under Leading the Way scenario.
 
@@ -43,7 +43,7 @@ def parse_ev_storage_data(storage_sheet_path: str, scenario: str) -> pd.DataFram
     # Load storage data
     df_storage = pd.read_csv(storage_sheet_path, index_col=[0, 1, 2, 3])
 
-    # Select EV storage
+    # Select EV V2G storage
     df_storage = df_storage.xs(
         (scenario, "V2G", "Storage Capacity (GWh)"),
         level=("scenario", "name", "parameter"),
@@ -60,14 +60,14 @@ def parse_ev_flexibility_data(
     fes_scenario: str,
 ) -> pd.DataFrame:
     """
-    Parse the EV storage data from FES workbook to obtain storage capacity in the required format.
+    Parse the EV V2G storage data from FES workbook to obtain storage capacity in the required format.
 
     Args:
         storage_sheet_path (str): Filepath to the storage data CSV file containing
-                                 EV storage capacity data by technology and year
+                                 EV V2G storage capacity data by technology and year
 
     Returns:
-        pd.DataFrame: DataFrame containing EV storage capacity data indexed by year
+        pd.DataFrame: DataFrame containing EV V2G storage capacity data indexed by year
                      with 'data' column representing storage capacity in GWh for
                      V2G (Vehicle-to-Grid) technology under Leading the Way scenario.
 
@@ -104,23 +104,23 @@ def interpolate_storage_data(
     year_range: list[int],
 ) -> pd.DataFrame:
     """
-    Interpolate the EV storage data to match the required year range.
+    Interpolate the EV V2G storage data to match the required year range.
 
     Args:
-        df_storage (pd.DataFrame): DataFrame containing EV storage capacity data
+        df_storage (pd.DataFrame): DataFrame containing EV V2G storage capacity data
                                     indexed by year.
         df_flexibility (pd.DataFrame): DataFrame containing flexibility data
                                        indexed by year.
         year_range (list[int]): List of years to interpolate the data for.
 
     Returns:
-        pd.DataFrame: Interpolated DataFrame containing EV storage data for the
+        pd.DataFrame: Interpolated DataFrame containing EV V2G storage data for the
                        specified year range.
     """
     # Compute energy to power ratio
     energy_to_power_ratio = df_storage / df_flexibility.loc[df_storage.index]
     logger.info(
-        f"Computed energy to power ratio for EV storage: {(-energy_to_power_ratio['data']).to_dict()}"
+        f"Computed energy to power ratio for EV V2G storage: {(-energy_to_power_ratio['data']).to_dict()}"
     )
 
     # Compute mean energy to power ratio
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     year_range = snakemake.params.year_range
 
     # Parse storage data
-    df_storage = parse_ev_storage_data(storage_sheet_path, fes_scenario)
+    df_storage = parse_ev_v2g_storage_data(storage_sheet_path, fes_scenario)
 
     # Parse flexibility data
     df_flexibility = parse_ev_flexibility_data(
@@ -183,4 +183,4 @@ if __name__ == "__main__":
 
     # Write storage dataframe to csv file
     df_storage_interp.to_csv(snakemake.output.storage_table)
-    logger.info(f"EV storage data saved to {snakemake.output.storage_table}")
+    logger.info(f"EV V2G storage data saved to {snakemake.output.storage_table}")

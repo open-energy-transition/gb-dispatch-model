@@ -615,9 +615,9 @@ rule process_ev_demand_shape:
         "../scripts/gb_model/process_ev_demand_shape.py"
 
 
-rule create_ev_storage_table:
+rule create_ev_v2g_storage_table:
     message:
-        "Process EV storage data from FES workbook into CSV format"
+        "Process EV V2G storage data from FES workbook into CSV format"
     params:
         scenario=config["fes"]["gb"]["scenario"],
         year_range=config["fes"]["year_range_incl"],
@@ -625,11 +625,11 @@ rule create_ev_storage_table:
         storage_sheet=resources("gb-model/fes/2021/FL.14.csv"),
         flexibility_sheet=resources("gb-model/fes/2021/FLX1.csv"),
     output:
-        storage_table=resources("gb-model/ev_storage.csv"),
+        storage_table=resources("gb-model/ev_v2g_storage.csv"),
     log:
-        logs("create_ev_storage_table.log"),
+        logs("create_ev_v2g_storage_table.log"),
     script:
-        "../scripts/gb_model/create_ev_storage_table.py"
+        "../scripts/gb_model/create_ev_v2g_storage_table.py"
 
 
 rule create_ev_peak_charging_table:
@@ -655,14 +655,14 @@ rule process_regional_ev_data:
         input_csv=resources("gb-model/ev_{ev_data_type}.csv"),
         reference_data=lambda wildcards: {
             "peak": resources("gb-model/ev_demand_annual.csv"),
-            "storage": resources("gb-model/regional_ev_v2g.csv"),
+            "v2g_storage": resources("gb-model/regional_ev_v2g.csv"),
         }[wildcards.ev_data_type],
     output:
         regional_output=resources("gb-model/regional_ev_{ev_data_type}.csv"),
     log:
         logs("process_regional_ev_{ev_data_type}.log"),
     wildcard_constraints:
-        ev_data_type="storage|peak",
+        ev_data_type="v2g_storage|peak",
     script:
         "../scripts/gb_model/process_regional_ev_data.py"
 
@@ -798,7 +798,7 @@ rule compose_network:
         renewable=config["renewable"],
         enable_chp=config["chp"]["enable"],
         prune_lines=config["region_operations"]["prune_lines"],
-        dsr_hours=config["fes"]["dsr_hours"],
+        dsr_hours_dict=config["fes"]["gb"]["flexibility"]["dsr_hours"],
     input:
         unpack(input_profile_tech),
         demands=expand(
@@ -811,9 +811,9 @@ rule compose_network:
         ),
         ev_data=expand(
             resources("gb-model/regional_ev_{ev_data}_inc_eur.csv"),
-            ev_data=["storage", "dsr", "v2g"],
+            ev_data=["v2g_storage", "v2g"],
         )
-        + [resources("dsm_profile_s_clustered.csv")],
+        + [resources("avail_profile_s_clustered.csv")],
         network=resources("networks/base_s_clustered.nc"),
         powerplants=resources("gb-model/fes_powerplants_processed.csv"),
         tech_costs=lambda w: resources(

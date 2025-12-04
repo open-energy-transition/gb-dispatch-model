@@ -781,8 +781,7 @@ fes-costing-sheet-config:
       columns: year
 
 fes:
-  year_range_incl: [2022, 2041] # 20-year period over which we will run the simulation
-  dsr_hours: [17, 20]  # hours during which demand-side management can occur (5pm-8pm)
+  year_range_incl: [2022, 2041] # 20-year period over which we will run the simulation   
   default_set: PP
   default_characteristics:
     # Ensure all required columns exist with defaults
@@ -873,11 +872,15 @@ fes:
       eur_add_data_reference:
         ev_dsr: "ev"
         ev_v2g: "ev"
-        ev_storage: "ev"
+        ev_v2g_storage: "ev"
         residential_dsr: "baseline_electricity"
         iandc_dsr: "baseline_electricity"
         iandc_heat_dsr: "iandc_heat"
-
+      dsr_hours:  # hours during which demand-side management can occur (E.g., 5pm-8pm)
+        residential_dsr: [17, 20]
+        iandc_dsr: [17, 20]
+        iandc_heat_dsr: [17, 20]
+        ev_dsr: [8, 6]
 
   eur:
     scenario: CT & LW    # "Leading the Way" equivalent in the NESO european supply table
