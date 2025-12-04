@@ -1,8 +1,8 @@
-# SPDX-FileCopyrightText: gb-open-market-model contributors
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
 #
 # SPDX-License-Identifier: CC0-1.0
 
-software-deployment-method: conda
+# software-deployment-method: conda
 cores: 1
 storage-http-max-requests-per-second: 2
 keep-storage-local-copies: true
