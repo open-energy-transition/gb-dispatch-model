@@ -22,6 +22,8 @@ from scripts._helpers import (
 configfile: "config/config.default.yaml"
 configfile: "config/config.gb.default.yaml"
 configfile: "config/plotting.default.yaml"
+configfile: "config/config.noa.default.yaml"
+configfile: "config/config.noa.sets.yaml"
 
 
 if Path("config/config.yaml").exists():

@@ -51,6 +51,23 @@ rule osm_name_mapper:
         "../scripts/gb-model/osm_name_mapper.py"
 
 
+rule add_noa_options:
+    message:
+        "Adds NOA options to the model"
+    params:
+        noa_options=config["noa_options"],
+        noa_sets=config["noa_sets"],
+    input:
+        network=resources("networks/base.nc"),
+        osm_mapping_csv=resources("gb-model/osm_name_mapping.csv"),
+    output:
+        modified_network=resources("gb-model/networks/base_noa.nc"),
+    log:
+        logs("add_noa_options.log"),
+    script:
+        "../scripts/gb-model/add_noa_options.py"
+
+
 rule extract_etys_boundary_capabilities:
     message:
         "Extract boundary capability data from ETYS PDF report"

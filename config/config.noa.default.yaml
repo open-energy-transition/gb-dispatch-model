@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
+#
+# SPDX-License-Identifier: CC0-1.0
+
+noa_options:
+- id: AENC
+  grouped_name: AENC_ATNC
+  name: "A new 400 kV double circuit in north East Anglia"
+    # detailed description
+  description: "Construct a new 400 kV double circuit in north East Anglia to facilitate power transfer requirements across the relevant boundaries. Substation works are required to accommodate the new circuits."
+  commissioning_year: 2027
+    # details of individual components to change
+  details:
+  - name: 60km of new 400kV double circuit OHL between Norwich Main and Bramford substations.
+    pypsa_operations:
+    - action: add
+      component_type: substation
+      name: Norwich Main Substation     # OSM name
+      voltage: 400     # provide voltage level in KV (TODO: do we need to define AC or DC?)
+      carrier: AC
+    - action: add     # TODO: think if we need to make addition of substation in one action
+      component_type: substation
+      name: Bramford Substation
+      voltage: 400
+      carrier: AC
+    - action: add
+      component_type: line
+      name: AENC_400kV_OHL_NorwichMain_Bramford
+      from: Norwich Main Substation
+      to: Bramford Substation
+      voltage: 400
+      length_km: 60
+      circuits: 2
+      line_type: OHL
+  - name: 120km of new 400kV double circuit OHL between Bramford and Tilbury substations via a new connection substation to be located in the Tendring district.
+      #   pypsa_components: ...
+      # - ...

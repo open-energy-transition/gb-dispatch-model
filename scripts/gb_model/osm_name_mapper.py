@@ -22,7 +22,10 @@ logger = logging.getLogger(__name__)
 
 class OSMNameMapper:
     def __init__(
-        self, osm_files: dict[str, Path], build_files: dict[str, Path]
+        self,
+        osm_files: dict[str, Path] | None = None,
+        build_files: dict[str, Path] | None = None,
+        csv_path: str | None = None,
     ) -> None:
         """
         Initialize the OSMNameMapper with paths to OSM data files.
@@ -33,12 +36,27 @@ class OSMNameMapper:
                       'substations_way', 'substations_relation'
             build_files (dict): Dictionary mapping build component types to file paths.
                 Keys: 'lines', 'links', 'converters', 'transformers', 'substations'
+            csv_path (Path): Path to pre-generated OSM mapping CSV.
         """
         self.osm_files = osm_files
         self.build_files = build_files
 
-        # Store the combined DataFrame for direct access
-        self.combined_df = self._create_combined_df()
+        # Convert csv_path to Path object if it's a string
+        if isinstance(csv_path, str):
+            csv_path = Path(csv_path)
+
+        # Load from CSV if provided
+        if csv_path is not None and csv_path.exists():
+            logger.info(f"Loading OSM mapping from CSV: {csv_path}")
+            self.combined_df = pd.read_csv(csv_path)
+        elif osm_files is not None and build_files is not None:
+            logger.info("Loading OSM data from raw files")
+            # Store the combined DataFrame for direct access
+            self.combined_df = self._create_combined_df()
+        else:
+            raise ValueError(
+                "Either csv_path or both osm_files and build_files must be provided."
+            )
 
     def _read_osm_file(self, file_path: Path, feature_type: str) -> pd.DataFrame:
         """
@@ -171,7 +189,11 @@ class OSMNameMapper:
             raise ValueError("No data found in any OSM files")
 
     def get_raw_id(
-        self, name: str, component_type: str, voltage: int | str = ""
+        self,
+        name: str,
+        component_type: str,
+        method: str,
+        voltage: int | str = "",
     ) -> tuple[list[int], list[str]]:
         """
         Get OSM entries matching both name and component type.
@@ -180,6 +202,7 @@ class OSMNameMapper:
             name (str): The name to search for.
             component_type (str): The component type (e.g., 'cable', 'line', 'substation').
             voltage (int): The voltage level in kV to filter by.
+            method (str): The matching method to use ('exact', 'contains', 'robust', etc.).
 
         Returns:
             pd.DataFrame: DataFrame with entries matching both name and type.
@@ -189,7 +212,14 @@ class OSMNameMapper:
 
         # Filter by name by simply checking if the name is contained (case-insensitive)
         # TODO: Improve name matching if necessary with robust methods
-        result = result[result["name"].str.lower().str.contains(name.lower())]
+        if method == "exact":
+            result = result[result["name"].str.lower() == name.lower()]
+        elif method == "contains":
+            result = result[result["name"].str.lower().str.contains(name.lower())]
+        else:
+            logger.warning(
+                "For now, only 'exact' and 'contains' methods are implemented for name matching."
+            )
 
         # Filter by voltage only if provided
         if voltage is not None:
@@ -260,45 +290,6 @@ if __name__ == "__main__":
 
     # Access the DataFrame
     osm_mapping_df = mapper.combined_df
-
-    # Get substation example
-    substation_list = snakemake.config["noa_options"]["substations_list"]
-
-    results = []
-
-    for substation_data in substation_list:
-        substation_data = [x.strip() for x in substation_data.split(",")]
-        raw_ids, raw_names = mapper.get_raw_id(
-            name=substation_data[0],
-            component_type="substation",
-            voltage=substation_data[2],
-        )
-        print(f"Results for substation: {substation_data[0]}")
-
-        if not raw_ids:
-            # Append entry for substations with no matches
-            print(f"No matches found for: {substation_data[0]}")
-            results.append(
-                {
-                    "substation_query": substation_data[0],
-                    "name": None,
-                    "id": None,
-                    "voltage": substation_data[2],
-                }
-            )
-        else:
-            for name, raw_id in zip(raw_names, raw_ids):
-                print(f"Name: {name}, OSM ID: {raw_id}, Voltage: {substation_data[2]}")
-                results.append(
-                    {
-                        "substation_query": substation_data[0],
-                        "name": name,
-                        "id": raw_id,
-                        "voltage": substation_data[2],
-                    }
-                )
-
-    df = pd.DataFrame(results)
 
     # Save to CSV
     osm_mapping_df.to_csv(snakemake.output.osm_mapping, index=False)
