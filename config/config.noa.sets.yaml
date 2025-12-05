@@ -4,7 +4,7 @@
 
 noa_sets:
 - id: 0
-  name: "AENC related"   # any meaningful name
+  name: "East Anglia GREEN (AENC and ATNC)"   # any meaningful name
   noa_options:
   - AENC
   - ATNC

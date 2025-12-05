@@ -13,6 +13,7 @@ import logging
 from pathlib import Path
 
 import pandas as pd
+import pypsa
 
 from scripts._helpers import configure_logging, set_scenario_config
 from scripts.clean_osm_data import _clean_voltage
@@ -24,7 +25,7 @@ class OSMNameMapper:
     def __init__(
         self,
         osm_files: dict[str, Path] | None = None,
-        build_files: dict[str, Path] | None = None,
+        network_path: str | None = None,
         csv_path: str | None = None,
     ) -> None:
         """
@@ -34,12 +35,14 @@ class OSMNameMapper:
             osm_files (dict): Dictionary mapping OSM feature types to file paths.
                 Keys: 'cables_way', 'lines_way', 'routes_relation',
                       'substations_way', 'substations_relation'
-            build_files (dict): Dictionary mapping build component types to file paths.
-                Keys: 'lines', 'links', 'converters', 'transformers', 'substations'
+            network_path (str): Path to the network file.
             csv_path (Path): Path to pre-generated OSM mapping CSV.
         """
         self.osm_files = osm_files
-        self.build_files = build_files
+        self.network_path = network_path
+        self.network = None
+        if network_path is not None:
+            self.network = self._load_network()
 
         # Convert csv_path to Path object if it's a string
         if isinstance(csv_path, str):
@@ -49,7 +52,7 @@ class OSMNameMapper:
         if csv_path is not None and csv_path.exists():
             logger.info(f"Loading OSM mapping from CSV: {csv_path}")
             self.combined_df = pd.read_csv(csv_path)
-        elif osm_files is not None and build_files is not None:
+        elif osm_files is not None:
             logger.info("Loading OSM data from raw files")
             # Store the combined DataFrame for direct access
             self.combined_df = self._create_combined_df()
@@ -113,6 +116,11 @@ class OSMNameMapper:
         except Exception as e:
             logger.error(f"Unexpected error reading {file_path}: {e}")
             return pd.DataFrame()
+
+    def _load_network(self) -> pypsa.Network:
+        """Load the base PyPSA network from the specified path."""
+        network = pypsa.Network(self.network_path)
+        return network
 
     def _check_duplicate_ids(self, df: pd.DataFrame) -> None:
         """
@@ -187,6 +195,97 @@ class OSMNameMapper:
             return combined_df
         else:
             raise ValueError("No data found in any OSM files")
+
+    def _get_network_bus_from_raw_id(
+        self, raw_id: str, voltage: int | str
+    ) -> tuple[str | None, str]:
+        """
+        Find network bus that corresponds to a raw OSM ID.
+
+        Strategy:
+        1. Find all buses where raw_id appears in bus_id
+        2. If multiple matches and voltage provided, filter by voltage suffix
+        3. Return best match or None
+
+        Args:
+            raw_id: The raw OSM ID to search for (e.g., "way/123456")
+            voltage: Optional voltage to use as tiebreaker (e.g., 400)
+
+        Returns:
+            Network bus ID and 'exists' status if found (with exact voltage match), else 'reference' status
+            None, None otherwise
+        """
+        # Find all buses that contain raw_id
+        matching_buses = [
+            bus_id for bus_id in self.network.buses.index if str(raw_id) in bus_id
+        ]
+
+        # Apply voltage filtering if matches found
+        if matching_buses:
+            matching_buses_with_voltage = [
+                bus_id for bus_id in matching_buses if bus_id.endswith(f"-{voltage}")
+            ]
+            if matching_buses_with_voltage:
+                return matching_buses_with_voltage[0], "exists"
+            else:
+                return matching_buses[0], "reference"
+        else:
+            logger.debug(f"No contains match for raw_id: {raw_id}")
+            return None, None
+
+    def _find_substation_with_fallback(
+        self, name: str, voltage: int | None = None
+    ) -> tuple[str | None, str | None, str | None]:
+        """
+        Find substation using fallback matching strategies.
+
+        Tries in order:
+        1. Exact name + exact voltage
+        2. Exact name + any voltage
+        3. Contains name + exact voltage
+        4. Contains name + any voltage
+
+        Returns:
+            tuple: (reference_bus_id, bus_status, raw_names) or (None, None, None) if not found
+        """
+        strategies = [
+            ("exact", voltage, f"exact name + exact voltage ({voltage}kV)"),
+            ("exact", "", "exact name + any voltage"),
+            ("contains", voltage, f"contains name + exact voltage ({voltage}kV)"),
+            ("contains", "", "contains name + any voltage"),
+        ]  # We might need even more robust methods in the future for fallback
+
+        for method, voltage_filter, description in strategies:
+            logger.debug(f"Trying strategy: {description}")
+
+            raw_ids, raw_names = self.get_raw_id(
+                name=name,
+                component_type="substation",
+                method=method,
+                voltage=voltage_filter,
+            )
+
+            if not raw_ids:
+                continue
+
+            # Try to find network bus for each raw_id
+            for raw_id, raw_name in zip(raw_ids, raw_names):
+                network_bus_id, bus_status = self._get_network_bus_from_raw_id(
+                    raw_id, voltage
+                )
+
+                if network_bus_id:
+                    logger.info(
+                        f"Match found using: {description}\n"
+                        f"OSM: {raw_name} (ID: {raw_id})\n"
+                        f"Network bus: {network_bus_id} (status: {bus_status})"
+                    )
+                    return network_bus_id, bus_status, raw_name
+
+            if raw_ids:  # This needs to be handled if such case happen
+                logger.debug(f"Found {len(raw_ids)} OSM matches but none in network")
+
+        return None, None, None
 
     def get_raw_id(
         self,
@@ -274,18 +373,10 @@ if __name__ == "__main__":
         "substations_relation": snakemake.input.raw_substations_relation,
     }
 
-    build_files = {
-        "lines": snakemake.input.build_lines,
-        "links": snakemake.input.build_links,
-        "converters": snakemake.input.build_converters,
-        "transformers": snakemake.input.build_transformers,
-        "substations": snakemake.input.build_substations,
-    }
-
     # Get mapping of names to IDs
     mapper = OSMNameMapper(
         osm_files=osm_files,
-        build_files=build_files,
+        network_path=snakemake.input.network,
     )
 
     # Access the DataFrame

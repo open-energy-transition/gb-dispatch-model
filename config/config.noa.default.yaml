@@ -18,7 +18,7 @@ noa_options:
       name: Norwich Main Substation     # OSM name
       voltage: 400     # provide voltage level in KV (TODO: do we need to define AC or DC?)
       carrier: AC
-    - action: add     # TODO: think if we need to make addition of substation in one action
+    - action: add     # TODO: think if we need to make addition of several substations in one action
       component_type: substation
       name: Bramford Substation
       voltage: 400
@@ -26,12 +26,12 @@ noa_options:
     - action: add
       component_type: line
       name: AENC_400kV_OHL_NorwichMain_Bramford
-      from: Norwich Main Substation
+      from: Norwich Main Substation # TODO: maybe we call it fully from_substation and to_substation
       to: Bramford Substation
       voltage: 400
       length_km: 60
       circuits: 2
-      line_type: OHL
+      carrier: AC # probably not needed, because it is AC for lines by default
   - name: 120km of new 400kV double circuit OHL between Bramford and Tilbury substations via a new connection substation to be located in the Tendring district.
       #   pypsa_components: ...
       # - ...

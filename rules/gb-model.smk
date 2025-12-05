@@ -38,11 +38,7 @@ rule osm_name_mapper:
         raw_routes_relation="data/osm-raw/GB/routes_relation.json",
         raw_substations_way="data/osm-raw/GB/substations_way.json",
         raw_substations_relation="data/osm-raw/GB/substations_relation.json",
-        build_lines=resources("osm-raw/build/lines.csv"),
-        build_links=resources("osm-raw/build/links.csv"),
-        build_converters=resources("osm-raw/build/converters.csv"),
-        build_transformers=resources("osm-raw/build/transformers.csv"),
-        build_substations=resources("osm-raw/build/buses.csv"),
+        network=resources("networks/base.nc"),
     output:
         osm_mapping=resources("gb-model/osm_name_mapping.csv"),
     log:
