@@ -174,6 +174,7 @@ def add_noa_options(
     noa_options_config: dict,
     noa_sets_config: dict,
     mapper: OSMNameMapper,
+    output_network_path: str,
 ) -> None:
     """
     Add NOA options to the GB model network.
@@ -198,6 +199,9 @@ def add_noa_options(
             # Add NOA option to the network
             AddNOAOption(network, option, noa_options_config, mapper)
 
+    # Save the updated network
+    network.export_to_netcdf(output_network_path)
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -209,9 +213,10 @@ if __name__ == "__main__":
     configure_logging(snakemake)
     set_scenario_config(snakemake)
 
-    # Load the base network
+    # Load the input
     network_path = snakemake.input.network
     osm_mapping_path = snakemake.input.osm_mapping_csv
+    output_network_path = snakemake.output.network
 
     # Load params
     noa_options_config = snakemake.params.noa_options
@@ -226,4 +231,5 @@ if __name__ == "__main__":
         noa_options_config=noa_options_config,
         noa_sets_config=noa_sets_config,
         mapper=mapper,
+        output_network_path=output_network_path,
     )

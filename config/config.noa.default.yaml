@@ -32,6 +32,6 @@ noa_options:
       length_km: 60
       circuits: 2
       carrier: AC # probably not needed, because it is AC for lines by default
-  - name: 120km of new 400kV double circuit OHL between Bramford and Tilbury substations via a new connection substation to be located in the Tendring district.
+  #- name: 120km of new 400kV double circuit OHL between Bramford and Tilbury substations via a new connection substation to be located in the Tendring district.
       #   pypsa_components: ...
       # - ...

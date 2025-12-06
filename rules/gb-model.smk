@@ -44,7 +44,7 @@ rule osm_name_mapper:
     log:
         logs("osm_name_mapper.log"),
     script:
-        "../scripts/gb-model/osm_name_mapper.py"
+        "../scripts/gb_model/osm_name_mapper.py"
 
 
 rule add_noa_options:
@@ -54,14 +54,36 @@ rule add_noa_options:
         noa_options=config["noa_options"],
         noa_sets=config["noa_sets"],
     input:
-        network=resources("networks/base.nc"),
+        network=resources("networks/base_extended.nc"),
         osm_mapping_csv=resources("gb-model/osm_name_mapping.csv"),
     output:
-        modified_network=resources("gb-model/networks/base_noa.nc"),
+        network=resources("networks/base_extended_noa.nc"),
     log:
         logs("add_noa_options.log"),
     script:
-        "../scripts/gb-model/add_noa_options.py"
+        "../scripts/gb_model/add_noa_options.py"
+
+
+use rule simplify_network as simplify_network_noa with:
+    message:
+        "Simplify NOA extended network"
+    input:
+        network=resources("networks/base_extended_noa.nc"),
+        regions_onshore=resources("regions_onshore.geojson"),
+        regions_offshore=resources("regions_offshore.geojson"),
+        admin_shapes=resources("admin_shapes.geojson"),
+    output:
+        network=resources("networks/base_s.nc"),
+        regions_onshore=resources("regions_onshore_base_s.geojson"),
+        regions_offshore=resources("regions_offshore_base_s.geojson"),
+        busmap=resources("busmap_base_s.csv"),
+    log:
+        logs("simplify_network_noa.log"),
+    benchmark:
+        benchmarks("simplify_network_noa")
+
+
+ruleorder: simplify_network_noa > simplify_network
 
 
 rule extract_etys_boundary_capabilities:
