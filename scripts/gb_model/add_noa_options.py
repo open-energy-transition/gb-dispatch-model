@@ -83,6 +83,7 @@ class AddNOAOption:
         # Use fallback matching to find substation
         reference_bus_id, bus_status, raw_name = (
             self.mapper._find_substation_with_fallback(
+                network=self.network,
                 name=substation_name,
                 voltage=voltage,
             )
@@ -136,10 +137,10 @@ class AddNOAOption:
         line_type = snakemake.config["lines"]["types"][voltage]
 
         from_bus, bus_status_from, _ = self.mapper._find_substation_with_fallback(
-            name=operation.get("from"), voltage=voltage
+            network=self.network, name=operation.get("from"), voltage=voltage
         )
         to_bus, bus_status_to, _ = self.mapper._find_substation_with_fallback(
-            name=operation.get("to"), voltage=voltage
+            network=self.network, name=operation.get("to"), voltage=voltage
         )
 
         # Add new line
@@ -155,6 +156,8 @@ class AddNOAOption:
             s_nom=self._calculate_s_nom(line_type, voltage, circuits),
             num_parallel=circuits,
             dc=False,
+            underground=False,
+            onshore_bus=True,
         )
 
     def add_option(self):
@@ -223,7 +226,7 @@ if __name__ == "__main__":
     noa_sets_config = snakemake.params.noa_sets
 
     # Create OSM name mapper
-    mapper = OSMNameMapper(csv_path=osm_mapping_path, network_path=network_path)
+    mapper = OSMNameMapper(csv_path=osm_mapping_path)
 
     # Add NOA option
     add_noa_options(

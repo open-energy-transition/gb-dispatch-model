@@ -25,7 +25,6 @@ class OSMNameMapper:
     def __init__(
         self,
         osm_files: dict[str, Path] | None = None,
-        network_path: str | None = None,
         csv_path: str | None = None,
     ) -> None:
         """
@@ -35,14 +34,9 @@ class OSMNameMapper:
             osm_files (dict): Dictionary mapping OSM feature types to file paths.
                 Keys: 'cables_way', 'lines_way', 'routes_relation',
                       'substations_way', 'substations_relation'
-            network_path (str): Path to the network file.
             csv_path (Path): Path to pre-generated OSM mapping CSV.
         """
         self.osm_files = osm_files
-        self.network_path = network_path
-        self.network = None
-        if network_path is not None:
-            self.network = self._load_network()
 
         # Convert csv_path to Path object if it's a string
         if isinstance(csv_path, str):
@@ -116,11 +110,6 @@ class OSMNameMapper:
         except Exception as e:
             logger.error(f"Unexpected error reading {file_path}: {e}")
             return pd.DataFrame()
-
-    def _load_network(self) -> pypsa.Network:
-        """Load the base PyPSA network from the specified path."""
-        network = pypsa.Network(self.network_path)
-        return network
 
     def _check_duplicate_ids(self, df: pd.DataFrame) -> None:
         """
@@ -197,7 +186,7 @@ class OSMNameMapper:
             raise ValueError("No data found in any OSM files")
 
     def _get_network_bus_from_raw_id(
-        self, raw_id: str, voltage: int | str
+        self, network: pypsa.Network, raw_id: str, voltage: int | str
     ) -> tuple[str | None, str]:
         """
         Find network bus that corresponds to a raw OSM ID.
@@ -217,7 +206,7 @@ class OSMNameMapper:
         """
         # Find all buses that contain raw_id
         matching_buses = [
-            bus_id for bus_id in self.network.buses.index if str(raw_id) in bus_id
+            bus_id for bus_id in network.buses.index if str(raw_id) in bus_id
         ]
 
         # Apply voltage filtering if matches found
@@ -234,7 +223,7 @@ class OSMNameMapper:
             return None, None
 
     def _find_substation_with_fallback(
-        self, name: str, voltage: int | None = None
+        self, network: pypsa.Network, name: str, voltage: int | None = None
     ) -> tuple[str | None, str | None, str | None]:
         """
         Find substation using fallback matching strategies.
@@ -271,7 +260,7 @@ class OSMNameMapper:
             # Try to find network bus for each raw_id
             for raw_id, raw_name in zip(raw_ids, raw_names):
                 network_bus_id, bus_status = self._get_network_bus_from_raw_id(
-                    raw_id, voltage
+                    network, raw_id, voltage
                 )
 
                 if network_bus_id:
@@ -374,10 +363,7 @@ if __name__ == "__main__":
     }
 
     # Get mapping of names to IDs
-    mapper = OSMNameMapper(
-        osm_files=osm_files,
-        network_path=snakemake.input.network,
-    )
+    mapper = OSMNameMapper(osm_files=osm_files)
 
     # Access the DataFrame
     osm_mapping_df = mapper.combined_df
