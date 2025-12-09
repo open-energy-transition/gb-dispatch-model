@@ -101,7 +101,7 @@ noa_options:
     pypsa_operations:
     - action: add
       component_type: substation
-      name: New Deer Substation
+      name: Moray East Onshore substation # New Deer substation (two substations are at the same location)
       voltage: 400
       carrier: AC
     - action: add
@@ -113,7 +113,7 @@ noa_options:
       component_type: line
       name: BBNC_400kV_OHL_Blackhillock_NewDeer
       from: Blackhillock Substation
-      to: New Deer Substation
+      to: Moray East Onshore substation # New Deer substation (two substations are at the same location)
       voltage: 400
       length_km: 41 # approximate assumption
       circuits: 2
@@ -121,7 +121,7 @@ noa_options:
     - action: add
       component_type: line
       name: BBNC_400kV_OHL_NewDeer_Peterhead
-      from: New Deer Substation
+      from: Moray East Onshore substation # New Deer substation (two substations are at the same location)
       to: Peterhead Substation
       voltage: 400
       length_km: 41 # approximate assumption
