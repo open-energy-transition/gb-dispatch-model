@@ -66,7 +66,7 @@ noa_options:
   grouped_name: BBNC_BPNC
   name: "Beauly - Blackhillock 400 kV double circuit addition"
   description: "Construct a new 400 kV double circuit between Beauly and Blackhillock. At both sites extend the 400 kV busbar arrangements to allow for the connection of two additional bays."
-  commissioning_year: 2027
+  commissioning_year: 2030
   # details of individual components to change
   details:
   - name: new 110km 400kV double circuit OHL between new Beauly 400kV substation and new Blackhillock 400kV substation
@@ -90,6 +90,13 @@ noa_options:
       length_km: 110
       circuits: 2
       carrier: AC
+- id: BPNC
+  grouped_name: BBNC_BPNC
+  name: Blackhillock - Peterhead 400 kV double circuit addition
+  description: "Establish a new 400 kV double circuit overhead line from Peterhed to Blackhillock via New Deer. Peterhead and Blackhillock substations will require extension to accomodate termination of the new double circuit. This reinforcement is required as onshore works to faciliate the 2nd Eastern HVDC Link from Peterhead (NOA option reference E4L5)"
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
   - name: new 82 km 400kV double circuit OHL between new substation of Blackhillock, New Deer, and Peterhead substations
     pypsa_operations:
     - action: add
