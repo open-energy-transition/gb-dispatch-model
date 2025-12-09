@@ -32,70 +32,98 @@ noa_options:
       length_km: 60
       circuits: 2
       carrier: AC # probably not needed, because it is AC for lines by default
+  - name: 120km of new 400kV double circuit OHL between Bramford and Tilbury substations via a new connection substation to be located in the Tendring district
+    pypsa_operations:
+    - action: add
+      component_type: substation
+      name: Tilbury Substation
+      voltage: 400
+      carrier: AC
+    - action: add
+      component_type: substation
+      name: Lawford Substation # new connection substation to be located in the Tendring district (based on provided map: https://norwichtotilburymap.nationalgrid.com/)
+      voltage: 400
+      carrier: AC
+    - action: add
+      component_type: line
+      name: AENC_400kV_OHL_Bramford_Tendring_Lawford
+      from: Bramford Substation
+      to: Lawford Substation
+      voltage: 400
+      length_km: 60 # approximate assumption based on provided map
+      circuits: 2
+      carrier: AC
+    - action: add
+      component_type: line
+      name: AENC_400kV_OHL_Tendring_Lawford_Tilbury
+      from: Lawford Substation
+      to: Tilbury Substation
+      voltage: 400
+      length_km: 60 # approximate assumption based on provided map
+      circuits: 2
+      carrier: AC
 - id: BBNC
   grouped_name: BBNC_BPNC
-  name: "TBD"
-  description: "TBD"
+  name: "Beauly - Blackhillock 400 kV double circuit addition"
+  description: "Construct a new 400 kV double circuit between Beauly and Blackhillock. At both sites extend the 400 kV busbar arrangements to allow for the connection of two additional bays."
   commissioning_year: 2027
   # details of individual components to change
   details:
-  - name: "new 400kV substations at Beauly, Blackhillock, New Deer"
+  - name: new 110km 400kV double circuit OHL between new Beauly 400kV substation and new Blackhillock 400kV substation
     pypsa_operations:
     - action: add
       component_type: substation
-      name: "Beauly"     # OSM name
-      voltage: 400     # provide voltage level in KV (TODO: do we need to define AC or DC?)
-      carrier: AC
-  - name: "new 400kV substations at Peterhead"
-    pypsa_operations:
-    - action: add
-      component_type: substation
-      name: "Bramford Substation"
+      name: Beauly Substation
       voltage: 400
       carrier: AC
-  - name: "new 400kV substation at Peterhead"
-    pypsa_operations:
     - action: add
       component_type: substation
-      name: "Peterhead Substation"
+      name: Blackhillock Substation
       voltage: 400
       carrier: AC
-  - name: "new 132kV substation at Peterhead"
-    pypsa_operations:
-    - action: add
-      component_type: substation
-      name: "Peterhead Substation"
-      voltage: 132
-      carrier: AC
-  - name: "new 110km 400kV double circuit OHL between new Beauly 400kV substation and new Blackhillock 400kV substation"
-    pypsa_operations:
     - action: add
       component_type: line
-      name: "new 400kV DC OHL between Beauly and Blackhillock"
-      from: Beauly-400
-      to: Blackhillock-400
+      name: BBNC_400kV_OHL_Beauly_Blackhillock
+      from: Beauly Substation
+      to: Blackhillock Substation
       voltage: 400
       length_km: 110
       circuits: 2
-      carrier: AC # probably not needed, because it is AC for lines by default
+      carrier: AC
+  - name: new 82 km 400kV double circuit OHL between new substation of Blackhillock, New Deer, and Peterhead substations
+    pypsa_operations:
+    - action: add
+      component_type: substation
+      name: New Deer Substation
+      voltage: 400
+      carrier: AC
+    - action: add
+      component_type: substation
+      name: Peterhead Substation
+      voltage: 400
+      carrier: AC
     - action: add
       component_type: line
-      name: "new 82km 400kV double circuit OHL between new Blackhillock and New Deer"
-      from: Blackhillock-400
-      to: New Deer-400
+      name: BBNC_400kV_OHL_Blackhillock_NewDeer
+      from: Blackhillock Substation
+      to: New Deer Substation
       voltage: 400
-      length_km: 82
+      length_km: 41 # approximate assumption
       circuits: 2
-      carrier: AC # probably not needed, because it is AC for lines by default
+      carrier: AC
     - action: add
       component_type: line
-      name: "new 82km 400kV double circuit OHL between new New Deer and Peterhead"
-      from: New Deer-400
-      to: Peterhead-400
+      name: BBNC_400kV_OHL_NewDeer_Peterhead
+      from: New Deer Substation
+      to: Peterhead Substation
       voltage: 400
-      length_km: 80
+      length_km: 41 # approximate assumption
       circuits: 2
-      carrier: AC # probably not needed, because it is AC for lines by default
-  #- name: "TBD"
-      #   pypsa_components: ...
-      # - ...
+      carrier: AC
+  - name: new 132kV substation at Peterhead
+    pypsa_operations:
+    - action: add
+      component_type: substation
+      name: Peterhead Substation
+      voltage: 132
+      carrier: AC
