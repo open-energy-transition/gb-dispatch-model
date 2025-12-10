@@ -7,5 +7,5 @@ noa_sets:
   name: "East Anglia GREEN (AENC and ATNC)"   # any meaningful name
   noa_options:
   - AENC
-  - BPNC
   - BBNC
+  - BPNC
