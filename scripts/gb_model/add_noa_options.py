@@ -34,6 +34,7 @@ class AddNOAOption:
         self.noa_option = noa_option
         self.noa_options_config = noa_options_config
         self.mapper = mapper
+        self._bus_lookup_cache = {}
         self.add_option()
 
     def _get_noa_option(self) -> dict:
@@ -80,43 +81,71 @@ class AddNOAOption:
         voltage = operation.get("voltage")
         carrier = operation.get("carrier")
 
-        # Use fallback matching to find substation
-        reference_bus_id, bus_status, raw_name = (
-            self.mapper._find_substation_with_fallback(
-                network=self.network,
-                name=substation_name,
-                voltage=voltage,
-            )
+        # Determine bus closest to the substation
+        network_bus_id, bus_status = self._find_bus_cached(
+            name=substation_name,
+            voltage=voltage,
         )
 
-        if reference_bus_id is not None and bus_status == "exists":
+        if bus_status == "exists":
             logger.info(
                 f"Substation '{substation_name}' with voltage '{voltage}'kV already exists in the network."
             )
             return
-        elif reference_bus_id is not None and bus_status == "reference":
-            self.network.add(
-                "Bus",
-                f"{reference_bus_id.split('-')[0]}-{voltage}",
-                v_nom=voltage,
-                carrier=carrier,
-                x=self.network.buses.at[reference_bus_id, "x"],
-                y=self.network.buses.at[reference_bus_id, "y"],
-                country=self.network.buses.at[reference_bus_id, "country"],
-                geometry=self.network.buses.at[reference_bus_id, "geometry"],
-                tags=self.network.buses.at[reference_bus_id, "tags"],
-                symbol=self.network.buses.at[reference_bus_id, "symbol"],
-            )
+
+        if network_bus_id and bus_status == "reference":
+            # Get attributes from reference bus
+            ref_attrs = self.network.buses.loc[network_bus_id].to_dict()
+            ref_attrs.update({"v_nom": voltage, "carrier": carrier})
+            new_bus_id = f"{network_bus_id.split('-')[0]}-{voltage}"
+            # Add new bus to the network
+            self.network.add("Bus", new_bus_id, **ref_attrs)
+
+            # Update cache with new bus
+            self._bus_lookup_cache[(substation_name, voltage)] = (new_bus_id, "exists")
+
             logger.info(
                 f"Substation '{substation_name}' with voltage '{voltage}'kV added to the network."
             )
             return
 
-        if not reference_bus_id:
-            logger.error(
+        if not network_bus_id:
+            raise ValueError(
                 f"Cannot add substation '{substation_name}' with voltage '{voltage}'kV using any strategy."
             )
-            return
+
+    def _find_bus_cached(
+        self, name: str, voltage: int
+    ) -> tuple[str | None, str | None, str | None]:
+        """
+        Find bus with caching to avoid duplicate lookups.
+
+        Args:
+            name: Substation name
+            voltage: Voltage level in kV
+
+        Returns:
+            Tuple of (bus_id, bus_status, raw_name)
+        """
+        # Create cache key
+        cache_key = (name, voltage)
+
+        # Check cache first
+        if cache_key in self._bus_lookup_cache:
+            logger.debug(f"Using cached lookup for '{name}' at {voltage}kV")
+            return self._bus_lookup_cache[cache_key]
+
+        # Perform lookup
+        result = self.mapper._get_network_bus_id(
+            network=self.network,
+            name=name,
+            voltage=voltage,
+        )
+
+        # Cache the result
+        self._bus_lookup_cache[cache_key] = result
+
+        return result
 
     def _calculate_s_nom(self, line_type: str, voltage: float, circuits: int) -> float:
         """Calculate nominal power (s_nom) based on voltage and number of circuits."""
@@ -136,11 +165,11 @@ class AddNOAOption:
         circuits = operation.get("circuits")
         line_type = snakemake.config["lines"]["types"][voltage]
 
-        from_bus, bus_status_from, _ = self.mapper._find_substation_with_fallback(
-            network=self.network, name=operation.get("from"), voltage=voltage
+        from_bus, bus_status_from = self._find_bus_cached(
+            name=operation.get("from"), voltage=voltage
         )
-        to_bus, bus_status_to, _ = self.mapper._find_substation_with_fallback(
-            network=self.network, name=operation.get("to"), voltage=voltage
+        to_bus, bus_status_to = self._find_bus_cached(
+            name=operation.get("to"), voltage=voltage
         )
 
         # Add new line
@@ -158,6 +187,9 @@ class AddNOAOption:
             dc=False,
             underground=False,
             onshore_bus=True,
+        )
+        logger.info(
+            f"Line '{line_name}' between '{from_bus}' and '{to_bus}' at voltage '{voltage}'kV added to the network."
         )
 
     def add_option(self):

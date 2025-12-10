@@ -101,6 +101,11 @@ noa_options:
     pypsa_operations:
     - action: add
       component_type: substation
+      name: Blackhillock Substation
+      voltage: 400
+      carrier: AC
+    - action: add
+      component_type: substation
       name: Moray East Onshore substation # New Deer substation (two substations are at the same location)
       voltage: 400
       carrier: AC
