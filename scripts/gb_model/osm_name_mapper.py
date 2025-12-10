@@ -488,7 +488,7 @@ class OSMNameMapper:
             closest_bus_id = nearby_bus_exact_voltage["distance_m"].idxmin()
             bus_status = "exists"
         else:
-            closest_bus_id = nearby_buses.iloc["distance_m"].idxmin()
+            closest_bus_id = nearby_buses["distance_m"].idxmin()
             bus_status = "reference"
 
         return closest_bus_id, bus_status
