@@ -24,6 +24,8 @@ snapshots:
   end: "2013-01-01"
   inclusive: 'left'
 
+noa_sets_selected: [] # [0, 1]
+
 atlite:
   default_cutout: europe-2012-sarah3-era5
   cutouts:

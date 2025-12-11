@@ -208,6 +208,7 @@ def add_noa_options(
     network_path: str,
     noa_options_config: dict,
     noa_sets_config: dict,
+    noa_sets_selected: list[int],
     mapper: OSMNameMapper,
     output_network_path: str,
 ) -> None:
@@ -217,6 +218,10 @@ def add_noa_options(
     Args:
         network_path (Path): Path to the GB model network file.
         noa_options_config (dict): Configuration for NOA options.
+        noa_sets_config (dict): Configuration for NOA sets.
+        noa_sets_selected (list[int]): List of NOA set IDs to apply.
+        mapper (OSMNameMapper): OSM name mapper instance.
+        output_network_path (Path): Path to save the updated network.
 
     Returns:
         None
@@ -224,11 +229,20 @@ def add_noa_options(
     # Load the network
     network = pypsa.Network(network_path)
 
-    for noa_set in noa_sets_config:
-        set_name = noa_set["name"]
+    # Create NOA sets dictionary
+    noa_sets_dict = {s["id"]: s for s in noa_sets_config}
+
+    for noa_set_id in noa_sets_selected:
+        noa_set = noa_sets_dict.get(noa_set_id)
+
+        if not noa_set:
+            logger.warning(f"NOA set ID '{noa_set_id}' not found in config. Skipping.")
+            continue
+
+        set_name = noa_set.get("name")
         options = noa_set.get("noa_options", [])
 
-        logger.info(f"\nApplying NOA set: '{set_name}' ({len(options)} options)")
+        logger.info(f"\nApplying NOA set: '{set_name}' (options: {options})")
 
         for option in options:
             # Add NOA option to the network
@@ -256,6 +270,7 @@ if __name__ == "__main__":
     # Load params
     noa_options_config = snakemake.params.noa_options
     noa_sets_config = snakemake.params.noa_sets
+    noa_sets_selected = snakemake.params.noa_sets_selected
 
     # Create OSM name mapper
     mapper = OSMNameMapper(csv_path=osm_mapping_path)
@@ -265,6 +280,7 @@ if __name__ == "__main__":
         network_path=network_path,
         noa_options_config=noa_options_config,
         noa_sets_config=noa_sets_config,
+        noa_sets_selected=noa_sets_selected,
         mapper=mapper,
         output_network_path=output_network_path,
     )
