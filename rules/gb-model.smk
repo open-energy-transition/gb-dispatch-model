@@ -53,6 +53,7 @@ rule add_noa_options:
     params:
         noa_options=config["noa_options"],
         noa_sets=config["noa_sets"],
+        noa_sets_selected=config["noa_sets_selected"],
     input:
         network=resources("networks/base_extended.nc"),
         osm_mapping_csv=resources("gb-model/osm_name_mapping.csv"),
