@@ -106,7 +106,7 @@ noa_options:
     - action: update
       component_type: line
       line_type: 490-AL1/64-ST1A 380.0
-      name: BBNC_400kV_OHL_Blackhillock_NewDeer
+      name: BDUP_400kV_OHL_Blackhillock_NewDeer
       from: Beauly
       to: Denny
       voltage: 400
@@ -180,7 +180,7 @@ noa_options:
     pypsa_operations:
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
+      line_type: Al/St 240/40 3-bundle 300.0
       name: BLN2_275kV_OHL_Beauly_Shin
       from: Beauly
       to: Shin
@@ -189,7 +189,7 @@ noa_options:
       carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
+      line_type: ^Al/St 240/40 3-bundle 300.0
       name: BLN2_275kV_OHL_Shin_LochBuidhe
       from: Shin
       to: Loch Buidhe
@@ -207,7 +207,7 @@ noa_options:
     pypsa_operations:
     - action: update
       component_type: line
-      name: BLN2_400kV_OHL_Beauly_Shin
+      name: BLN4_400kV_OHL_Beauly_Shin
       from: Beauly
       to: Shin
       voltage: 400
@@ -263,7 +263,7 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
-      name: BBNC_400kV_OHL_Blackhillock_NewDeer
+      name: BPNC_400kV_OHL_Blackhillock_NewDeer
       from: Blackhillock Substation
       to: Moray East Onshore substation # New Deer substation (two substations are at the same location)
       voltage: 400
@@ -272,7 +272,7 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
-      name: BBNC_400kV_OHL_NewDeer_Peterhead
+      name: BPNC_400kV_OHL_NewDeer_Peterhead
       from: Moray East Onshore substation # New Deer substation (two substations are at the same location)
       to: Peterhead Substation
       voltage: 400
@@ -361,3 +361,724 @@ noa_options:
       to: Twinstead Tee
       voltage: 400
       carrier: AC
+- id: BWRE
+  name: Reconductor Barking to West Ham double circuit
+  description: "Replace the conductors in the Barking to West Ham single circuit with higher-rated conductors."
+  - id: CBEU
+  name: Creyke Beck advanced ratings to increase the thermal capability of the line from Creyke Beck to Keadby based upon a dynamic ratings principle
+  description: "Using  weather data, enhance the rating of the Creyke Beck to Keadby 400 kV overhead line to enable higher average power flows."
+- id: CDHW
+  name: Cellarhead to Drakelow circuits thermal uprating
+  description: "Thermal upgrade of both Cellarhead to Drakelow 400 kV circuits to allow them to operate at higher temperature and rating."
+- id: CDP1
+  name: Power control device along Cellarhead to Drakelow
+  description: "Install a power control device along the Cellarhead to Drakelow 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: CDP2
+  name: Power control device along Cellarhead to Drakelow
+  description: "Install a power control device along the Cellarhead to Drakelow 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: CDP3
+  name: Additional alternative power control devices along Cellarhead to Drakelow
+  description: "Install additional alternative power control devices along the Cellarhead to Drakelow 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: CGNC
+  name: A new 400 kV double circuit between North Humber to South Humber
+  description: "Construct a new 400 kV double circuit in Yorkshire to facilitate power transfer requirements across the relevant boundaries. Substation works are required to accommodate the new circuits."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: c90 km of new overhead line between the new Birkhill Wood and High Marnham 400 kV substations.
+    pypsa_operations:
+    - action: add
+      component_type: substation
+      name: Birkhill Wood
+      voltage: 400
+      carrier: AC
+    - action: add
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: CGNC_400kV_OHL_BirkhillWood_HighMarnham
+      from: Birkhill Wood
+      to: High Marnham
+      voltage: 400
+      circuits: 1
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: CGNC_400kV_OHL_Brantingham_Broomfleet
+      from: Brantingham
+      to: Broomfleet
+      voltage: 400
+      circuits: 1
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: CGNC_400kV_OHL_Ealand_Keadby
+      from: Ealand
+      to: Keadby
+      voltage: 400
+      circuits: 1
+      carrier: AC
+- id: CKPC
+  name: Power control device along Creyke Beck to Keadby to Killingholme
+  description: "Install a power control device along the Creyke Beck to Keadby to Killingholme 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: CLNC
+  name: New Cumbria to Lancashire reinforcement
+  description: "Construct a new 400 kV double circuit from north west England to Lancashire, to facilitate power transfer requirements across the relevant boundaries. Suitable connection points at each end will be identified, as well as relevant substation works required to accommodate the new circuit."
+- id: CMNC
+  name: South east Scotland to north west England AC onshore reinforcement
+  description: "Construct a new 400 kV double circuit from in south east Scotland to north west England, to facilitate power transfer requirements across the relevant boundaries. Suitable connection points at each end will be identified, as well as relevant substation works required to accommodate the new circuit."
+- id: CRPC
+  name: Power control device along Cottam to West Burton
+  description: "Install a power control device along the Cottom to Ryhall 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network.
+- id: CS05
+  name: Commercial solution for Scotland and the North of England - stage 1
+  description: "This ESO-led commercial solution provides benefit across boundaries B2 and B4 in the north of Scotland."
+- id: CS06
+  name: Commercial solution for Scotland and the North of England - stage 2
+  description: "This ESO-led commercial solution provides benefit across boundaries B2 and B4 in the north of Scotland."
+- id: CS07
+  name: Commercial solution for East Anglia - stage 1
+  description: "This ESO-led commercial solution provides boundary benefit across the East Anglia boundary."
+- id: CS08
+  name: Commercial solution for East Anglia - stage 2
+  description: "This ESO-led commercial solution provides boundary benefit across the East Anglia boundary."
+- id: CS11
+  name: Commercial solution for the North of England - stage 1
+  description: "This ESO-led commercial solution provides boundary benefit across the north of England."
+- id: CS12
+  name: Commercial solution for the North of England - stage 2
+  description: "This ESO-led commercial solution provides boundary benefit across the north of England."
+- id: CS20
+  name: Commercial solution for North Wales - stage 1
+  description: "This ESO-led commercial solution provides boundary benefit in the north of Wales."
+- id: CS21
+  name: Commercial solution for North Wales - stage 2
+  description: "This ESO-led commercial solution provides boundary benefit in the north of Wales."
+- id: CTP2
+  name: Alternative power control device along Creyke Beck to Thornton
+  description: "Install an alternative power control device along the Creyke Beck to Thornton 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: CTRE
+  name: Reconductor remainder of Coryton South to Tilbury circuit
+  description: "Replace the conductors on the remaining sections of the Coryton South to Tilbury circuit, which have not recently been reconductored with higher-rated conductors. These would increase the circuit’s thermal rating."
+- id: CVUP
+  name: Clydesmill to Strathaven 400 kV reinforcement
+  description: "Following LWUP or DWUP, reconfigure and reconductor the 275 kV circuits between Clydesmill and Strathaven to establish a 400 kV single circuit, including substation works at Clydesmill and Strathaven.  The new circuit connects the new 400 kV circuit into Clydesmill into the existing 400 kV east-west corridor improving power flows."
+- id: CWPC
+  name: Power control device along Cottam to West Burton
+  description: "Install a power control device along the Cottam to West Burton 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: DBNC
+  name: Beauly to Dounreay 400 kV double circuit addition
+  description: "Establish a new 400 kV double busbar substation at Loch Buidhe and Dounreay, and a new 400 kV double circuit overhead line between Beauly, Loch Buidhe and Dounreay (minimum summer pre-fault rating of 2083 MVA - Twin Araucaria at 90 °C."
+- id: DEP1
+  name: Additional power control devices along the Drax - Eggborough 1 400 kV circuit
+  description: "Install additional power control devices along the Drax to Eggborough 1 400 kV circuit.  This is to help balance the flows and alleviate overloading of circuit due to system faults.
+- id: DEPC
+  name: Power control device along Drax to Eggborough
+  description: "Install a power control device along the Drax to Eggborough 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network.
+- id: DFRE
+  name: Reconductor Drax to Fenwick Tee 400 kV circuit
+  description: "The existing on Drax – Fenwick Tee (A344) circuit comprises 4 x 400mm² Quad Zebra 400 kV overhead lines on L6 circuit towers. This limits the rating of the circuit to 2671 MVA/3180 MVA (pre/post fault). 
+- id: DLNC
+  name: Loch Buidhe to Dounreay 400 kV reinforcement
+  description: "Establish a new 400 kV double busbar substation at Loch Buidhe, Gordonbush, Strathbrora, Connagil and the existing Dounreay substation, rebuild Loch Buidhe to Dounreay double circuit overhead line for 400 kV operation (minimum summer pre-fault rating of 2083 MVA - Twin Araucaria at 90 °C)
+- id: DLRE
+  name: Loch Buidhe - Dounreay 275 kV double circuit overhead line reconductoring
+  description: "Reconductor the Loch Buidhe to Dounreay 275 kV double circuit overhead line with a high temperature low sag conductor. This option is conditional on SHE Transmission business approval for the use of a high temperature conductor on the 275 kV network and suitability of the conductor for use on the existing L3 tower structures.
+- id: DLUP
+  name: Windyhill-Lambhill-Denny North 400 kV reinforcement
+  description: "Following WLTI and DNEU, increase the operating voltage of the Windyhill to Lambhill to Denny 275 kV circuit by the establishment of a new 400 kV gas insulated substation at Windyhill, the installation of a new 400/275 kV transformer at Windyhill 400 kV substation, a new 400/275 kV transformer at Lambhill substation and transferring existing 275 kV circuit onto the existing Denny 400 kV substation.
+- id: DNEU
+  name: Denny North 400/275 kV second supergrid transformer
+  description: "Installation of a new 400/275 kV 1000  MVA supergrid transformer (SGT2) at Denny North 400 kV substation.
+- id: DREU
+  name: Generator circuit breaker replacement to allow Thornton to run a two-way split
+  description: "This reinforcement is to replace generator owned circuit breakers with higher-rated equivalents including substation equipment. This would allow higher fault levels, which in turn improves load sharing on circuits connecting to the substation.
+- id: DWNO
+  name: Denny to Wishaw 400 kV reinforcement
+  description: "Construct a new 400 kV double circuit from Bonnybridge to Newarthill, and reconfigure associated sites to establish a fourth north to south double circuit supergrid route through the Scottish central belt. One side of the new double circuit will operate at 400 kV, the other at 275 kV. This reinforcement will establish Denny to Bonnybridge, Bonnybridge to Wishaw, Wishaw to Strathaven No.2 and Wishaw to Torness 400 kV circuits, and a Denny to Newarthill to Easterhouse 275 kV circuit.
+- id: DWUP
+  name: Kincardine - Wishaw 400 kV reinforcement
+  description: "Establish a new 400 kV single circuit between Denny North, Clydesmill and Wishaw by reconfiguration of the existing Longannet to Easterhouse/Clydesmill 275 kV circuits and existing de-energised circuit between Easterhouse and Newarthill and the existing Newarthill to Wishaw circuit. Provides additional capability in Scotland via a new 400 kV corridor.
+- id: E2DC
+  name: Eastern subsea HVDC link from Torness to Hawthorn Pit
+  description: "Construct a new offshore 2 GW HVDC subsea link from the Torness area to Hawthorn Pit to provide additional transmission capacity. The onshore works involve the construction of AC/DC converter stations and the associated AC works at Torness and Hawthorn Pit.
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: new DC line with 525kV from Torness in Southeast Scotland to Hawthorn Pit substation in Murton, County Durham.
+    pypsa_operations:
+    - action: new
+      component_type: line # subsea cable
+      line_type: Al/St 560/50 4-bundle 750.0
+      name: E2DC_525kV_subsea_Torness_HawthornPit
+      from: Torness
+      to: Hawthorn Pit
+      voltage: 525
+      p_nom: 2000 # MW 
+      circuits: 1
+      carrier: DC
+- id: E4D3
+  name: Eastern Scotland to England link: Peterhead to Drax offshore HVDC
+  description: "Construct a new offshore 2 GW bipole HVDC subsea link from Peterhead in the north east of Scotland to Drax in the Yorkshire area of England. The onshore works involve the construction of AC/DC converter stations and the associated AC works at Peterhead and Drax.
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: new c505km from Sandford Bay, at Peterhead in Scotland, to the Drax Power Station in Yorkshire, England
+    pypsa_operations:
+    - action: new
+      component_type: line # subsea cable
+      line_type: Al/St 560/50 4-bundle 750.0
+      name: E2DC_525kV_subsea_Peterhead_Yorkshire
+      from: Peterhead
+      to: Yorkshire
+      voltage: 525
+      p_nom: 2000 # MW 
+      circuits: 1
+      carrier: DC
+- id: E4L5
+  name: Eastern Scotland to England 3rd link: Peterhead to the south Humber offshore HVDC
+  description: "Following a first HVDC link from Peterhead to England, construct an additional offshore 2 GW bipole HVDC link from Peterhead to a location in the South Humber area. The link will involve substation works and HVDC converter stations at both Peterhead and the South Humber. In the SHE Transmission area, BPNC is the required onshore circuit reinforcement to facilitate this additional 2 GW link. Circuit upgrades will also be required in the South Humber area.
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: new substations at Peterhead and Lincolnshire and new 525kV line
+    pypsa_operations:
+    - action: add
+      component_type: substation
+      name: Peterhead
+      voltage: 400
+      carrier: AC
+    - action: add
+      component_type: substation
+      name: Lincolnshire
+      voltage: 400
+      carrier: AC
+    - action: new
+      component_type: line # subsea cable
+      line_type: Al/St 560/50 4-bundle 750.0
+      name: E2DC_525kV_subsea_Peterhead_Lincolnshire
+      from: Peterhead
+      to: Lincolnshire
+      voltage: 525
+      length_km: 505
+      p_nom: 2000 # MW 
+      circuits: 2
+      carrier: DC
+- id: EAM1
+  name: 225 MVAr MSCs at Eaton Socon
+  description: "One new 225 MVAr 400 kV MSCs to be installed at Eaton Socon 400 kV. The MSCs should be switchable within 200ms post fault as per the new Harker and Hutton SGTs
+- id: EAM2
+  name: 225 MVAr MSCs at Eaton Socon
+  description: "One new 225 MVAr 400 kV MSCs to be installed at Eaton Socon 400 kV. The MSCs should be switchable within 200ms post fault as per the new Harker and Hutton SGTs
+- id: EBRE
+  name: Reconductor Enderby to Patford Bridge to East Claydon 400 kV Double Circuit
+  description: "The existing Enderby – Patford Bridge – East Claydon 400 kV double circuit comprises of a combination of 4x400mm² Quad Zebra and 2 x 500mm² Rubus 400 kV overhead lines on L2/2 single circuit tower. This limits the rating of the circuit to 1687 MVA/2009 MVA (pre/post fault)
+- id: EDEU
+  name: 400 kV upgrade of Brinsworth to Chesterfield double circuit and Chesterfield to High Marnham double circuit. New High Marnham and Chesterfield 400 kV substations
+  description: "Installation of two hybrid synchronous compensators at Eccles 400 kV substation, and a real-time ratings system on the 400 kV overhead line circuits between Moffat and Harker and Gretna and Harker and 400 kV cable circuits between Crystal Rig and Torness.
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: substations upgrades at Brinsworth, Chesterfield, High Marnham and line upgrades
+    pypsa_operations:
+    - action: update
+      component_type: substation
+      name: Brinsworth
+      voltage: 400
+      carrier: AC
+    - action: update
+      component_type: substation
+      name: Chesterfield
+      voltage: 400
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: E2DC_525kV_OHL_Peterhead_Lincolnshire
+      from: Brinsworth
+      to: Chesterfield
+      voltage: 400
+      circuits: 2
+      carrier: AC
+    - action: update
+      component_type: substation
+      name: High Marnham
+      voltage: 400
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: E2DC_525kV_OHL_Peterhead_Lincolnshire
+      from: Chesterfield
+      to: High Marnham
+      voltage: 400
+      circuits: 2
+      carrier: AC
+- id: EDN2
+  name: New Chesterfield to Ratcliffe-on-Soar 400 kV double circuit
+  description: "400 kV upgrade of Brinsworth to Chesterfield Double Circuit and Chesterfield-High Marnham Double Circuit.  New High Marnham and Chesterfield 400 kV substations
+- id: EDNC
+  name: 400 kV upgrade of Brinsworth to Chesterfield double circuit and new Ratcliffe to Chesterfield 400 kV double circuit
+  description: "A new 400 kV route to be established between the Sheffield area and the East Midlands, to aid with North to South flows of generation form Scotland and the North East of England.
+- id: EHRE
+  name: Elvanfoot to Harker reconductoring
+  description: "Upgrade the Brinsworth to Chesterfield 400 kV double circuit and a new 400 kV double circuit between Ratcliffe and Chesterfield. This is to help alleviate high power flows in and around East Anglia and Humber area.
+- id: ESC1
+  name: Second Elstree to St John’s Wood 400 kV circuit
+  description: "Replace the double circuit conductors in the Elvanfoot to Harker circuits with a higher-rated conductor to increase their thermal ratings.
+- id: FMHW
+  name: Feckenham to Minety circuit thermal uprating
+  description: "New second 400 kV cable transmission circuit from Elstree to St. Johns Wood in the existing tunnel, and carry out associated work, including modifying Elstree 400 kV and St. John’s Wood 400 kV substations. This will improve the power flow into London.
+- id: FMPC
+  name: Power control device along Feckenham to Minety
+  description: "Thermal upgrade of the Feckenham to Minety to allow them to operate at higher temperatures, and increase their thermal rating"
+- id: GCHW
+  name: Cottam to Market Harborough to Grendon circuit thermal uprating
+  description: "Install a power control device along the Feckenham to Minety 400 kV overhead line route. This would improve the capability to control the power flows from North to South of the transmission network."
+- id: GWNC
+  name: A new 400 kV double circuit between the South Humber and South Lincolnshire
+  description: "The existing Cottam – Market Harborough – Grendon circuit comprises of a combination of 4x400mm² Quad Zebra and 2 x 500mm² Rubus 400 kV overhead lines on L2/2 single circuit tower. This limits the rating of the circuit to 1687   MVA/2009  MVA (pre/post fault). 
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: update substations in Braco West, Fasnakyle and line upgrade via Port Augustus, Errochty, Kinardochy and Tummel
+    pypsa_operations:
+    - action: update
+      component_type: substation
+      name: Braco West
+      voltage: 400
+      carrier: AC
+    - action: update
+      component_type: substation
+      name: Fasnakyle
+      voltage: 400
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: GWNC_400kV_OHL_BracoWest_FortAugustus
+      from: Braco West
+      to: Fort Augustus
+      voltage: 400
+      circuits: 2
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: GWNC_400kV_OHL_FortAugustus_Errochty
+      from: Fort Augustus
+      to: Errochty
+      voltage: 400
+      circuits: 2
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: GWNC_400kV_OHL_Errochty_Kinardochy
+      from: Errochty
+      to: Kinardochy
+      voltage: 400
+      circuits: 2
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: GWNC_400kV_OHL_Kinardochy_Tummel
+      from: Kinardochy
+      to: Tummel
+      voltage: 400
+      circuits: 2
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: GWNC_400kV_OHL_Tummel_Fasnakyle
+      from: Tummel
+      to: Fasnakyle
+      voltage: 400
+      circuits: 2
+      carrier: AC
+- id: HAE2
+  name: Harker supergrid transformer 6 replacement
+  description: "Construct a new 400 kV double circuit in Lincolnshire to facilitate power transfer requirements across the relevant boundaries. Substation works are required to accommodate the new circuits.
+- id: HAEU
+  name: Harker supergrid transformer 5 and supergrid transformer 9A banking arrangement
+  description: "Banking of existing transformers supergrid transformer 5 and supergrid transformer 9A at Harker substation and connecting directly to the Fourstones – Harker 275 kV circuit to help alleviate overloading of supergrid transformers following transmission system faults.
+- id: HBUP
+  name: Uprate Bridgewater to 400 kV and reconductor the route to Hinkley
+  description: "Upgrade the Hinkley Point to Bridgewater 275 kV circuits to 400 kV including insulator and conductor replacement. Connect the circuits to the new Hinkley Point 400 kV substation.
+- id: HFRE
+  name: Reconductor Harker to Fourstones and Fourstones to Stella West circuits
+  description: "Replace the conductors in the Harker to Fourstone single circuit with higher-rated conductors.
+- id: HMNS
+  name: New High Marnham 400 kV substation
+  description: "New High Marnham 400 kV substation
+- id: HSR1
+  name: Reconductor Harker to Stella West
+  description: "Replace the conductors in the Harker to Stella West single circuit with higher-rated conductors."
+- id: HWUP
+  name: Uprate Hackney, Tottenham and Waltham Cross 275 kV to 400 kV
+  description: "Hackney, Tottenham and Waltham Cross substation uprate from 275 kV to 400 kV, and the double circuit route connecting them. This will strengthen the power flow into London, via Rye House, down to Hackney."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: update substations in Hackney, Tottenham, Waltham Cross, and line upgrades
+    pypsa_operations:
+    - action: update
+      component_type: substation
+      name: Hackney
+      voltage: 400
+      carrier: AC
+    - action: update
+      component_type: substation
+      name: Tottenham
+      voltage: 400
+      carrier: AC
+    - action: update
+      component_type: substation
+      name: Waltham Cross
+      voltage: 400
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: HWUP_400kV_OHL_Hackney_Tottenham
+      from: Hackney
+      to: Tottenham
+      voltage: 400
+      circuits: 2
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: HWUP_400kV_OHL_Tottenham_WalthamCross
+      from: Tottenham
+      to: Waltham Cross
+      voltage: 400
+      circuits: 2
+      carrier: AC
+- id: IFR1
+  name: Feckenham to Ironbridge circuit reconductoring
+  description: "Replace the conductors in the Feckenham to Ironbridge circuit with higher-rated conductors."
+- id: JTHW
+  name: High Marnham to Thurcroft to West Melton circuit thermal uprating
+  description: "Thermal Upgrade of the High Marnham to Thurcroft to West Melton circuit to allow them to operate at higher temperatures, and increase their thermal rating."
+- id: KBRE
+  name: Knocknagael - Blackhillock 275 kV double circuit overhead line reconductoring
+  description: "Reconductor the Knocknagael to Blackhillock 275 kV double circuit overhead line with a high temperature low sag conductor. This option is conditional on SHE Transmission business approval for the use of a high temperature conductor on the 275 kV network and suitability of the conductor for use on the existing L3 tower structures."
+- id: KCEU
+  name: Creyke to Keadby to Killingholme circuits thermal uprating
+  description: "Thermal Upgrade of the Creyke to Keadby to Killingholme circuits to allow them to operate at higher temperatures, and increase their thermal rating."
+- id: KCRE
+  name: Reconductor Cottam to Keadby 400 kV double circuit
+  description: "Replace the conductors in the Cottam to Keadby circuits with higher-rated conductors to increase the circuit’s thermal ratings."
+- id: KWHW
+  name: Keadby to West Burton circuits thermal uprating
+  description: "Thermal Upgrade of the Keadby to West Burton circuits to allow them to operate at higher temperatures, and increase their thermal rating."
+- id: KWP2
+  name: Additional power control devices along the Keadby to West Burton number 1 circuit
+  description: "Install additional power control devices along the Keadby to West Burton number 1 400 kV overhead line circuit. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: KWPC
+  name: Power control device along Keadby to West Burton
+  description: "Install a power control device along the Keadby to West Burton 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: LBRE
+  name: Beauly - Loch Buidhe 275 kV double circuit overhead line reconductoring
+  description: "Reconductor the Beauly to Loch Buidhe 275 kV double circuit overhead line with a high temperature low sag conductor. This option is conditional on SHE Transmission business approval for the use of a high temperature conductor on the 275 kV network and suitability of the conductor for use on the existing L3 tower structures."
+- id: LCU2
+  name: Eastern B5 400 kV reinforcement
+  description: "Reconfiguration of existing 275 kV circuits between Longannet and Currie via Kincardine, and Currie and Cockenzie via Smeaton and Kaimes, reprofiling one side of the existing overhead line double circuit to 400 kV operation. Establishes a new 400 kV corridor north to south, tying into existing east-west 400 kV circuits."
+- id: LNP1
+  name: Additional power control devices along the Lackenby to Norton Single Circuit
+  description: "Install additional power control devices along the Lackenby to Norton 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: LNRE
+  name: Reconductor Lackenby to Norton 400 kV Single Circuit
+  description: "Replace the conductors in the Lackenby to Norton circuit with higher-rated conductors to increase the circuit’s thermal ratings."
+- id: LRNC
+  name: South Lincolnshire to Rutland reinforcement
+  description: "Construct a new 400 kV double circuit from South Lincolnshire to Rutland to facilitate power transfer requirements across the relevant boundaries. Substation works are required to accommodate the new circuits."
+- id: LWUP
+  name: Kincardine 400 kV reinforcement
+  description: "Establishment of 400 kV GIS substation at the existing Longannet substation site.  Installation of two 400/275 kV 1000  MVA supergrid transformers to connect into 275 kV substation.  Reconfiguration and uprating of existing 275 kV network circuits to establish 400 kV connections between Longannet, Alyth, Denny North and Wishaw 400 kV substations."
+- id: MBHW
+  name: Bramley to Melksham circuits thermal uprating
+  description: "Thermal Upgrade of both Bramley to Melksham 400 kV circuits to allow them to operate at higher temperature and rating."
+- id: MBRE
+  name: Bramley to Melksham reconductoring
+  description: "Replace the conductors in the Bramley to Melksham circuits with higher-rated conductors to increase their thermal ratings."
+- id: MRP2
+  name: Additional power control devices at both Harker and Penwortham
+  description: "Install additional power control devices at both Harker and Penwortham. This would improve the capability to control the power flow in both these areas of the transmission network."
+- id: NBEU
+  name: Thermal upgrade for Bramford and Norwich 400 kV substations
+  description: "Upgrade the 400 kV Bramford and Norwich substation equipment to increase its thermal capacity, supporting future load flow within the area."
+- id: NBRE
+  name: Reconductor Bramford to Norwich double circuit
+  description: "The double circuit that runs from Norwich to Bramford would be reconductored with a higher-rated conductor."
+- id: NEMS
+  name: 225 MVAr MSCs within the north east region
+  description: "Three new 225 MVAr switched capacitors (MSCs) at Norton, Osbaldwick and Stella West 400 kV substations would provide voltage support to the east side of the transmission network as system flows increase in future.
+- id: NEP1
+  name: Power control device along Blyth to Tynemouth and Blyth to South Shields
+  description: "Install an additional power control device along the Blyth to Tynemouth and Blyth to South Shields 275 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: NEPC
+  name: Power control device along Blyth to Tynemouth and Blyth to South Shields
+  description: "Install a power control device along the Blyth to Tynemouth and Blyth to South Shields 275 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: NIM1
+  name: 225 MVAr MSCs at Ninfield
+  description: "One new 225 MVAr switched capacitor (MSC) at Ninfield would provide voltage support East Anglia area as system flows increase in the future."
+- id: NIM2
+  name: 225 MVAr MSCs at Ninfield
+  description: "One new 225 MVAr switched capacitor (MSC) at Ninfield would provide voltage support East Anglia area as system flows increase in the future."
+- id: NOM1
+  name: 225 MVAr MSCs at Norwich
+  description: "One new 225 MVAr switched capacitor (MSC) at Norwich would provide voltage support East Anglia area as system flows increase in future."
+- id: NOM2
+  name: 225 MVAr MSCs at Norwich
+  description: "One new 225 MVAr switched capacitor (MSC) at Norwich would provide voltage support East Anglia area as system flows increase in future."
+- id: NOR4
+  name: Reconductor 13.75km of Norton to Osbaldwick number 2 400 kV circuit
+  description: "Replace some of the conductors in Norton to Osbaldwick 2 circuit with higher-rated conductors to increase the circuit’s thermal rating."
+- id: NOR5
+  name: Reconductor 13.75km of Norton to Osbaldwick number 1 400 kV circuit to a higher rated conductor
+  description: "Replace some of the conductors in Norton to Osbaldwick 1 circuit with an even higher-rated conductor to increase the circuit’s thermal rating."
+- id: NTP1
+  name: Power control device north of Tilbury 400 kV
+  description: "Install a power control device along the North Tilbury  400 kV overhead line route. This would improve the capability to control the power flows east of the transmission network."
+- id: NTP2
+  name: Additional power control device north of Tilbury 400 kV
+  description: "Install an additional power control device on the overhead line route going north out of Tilbury  400 kV substation. This would improve the capability to control the power flows east of the transmission network."
+- id: NVUP
+  name: Neilston to Strathaven 400 kV reinforcement
+  description: "Establish a 400 kV single circuit between Neilston and Strathaven utilising the existing 275 kV circuit via Busby.  Establishment of 400 kV connection at Busby, with connection into existing 400 kV substations at Neilston and Strathaven."
+- id: OPN2
+  name: A new 400 kV double circuit between the existing Norton to Osbaldwick circuit and Poppleton and relevant 275 kV upgrades
+  description: "Construct a new 400 kV double circuit in Yorkshire to facilitate power transfer requirements across the relevant boundaries. This new circuit connects near Poppleton and tee-in to the existing Norton to Osbaldwick 400 kV circuit. 275 kV upgrades are delivered as part of the scope to increase power transfers. Substation works are also required."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: upgraded substations in York North, Monk Fryston and line upgrades
+    pypsa_operations:
+    - action: update
+      component_type: substation
+      name: York North
+      voltage: 275
+      carrier: AC
+    - action: add
+      component_type: substation
+      name: Monk Fryston
+      voltage: 400
+      carrier: AC
+    - action: new
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: OPN2_400kV_OHL_Norton_Osbaldwick
+      from: Norton
+      to: Osbaldwick
+      length_km: 8
+      voltage: 400
+      circuits: 2
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: OPN2_400kV_OHL_YorkNorth_MonkFryston
+      from: York North
+      to: Monk Fryston
+      voltage: 400
+      circuits: 2
+      carrier: AC
+- id: PEM1
+  name: 225 MVAr MSCs at Pelham
+  description: "One new 225 MVAr switched capacitor (MSC) at Pelham would provide voltage support through East Anglia and North London as system flows increase in future."
+- id: PEM2
+  name: 225 MVAr MSCs at Pelham
+  description: "One new 225 MVAr switched capacitor (MSC) at Pelham would provide voltage support through East Anglia and North London as system flows increase in future."
+- id: PSDC
+  name: Spittal - Peterhead HVDC reinforcement
+  description: "Construct a 2 GW HVDC subsea link from a new 400 kV substation at Spittal to the existing 400 kV substation at Peterhead. The onshore works involve construction of 400 kV substations at Dounreay, Thurso and Spittal and rebuilding of the existing Dounreay to Thurso to Spittal 275 kV double circuit overhead line to 400 kV."
+- id: PTC1
+  name: Pentir to Trawsfynydd cable replacement
+  description: "Upgrade the cable section on the existing Pentir to Trawsfynydd circuit to allow this to operate at higher temperatures and increase the circuits thermal rating."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: line upgrade between Pentir and Trawsfynydd
+    pypsa_operations:
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: PTC1_400kV_OHL_Pentir_Trawsfynydd
+      from: Pentir
+      to: Trawsfynydd
+      length_km: 45
+      voltage: 400
+      circuits: 1
+      carrier: AC
+- id: PTNO
+  name: North Wales reinforcement
+  description: "Construct a second circuit in North Wales, making use of the existing transmission infrastructure to facilitate power transfer requirements across the relevant boundaries. Associated substation works are required at each end."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: line upgrade between Pentir and Trawsfynydd
+    pypsa_operations:
+    - action: add
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: PTC1_400kV_OHL_Pentir_Trawsfynydd
+      from: Pentir
+      to: Trawsfynydd
+      length_km: 45
+      voltage: 400
+      circuits: 2
+      carrier: AC
+- id: PWMS
+  name: Two 225 MVAr MSCs at Penwortham
+  description: "Two new 225 MVAr switched capacitors (MSCs) at Penwortham substations would provide voltage support around Mersey area as system flows increase in future."
+- id: RHM1
+  name: 225 MVAr MSCs at Rye House
+  description: "One new 225 MVAr switched capacitors (MSCs) at Rye House would provide voltage support through East Anglia and North London as system flows increase in future."
+- id: RHM2
+  name: 225 MVAr MSCs at Rye House
+  description: "One new 225 MVAr switched capacitors (MSCs) at Rye House would provide voltage support through East Anglia and North London as system flows increase in future."
+- id: RTRE
+  name: Reconductor remainder of Rayleigh to Tilbury circuit
+  description: "Replace the conductors on the remaining sections of the Rayleigh to Tilbury circuit, which have not recently been reconductored with higher-rated conductors. These would increase the circuit’s thermal rating."
+- id: SBDC
+  name: Spittal - Blackhillock HVDC reinforcement
+  description: "Construct a 2 GW HVDC subsea link from a new 400 kV substation at Spittal to the existing 400 kV substation at Blackhillock. The onshore works involve construction of 400 kV substations at Dounreay, Thurso and Spittal and rebuilding of the existing Dounreay to Thurso to Spittal 275 kV double circuit overhead line to 400 kV."
+- id: SCD1
+  name: New offshore HVDC link between Suffolk and Kent option 1
+  description: "Construct a new offshore 2 GW HVDC circuit between Suffolk and Kent."
+- id: SCD2
+  name: New offshore HVDC link between Suffolk and Kent option 2
+  description: "Construct a second new offshore 2 GW HVDC circuit between Suffolk and Kent, parallel with SDC1."
+- id: SCRE
+  name: Reconductor Cottam to Staythorpe number 1 400 kV circuit
+  description: "Replace the conductors in the Cottam to Staythorpe number 1 circuit with higher-rated conductors to increase the circuit’s thermal ratings."
+- id: SEEU
+  name: Reactive compensation protective switching scheme
+  description: "Provide a new communications system, and other equipment, to allow existing reactive equipment to be switched in or out of service very quickly following transmission system faults. This would allow better control of system voltages following faults."
+- id: SER1
+  name: Elstree to Sundon reconductoring
+  description: "Replace the conductors from Elstree to Sundon circuit 1 with higher-rated conductors to increase their thermal rating."
+- id: SER2
+  name: Elstree to Sundon 2 circuit turn-in and reconductoring
+  description: "Turn-in the Elstree to Sundon circuit 2, which currently passes the Elstree 400 kV substation, to connect to it and replace the conductor with a  higher-rated conductor. This would ensure better load flow sharing and increase their thermal rating."
+- id: SHNS
+  name: Upgrade substation in the South Humber area
+  description: "Substation upgrade of the 400 kV South Humber substation equipment."
+- id: SLU2
+  name: Loch Buidhe to Spittal 275 kV reinforcement
+  description: "Replace the existing Loch Buidhe to Spittal 132 kV double circuit overhead line via Brora and Dunbeath with a higher capacity 275 kV double circuit overhead line. Extension/reconfiguration works will be required at both Loch Buidhe and Spittal substations to accommodate the 275 kV double circuit. At Brora and Dunbeath grid supply points (GSPs) replace the existing 132/33kV grid transformers (GTs) with 275/33kV GTs to connect the new 275 kV overhead line to the existing 33kV network."
+- id: SNHW
+  name: Spennymoor to Norton circuit thermal uprating
+  description: "Thermal upgrade of the Spennymoor to Norton circuits to allow them to operate at higher temperatures and increase their thermal rating."
+- id: SSHW
+  name: Stella West to Spennymoor circuit thermal uprating
+  description: "Thermal upgrade of the Stella West to Spennymoor circuits to allow them to operate at higher temperatures and increase their thermal rating."
+- id: TDP2
+  name: Additional power control device along Drax to Thornton
+  description: "Install an additional power control device along the Drax to Thornton 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: TDPC
+  name: Power control device along Drax to Thornton
+  description: "Install a power control device along the Drax to Thornton 400 kV overhead line route. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: TENC
+  name: Thames Estuary reinforcement
+  description: "Construct a new 400 kV double circuit bridging the Thames Estuary to facilitate power transfer requirements across the relevant boundaries. Substation works are required to accommodate the new circuits."
+- id: TFPC
+  name: Power flow control device along Tealing to Westfield
+  description: "Install a power flow control device on the Tealing to Westfield 275 kV circuit 1 at Tealing substation to optimise the power flow across the Tealing to Westfield 275 kV double circuits 1 and 2, under a double circuit loss of the Alyth to Kincardine 400 kV double circuit."
+- id: TGDC
+  name: Eastern subsea HVDC Link from south east Scotland to South Humber area
+  description: "Construct a new offshore 2 GW HVDC subsea link from South East Scotland to the South Humber area in England to provide additional transmission capacity. Suitable connection points at each end will be identified, with the onshore works involving the construction of AC/DC converter stations and the associated AC works in both Scotland and England.  This is in addition to a first HVDC link from the Torness area."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: upgraded substations in York North, Monk Fryston and line upgrades
+    pypsa_operations:
+    - action: update
+      component_type: substation
+      name: York North
+      voltage: 275
+      carrier: AC
+    - action: add
+      component_type: substation
+      name: Monk Fryston
+      voltage: 400
+      carrier: AC
+    - action: new
+      component_type: line # subsea cable
+      line_type: Al/St 560/50 4-bundle 750.0
+      name: TGDC_525kV_subsea_Westfield_NorthwestNorfolk
+      from: Westfield
+      to: Northwest Norfolk
+      voltage: 525
+      length_km: 100
+      p_nom: 2000 # MW 
+      circuits: 1
+      carrier: DC
+- id: TGP1
+  name: Power control device along Tilbury to Grain
+  description: "Install a power control device along the Tilbury to Grain 400 kV overhead line route. This would improve the capability to control the power flows South East of the transmission network."
+- id: THRE
+  name: Reconductor Hinkley Point to Taunton Double Circuit
+  description: "Replace the conductors in the Hinkley Point to Taunton circuits with higher-rated conductors to increase the circuits’ thermal ratings."
+- id: TKP1
+  name: Power control device along Tilbury to Kingsnorth
+  description: "Install a power control device along the Tilbury to Kingsnorth 400 kV overhead line route. This would improve the capability to control the power flows in the south east region of the transmission network."
+- id: TKRE
+  name: Tilbury to Grain and Tilbury to Kingsnorth upgrade
+  description: "Replace the conductors in the Tilbury to Grain and Tilbury to Kingsnorth circuits with higher-rated conductors, and replace the associated cables with larger cables of a higher rating, including Tilbury, Grain and Kingsnorth substation equipment. This will increase the circuits’ thermal ratings."
+- id: TKU2
+  name: Alternative East Coast onshore Phase 2 Reinforcement
+  description: "Establish further 400 kV infrastructure on the east coast following ECUP.  Re-profile the existing Kintore to Tealing 275 kV double circuit to enable a higher operating temperature. Establish a new 400 kV substation at Tealing, including new 400/275 kV transformers. Re-insulate the existing Alyth to Tealing 275 kV double circuit overhead line for 400 kV operation. Reinsulate a single side of the existing 275 kV double circuit between Tealing and Longannet via Westfield to 400 kV operation, installing a new 400/275 kV transformer at Westfield."
+- id: TKUP
+  name: East Coast onshore 400 kV Phase 2 Reinforcement
+  description: "Establish further 400 kV infrastructure on the east coast following ECUP. Rebuild the Kintore to Tealing 275 kV double circuit for 400 kV operation and establish a new 400 kV substation at Tealing, including new 400/275 kV transformers. Re-insulate the existing Alyth to Tealing 275 kV double circuit overhead line for 400 kV operation. Re-insulate the existing Tealing to Longannet 275 kV route through Glenrothes, Westfield and Mossmorran for 400 kV operation. Install 400/275 kV transformers at Glenrothes and new 400/132 kV transformers at Westfield and Mossmorran."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: line upgrade between Tealing and Westfield
+    pypsa_operations:
+    - action: add
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: PTC1_400kV_OHL_Tealing_Westfield
+      from: Tealing
+      to: Westfield
+      length_km: 37
+      voltage: 400
+      circuits: 2
+      carrier: AC
+- id: TLNO
+  name: Torness to north east England AC onshore reinforcement
+  description: "This option provides additional transmission capacity by installing a new 400 kV double circuit from a 400 kV substation in the Torness area to a suitable connection point in north east England, including required additional substation equipment at both ends."
+- id: TMPC
+  name: Power control device along Thorpe Marsh to West Melton number 1 circuit
+  description: "Install additional power control devices along the Thorpe Marsh to West Melton number 1 275 kV overhead line circuit. This would improve the capability to control the power flows from north to south of the transmission network."
+- id: VERE
+  name: Strathaven - Elvanfoot overhead line conductor replacement
+  description: "Reconductor existing 400 kV double circuit overhead line route from Strathaven to Elvanfoot (total route length 49km) on existing towers and where required carry out all necessary foundation and steel works to repair towers for re-use."
+- id: VSRE
+  name: Strathaven - Smeaton overhead line conductor replacement
+  description: "Reconductor existing 400 kV double circuit overhead line route from Strathaven to Wishaw and Wishaw to Smeaton on existing towers to a higher rated conductor system and where required carry out all necessary foundation and steel works to repair towers for re-use."
+- id: WAM1
+  name: 225 MVAr MSCs at Walpole
+  description: "One new 225 MVAr switched capacitor (MSC) at Walpole would provide voltage support to the north London area as system flows increase in future."
+- id: WAM2
+  name: 225 MVAr MSCs at Walpole
+  description: "One new 225 MVAr switched capacitor (MSC) at Walpole would provide voltage support to the north London area as system flows increase in future."
+- id: WCC1
+  name: Cable replacement at Hinksey
+  description: "Upgrade the cable section in the Cowley to Walham 400 kV circuit at Hinksey to increasing the circuits' thermal ratings."
+- id: WRRE
+  name: Reconductor West Burton to Ratcliffe-on-Soar circuit
+  description: "Replace the conductors in the West Burton to Ratcliffe-on-Soar circuit with higher-rated conductors to increase the circuit’s thermal ratings."
+- id: WSEU
+  name: Thermal upgrade for Sundon and Wymondley 400 kV substation
+  description: "Upgrade the 400 kV Sundon and Wymondley substation equipment to increase its thermal capacity, supporting future load flow within the area."
+- id: WYTI
+  name: Wymondley turn-in
+  description: "Modify the existing circuit that runs from Pelham to Sundon. Turn-in the circuit at Wymondley to create two separate circuits that run from Pelham to Wymondley and from Wymondley to Sundon to improve the balance of flows."
