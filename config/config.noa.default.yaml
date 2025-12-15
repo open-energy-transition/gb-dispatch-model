@@ -5,7 +5,7 @@
 noa_options:
 - id: AENC
   grouped_name: AENC_ATNC
-  name: "A new 400 kV double circuit in north East Anglia"
+  name: A new 400 kV double circuit in north East Anglia
     # detailed description
   description: "Construct a new 400 kV double circuit in north East Anglia to facilitate power transfer requirements across the relevant boundaries. Substation works are required to accommodate the new circuits."
   commissioning_year: 2027
@@ -25,6 +25,7 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
+      line_type: 490-AL1/64-ST1A 380.0
       name: AENC_400kV_OHL_NorwichMain_Bramford
       from: Norwich Main Substation # TODO: maybe we call it fully from_substation and to_substation
       to: Bramford Substation
@@ -46,6 +47,7 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
+      line_type: 490-AL1/64-ST1A 380.0
       name: AENC_400kV_OHL_Bramford_Tendring_Lawford
       from: Bramford Substation
       to: Lawford Substation
@@ -55,6 +57,7 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
+      line_type: 490-AL1/64-ST1A 380.0
       name: AENC_400kV_OHL_Tendring_Lawford_Tilbury
       from: Lawford Substation
       to: Tilbury Substation
@@ -64,7 +67,7 @@ noa_options:
       carrier: AC
 - id: BBNC
   grouped_name: BBNC_BPNC
-  name: "Beauly - Blackhillock 400 kV double circuit addition"
+  name: Beauly - Blackhillock 400 kV double circuit addition
   description: "Construct a new 400 kV double circuit between Beauly and Blackhillock. At both sites extend the 400 kV busbar arrangements to allow for the connection of two additional bays."
   commissioning_year: 2030
   # details of individual components to change
@@ -83,6 +86,7 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
+      line_type: 490-AL1/64-ST1A 380.0
       name: BBNC_400kV_OHL_Beauly_Blackhillock
       from: Beauly Substation
       to: Blackhillock Substation
@@ -90,6 +94,149 @@ noa_options:
       length_km: 110
       circuits: 2
       carrier: AC
+- id: BDUP
+  grouped_name: BDUP
+  name: Beauly - Denny 275 kV circuit upgrade to 400 kV
+  description: "Uprating of the 275 kV side of the existing Beauly-Denny circuit to 400 kV operation between SHE Transmission and SPT.  Substation works will be required at Beauly, Fasnakyle, Fort Augustus, Kinardochy, Braco West and Denny North. The Errochty I/T scheme (implemented under ECU2) shall be amended to trip the 400/132 kV supergrid transformer(SGTs) at Kinardochy under loss of the 400 kV double circuit south of Kinardochy."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: upgrade line from 275 kV to 400 kV from Beauly to Denny
+    pypsa_operations:
+    - action: update
+      component_type: line
+      line_type: 490-AL1/64-ST1A 380.0
+      name: BBNC_400kV_OHL_Blackhillock_NewDeer
+      from: Beauly
+      to: Denny
+      voltage: 400
+      circuits: 2
+      carrier: AC
+- id: BFHW
+  grouped_name: BFHW
+  name: Bramley to Fleet circuits thermal uprating
+  description: "Thermal Upgrade of the Bramley to Fleet circuits to allow them to operate at higher temperatures, and increase their thermal rating."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: upgrade line from Bramley to Fleet
+    pypsa_operations:
+    - action: update
+      component_type: line
+      line_type: 490-AL1/64-ST1A 380.0
+      name: BFHW_400kV_OHL_Bramley_Fleet
+      from: Bramley
+      to: Fleet
+      # voltage: 400
+      # circuits: 2
+      carrier: AC
+      p_nom_max: 0.8
+- id: BFPC
+  grouped_name: BFPC
+  name: Power control device along Bramley to Fleet
+  description: "Install a power control device along the Bramley to Fleet 400 kV overhead line route. This would improve the capability to control the power flows across the South Coast of the transmission network."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: upgrade line from Bramley to Fleet
+    pypsa_operations:
+    - action: update
+      component_type: line
+      line_type: 490-AL1/64-ST1A 380.0
+      name: BFPC_400kV_OHL_Bramley_Fleet
+      from: Bramley
+      to: Fleet
+      voltage: 400
+      circuits: 2
+      carrier: AC
+      p_nom_max: 0.85
+- id: BFRE
+  grouped_name: BFRE
+  name: Bramley to Fleet reconductoring
+  description: "Replace the conductors in the Bramley to Fleet circuits with higher-rated conductors to increase their thermal ratings."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: upgrade line from Bramley to Fleet
+    pypsa_operations:
+    - action: update
+      component_type: line
+      line_type: 490-AL1/64-ST1A 380.0
+      name: BFRE_400kV_OHL_Bramley_Fleet
+      from: Bramley
+      to: Fleet
+      voltage: 400
+      circuits: 2
+      carrier: AC
+      p_nom_max: 0.9
+- id: BLN2
+  grouped_name: BLN2
+  name: Beauly to Loch Buidhe 275 kV reinforcement
+  description: "Replace the Beauly to Shin to Loch Buidhe 132 kV double circuit overhead line with a higher capacity 275 kV double circuit overhead line, including new transformers at Shin and substation extensions at Beauly and Loch Buidhe."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: upgrade the Beauly to Shin to Loch Buidhe from 132 kV double circuit to 275 kV double circuit 
+    pypsa_operations:
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: BLN2_275kV_OHL_Beauly_Shin
+      from: Beauly
+      to: Shin
+      voltage: 275
+      circuits: 2
+      carrier: AC
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: BLN2_275kV_OHL_Shin_LochBuidhe
+      from: Shin
+      to: Loch Buidhe
+      voltage: 275
+      circuits: 2
+      carrier: AC
+- id: BLN4
+  grouped_name: BLN4
+  name: Beauly to Loch Buidhe 400 kV reinforcement
+  description: "This project is to reinforce the existing BSW/BSE Beauly - Shin - Loch Buidhe 132 kV double circuit overhead line with a higher capacity 400 kV double circuit overhead line."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: upgrade the Beauly to Shin to Loch Buidhe from 132 kV double circuit to 400 kV double circuit 
+    pypsa_operations:
+    - action: update
+      component_type: line
+      name: BLN2_400kV_OHL_Beauly_Shin
+      from: Beauly
+      to: Shin
+      voltage: 400
+      circuits: 2
+      carrier: AC
+    - action: update
+      component_type: line
+      name: BLN2_275kV_OHL_Shin_LochBuidhe
+      from: Shin
+      to: Loch Buidhe
+      voltage: 400
+      circuits: 2
+      carrier: AC
+- id: BMM2
+  grouped_name: BMM2
+  name: 225 MVAr MSCs at Burwell Main
+  description: "Two new 225 MVAr switched capacitors (MSCs) at Burwell Main would provide voltage support to the East Anglia area as system flows increase in future."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: unclear
+- id: BNRC
+  grouped_name: BNRC
+  name: Bolney and Ninfield additional reactive compensation
+  description: "A new MSC and SVC/STATCOM pair at both  Bolney  and  Ninfield  400 kV substations. These can indicatively be assumed to have the same ratings as those in  2016 - SE03."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: none
 - id: BPNC
   grouped_name: BBNC_BPNC
   name: Blackhillock - Peterhead 400 kV double circuit addition
@@ -138,4 +285,79 @@ noa_options:
       component_type: substation
       name: Peterhead Substation
       voltage: 132
+      carrier: AC
+- id: BPRE
+  grouped_name: BPRE
+  name: Reconductor the newly formed second Bramford to Braintree to Rayleigh Main circuit
+  description: "Replace the conductors of the newly formed second Bramford to Braintree to Rayleigh Main circuit that has not already been reconductored with higher-rated conductors. This would increase the circuit's thermal rating following the new 400 kV double circuit between Bramford and Twinstead"
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: unclear
+- id: BRRE
+  grouped_name: BRRE
+  name: Reconductor remainder of Bramford to Braintree to Rayleigh route
+  description: "Replace the conductors in the limiting sections of the existing Bramford to Braintree to Rayleigh overhead line that have not already been reconductored with higher-rated conductors, to increase the circuits overall thermal rating."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: upgrade the conductors from Bramford to Braintree to Rayleigh 
+    pypsa_operations:
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: BRRE_OHL_Bramford_Braintree
+      from: Bramford
+      to: Braintree
+      carrier: AC
+      p_nom_max: 0.8
+    - action: update
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: BRRE_OHL_Braintree_Rayleigh
+      from: Braintree
+      to: Rayleigh
+      carrier: AC
+      p_nom_max: 0.8
+- id: BTNO
+  grouped_name: BTNO
+  name: A new 400 kV double circuit between Bramford and Twinstead
+  description: "Construct a new 400 kV double circuit between Bramford substation and Twinstead tee point to create double circuits that run between Bramford to Pelham and Bramford to Braintree to Rayleigh Main. It would increase power export capability from East Anglia into the rest of the transmission system."
+  commissioning_year: 2030
+  # details of individual components to change
+  details:
+  - name: c27 km of new 400 kV double cicuit overhead line from Bramford to Twinstead tee point
+    pypsa_operations:
+    - action: add
+      component_type: substation
+      name: Bramford Substation
+      voltage: 400
+      carrier: AC
+    - action: add
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: BTNO_OHL_Bramford_Twinstead 
+      from: Bramford Substation
+      to: Twinstead tee
+      voltage: 400
+      length_km: 18
+      circuits: 2
+      carrier: AC
+  - name: removing c27 km of existing 132 kV and 400 kV overhead line between Burstall Bridge and Twinstead Tee
+    pypsa_operations:
+    - action: remove
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: BTNO_Burstall Bridge
+      from: Burstall Bridge
+      to: Twinstead Tee
+      voltage: 132
+      carrier: AC
+    - action: remove
+      component_type: line
+      line_type: Al/St 240/40 4-bundle 380.0
+      name: BTNO_Burstall Bridge
+      from: Burstall Bridge
+      to: Twinstead Tee
+      voltage: 400
       carrier: AC
