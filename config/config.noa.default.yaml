@@ -25,7 +25,6 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
-      line_type: 490-AL1/64-ST1A 380.0
       name: AENC_400kV_OHL_NorwichMain_Bramford
       from: Norwich Main Substation # TODO: maybe we call it fully from_substation and to_substation
       to: Bramford Substation
@@ -47,7 +46,6 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
-      line_type: 490-AL1/64-ST1A 380.0
       name: AENC_400kV_OHL_Bramford_Tendring_Lawford
       from: Bramford Substation
       to: Lawford Substation
@@ -57,7 +55,6 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
-      line_type: 490-AL1/64-ST1A 380.0
       name: AENC_400kV_OHL_Tendring_Lawford_Tilbury
       from: Lawford Substation
       to: Tilbury Substation
@@ -86,7 +83,6 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
-      line_type: 490-AL1/64-ST1A 380.0
       name: BBNC_400kV_OHL_Beauly_Blackhillock
       from: Beauly Substation
       to: Blackhillock Substation
@@ -105,7 +101,6 @@ noa_options:
     pypsa_operations:
     - action: update
       component_type: line
-      line_type: 490-AL1/64-ST1A 380.0
       name: BBNC_400kV_OHL_Blackhillock_NewDeer
       from: Beauly
       to: Denny
@@ -123,7 +118,6 @@ noa_options:
     pypsa_operations:
     - action: update
       component_type: line
-      line_type: 490-AL1/64-ST1A 380.0
       name: BFHW_400kV_OHL_Bramley_Fleet
       from: Bramley
       to: Fleet
@@ -142,7 +136,6 @@ noa_options:
     pypsa_operations:
     - action: update
       component_type: line
-      line_type: 490-AL1/64-ST1A 380.0
       name: BFPC_400kV_OHL_Bramley_Fleet
       from: Bramley
       to: Fleet
@@ -161,7 +154,6 @@ noa_options:
     pypsa_operations:
     - action: update
       component_type: line
-      line_type: 490-AL1/64-ST1A 380.0
       name: BFRE_400kV_OHL_Bramley_Fleet
       from: Bramley
       to: Fleet
@@ -176,11 +168,10 @@ noa_options:
   commissioning_year: 2030
   # details of individual components to change
   details:
-  - name: upgrade the Beauly to Shin to Loch Buidhe from 132 kV double circuit to 275 kV double circuit 
+  - name: upgrade the Beauly to Shin to Loch Buidhe from 132 kV double circuit to 275 kV double circuit
     pypsa_operations:
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: BLN2_275kV_OHL_Beauly_Shin
       from: Beauly
       to: Shin
@@ -189,7 +180,6 @@ noa_options:
       carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: BLN2_275kV_OHL_Shin_LochBuidhe
       from: Shin
       to: Loch Buidhe
@@ -203,7 +193,7 @@ noa_options:
   commissioning_year: 2030
   # details of individual components to change
   details:
-  - name: upgrade the Beauly to Shin to Loch Buidhe from 132 kV double circuit to 400 kV double circuit 
+  - name: upgrade the Beauly to Shin to Loch Buidhe from 132 kV double circuit to 400 kV double circuit
     pypsa_operations:
     - action: update
       component_type: line
@@ -301,11 +291,10 @@ noa_options:
   commissioning_year: 2030
   # details of individual components to change
   details:
-  - name: upgrade the conductors from Bramford to Braintree to Rayleigh 
+  - name: upgrade the conductors from Bramford to Braintree to Rayleigh
     pypsa_operations:
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: BRRE_OHL_Bramford_Braintree
       from: Bramford
       to: Braintree
@@ -313,7 +302,6 @@ noa_options:
       p_nom_max: 0.8
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: BRRE_OHL_Braintree_Rayleigh
       from: Braintree
       to: Rayleigh
@@ -335,8 +323,7 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
-      name: BTNO_OHL_Bramford_Twinstead 
+      name: BTNO_OHL_Bramford_Twinstead
       from: Bramford Substation
       to: Twinstead tee
       voltage: 400
@@ -347,7 +334,6 @@ noa_options:
     pypsa_operations:
     - action: remove
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: BTNO_Burstall Bridge
       from: Burstall Bridge
       to: Twinstead Tee
@@ -355,7 +341,6 @@ noa_options:
       carrier: AC
     - action: remove
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: BTNO_Burstall Bridge
       from: Burstall Bridge
       to: Twinstead Tee
