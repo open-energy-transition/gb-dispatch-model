@@ -253,7 +253,7 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
-      name: BBNC_400kV_OHL_Blackhillock_NewDeer
+      name: BPNC_400kV_OHL_Blackhillock_NewDeer
       from: Blackhillock Substation
       to: Moray East Onshore substation # New Deer substation (two substations are at the same location)
       voltage: 400
@@ -262,7 +262,7 @@ noa_options:
       carrier: AC
     - action: add
       component_type: line
-      name: BBNC_400kV_OHL_NewDeer_Peterhead
+      name: BPNC_400kV_OHL_NewDeer_Peterhead
       from: Moray East Onshore substation # New Deer substation (two substations are at the same location)
       to: Peterhead Substation
       voltage: 400
