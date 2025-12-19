@@ -13,3 +13,8 @@ noa_sets:
   noa_options:
   - BBNC
   - BPNC
+
+- id: 2
+  name: "North to South Scotland" # any meaningful name
+  noa_options:
+  - BDUP

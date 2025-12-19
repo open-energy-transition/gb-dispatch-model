@@ -61,58 +61,69 @@ class AddNOAOption:
         if action == "add":
             if component_type == "substation":
                 self._add_substation(operation)
-            elif component_type in ["line", "link"]:
+            elif component_type == "line":
                 self._add_line(operation)
+            elif component_type == "link":
+                self._add_link(operation)
             else:
                 logger.warning(f"Unknown component_type for add: {component_type}")
 
         elif action == "update":
-            self._update_component(self, operation)
+            if component_type == "line":
+                self._update_line(operation)
+            elif component_type == "link":
+                self._update_link(operation)
+            else:
+                logger.warning(f"Unknown component_type for update: {component_type}")
 
         elif action == "remove":
-            self._remove_component(self, operation)
+            self._remove_component(operation)
 
         else:
             logger.warning(f"Unknown action: {action}")
 
     def _add_substation(self, operation: dict) -> None:
         """Add substation to the network."""
-        substation_name = operation.get("name")
+        substation_names = operation.get("names", [])
         voltage = operation.get("voltage")
         carrier = operation.get("carrier")
 
-        # Determine bus closest to the substation
-        network_bus_id, bus_status = self._find_bus_cached(
-            name=substation_name,
-            voltage=voltage,
-        )
-
-        if bus_status == "exists":
-            logger.info(
-                f"Substation '{substation_name}' with voltage '{voltage}'kV already exists in the network."
+        for substation_name in substation_names:
+            # Determine bus closest to the substation
+            network_bus_id, bus_status = self._find_bus_cached(
+                name=substation_name,
+                voltage=voltage,
             )
-            return
 
-        if network_bus_id and bus_status == "reference":
-            # Get attributes from reference bus
-            ref_attrs = self.network.buses.loc[network_bus_id].to_dict()
-            ref_attrs.update({"v_nom": voltage, "carrier": carrier})
-            new_bus_id = f"{network_bus_id.split('-')[0]}-{voltage}"
-            # Add new bus to the network
-            self.network.add("Bus", new_bus_id, **ref_attrs)
+            if bus_status == "exists":
+                logger.info(
+                    f"Substation '{substation_name}' with voltage '{voltage}'kV already exists in the network."
+                )
+                continue
 
-            # Update cache with new bus
-            self._bus_lookup_cache[(substation_name, voltage)] = (new_bus_id, "exists")
+            if network_bus_id and bus_status == "reference":
+                # Get attributes from reference bus
+                ref_attrs = self.network.buses.loc[network_bus_id].to_dict()
+                ref_attrs.update({"v_nom": voltage, "carrier": carrier})
+                new_bus_id = f"{network_bus_id.split('-')[0]}-{voltage}"
+                # Add new bus to the network
+                self.network.add("Bus", new_bus_id, **ref_attrs)
 
-            logger.info(
-                f"Substation '{substation_name}' with voltage '{voltage}'kV added to the network."
-            )
-            return
+                # Update cache with new bus
+                self._bus_lookup_cache[(substation_name, voltage)] = (
+                    new_bus_id,
+                    "exists",
+                )
 
-        if not network_bus_id:
-            raise ValueError(
-                f"Cannot add substation '{substation_name}' with voltage '{voltage}'kV using any strategy."
-            )
+                logger.info(
+                    f"Substation '{substation_name}' with voltage '{voltage}'kV added to the network."
+                )
+                continue
+
+            if not network_bus_id:
+                raise ValueError(
+                    f"Cannot add substation '{substation_name}' with voltage '{voltage}'kV using any strategy."
+                )
 
     def _find_bus_cached(
         self, name: str, voltage: int
@@ -157,39 +168,120 @@ class AddNOAOption:
         )
         return s_nom
 
+    def _get_line_parameters(
+        self,
+        voltage: int,
+        from_name: str,
+        to_name: str,
+        carrier: str,
+        length: float | None = None,
+        circuits: int = 1,
+        capacity: float | None = None,
+    ) -> dict:
+        """
+        Get line parameters for adding to network.
+
+        Args:
+            voltage: Voltage level in kV
+            from_name: Start substation name
+            to_name: End substation name
+            carrier: Line carrier
+            length: Line length
+            circuits: Number of circuits
+            capacity: Optional fixed capacity (overrides calculation)
+
+        Returns:
+            Dictionary of line parameters ready for network.add()
+        """
+        line_type = snakemake.config["lines"]["types"][voltage]
+
+        # Calculate s_nom if capacity not provided
+        if capacity is not None:
+            s_nom = capacity
+        else:
+            s_nom = self._calculate_s_nom(line_type, voltage, circuits)
+
+        # Find buses
+        from_bus, _ = self._find_bus_cached(name=from_name, voltage=voltage)
+        to_bus, _ = self._find_bus_cached(name=to_name, voltage=voltage)
+
+        return {
+            "bus0": from_bus,
+            "bus1": to_bus,
+            "length": length,
+            "carrier": carrier,
+            "type": line_type,
+            "v_nom": voltage,
+            "s_nom": s_nom,
+            "num_parallel": circuits,
+            "dc": False,
+            "underground": False,
+            "onshore_bus": True,
+        }
+
     def _add_line(self, operation: dict) -> None:
         """Add line to the network."""
         line_name = operation.get("name")
         voltage = operation.get("voltage")
-        carrier = operation.get("carrier")
-        circuits = operation.get("circuits")
-        line_type = snakemake.config["lines"]["types"][voltage]
 
-        from_bus, bus_status_from = self._find_bus_cached(
-            name=operation.get("from"), voltage=voltage
-        )
-        to_bus, bus_status_to = self._find_bus_cached(
-            name=operation.get("to"), voltage=voltage
+        # Get line parameters using helper
+        line_params = self._get_line_parameters(
+            voltage=voltage,
+            from_name=operation.get("from"),
+            to_name=operation.get("to"),
+            carrier=operation.get("carrier"),
+            length=operation.get("length"),
+            circuits=operation.get("circuits", 1),
+            capacity=operation.get("capacity"),
         )
 
         # Add new line
-        self.network.add(
-            "Line",
-            line_name,
-            bus0=from_bus,
-            bus1=to_bus,
-            length=operation.get("length"),
-            carrier=carrier,
-            type=snakemake.config["lines"]["types"][voltage],
-            v_nom=voltage,
-            s_nom=self._calculate_s_nom(line_type, voltage, circuits),
-            num_parallel=circuits,
-            dc=False,
-            underground=False,
-            onshore_bus=True,
-        )
+        self.network.add("Line", line_name, **line_params)
+
         logger.info(
-            f"Line '{line_name}' between '{from_bus}' and '{to_bus}' at voltage '{voltage}'kV added to the network."
+            f"Line '{line_name}' was added between '{line_params['bus0']}' and "
+            f"'{line_params['bus1']}' at voltage '{voltage}'kV with s_nom={line_params['s_nom']:.1f}MW"
+        )
+
+    def _update_line(self, operation: dict) -> None:
+        """
+        Update line capacity by adding parallel line with povided capacity,
+        or capacity difference between initial and final line types.
+        """
+        line_name = operation.get("name")
+        from_voltage = operation.get("from_voltage")
+        to_voltage = operation.get("to_voltage")
+        circuits = operation.get("circuits", 1)
+        capacity = operation.get("capacity")
+
+        # Calculate s_nom difference if capacity not provided
+        if capacity is not None:
+            s_nom = capacity
+        else:
+            from_line_type = snakemake.config["lines"]["types"][from_voltage]
+            to_line_type = snakemake.config["lines"]["types"][to_voltage]
+
+            s_nom_from = self._calculate_s_nom(from_line_type, from_voltage, circuits)
+            s_nom_to = self._calculate_s_nom(to_line_type, to_voltage, circuits)
+            s_nom = s_nom_to - s_nom_from
+
+        # Get updated line parameters using helper
+        line_params = self._get_line_parameters(
+            voltage=to_voltage,
+            from_name=operation.get("from"),
+            to_name=operation.get("to"),
+            carrier=operation.get("carrier"),
+            length=operation.get("length"),
+            circuits=circuits,
+            capacity=s_nom,
+        )
+
+        # Add the parallel upgrade line
+        self.network.add("Line", line_name, **line_params)
+
+        logger.info(
+            f"Line upgrade '{line_name}' added: {from_voltage}kV → {to_voltage}kV, "
+            f"capacity difference: {s_nom:.1f}MW"
         )
 
     def add_option(self):
@@ -256,9 +348,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
 
-        snakemake = mock_snakemake(
-            Path(__file__).stem, configfiles="config/config.noa.sets.yaml"
-        )
+        snakemake = mock_snakemake(Path(__file__).stem)
     configure_logging(snakemake)
     set_scenario_config(snakemake)
 

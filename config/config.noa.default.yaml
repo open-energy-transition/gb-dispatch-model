@@ -15,13 +15,10 @@ noa_options:
     pypsa_operations:
     - action: add
       component_type: substation
-      name: Norwich Main Substation     # OSM name
+      names:
+      - Norwich Main Substation
+      - Bramford Substation
       voltage: 400     # provide voltage level in KV (TODO: do we need to define AC or DC?)
-      carrier: AC
-    - action: add     # TODO: think if we need to make addition of several substations in one action
-      component_type: substation
-      name: Bramford Substation
-      voltage: 400
       carrier: AC
     - action: add
       component_type: line
@@ -36,12 +33,9 @@ noa_options:
     pypsa_operations:
     - action: add
       component_type: substation
-      name: Tilbury Substation
-      voltage: 400
-      carrier: AC
-    - action: add
-      component_type: substation
-      name: Lawford Substation # new connection substation to be located in the Tendring district (based on provided map: https://norwichtotilburymap.nationalgrid.com/)
+      names:
+      - Tilbury Substation
+      - Lawford Substation # new connection substation to be located in the Tendring district (based on provided map: https://norwichtotilburymap.nationalgrid.com/)
       voltage: 400
       carrier: AC
     - action: add
@@ -62,6 +56,7 @@ noa_options:
       length_km: 60 # approximate assumption based on provided map
       circuits: 2
       carrier: AC
+
 - id: BBNC
   grouped_name: BBNC_BPNC
   name: Beauly - Blackhillock 400 kV double circuit addition
@@ -73,12 +68,9 @@ noa_options:
     pypsa_operations:
     - action: add
       component_type: substation
-      name: Beauly Substation
-      voltage: 400
-      carrier: AC
-    - action: add
-      component_type: substation
-      name: Blackhillock Substation
+      names:
+      - Beauly Substation
+      - Blackhillock Substation
       voltage: 400
       carrier: AC
     - action: add
@@ -90,6 +82,7 @@ noa_options:
       length_km: 110
       circuits: 2
       carrier: AC
+
 - id: BDUP
   grouped_name: BDUP
   name: Beauly - Denny 275 kV circuit upgrade to 400 kV
@@ -99,14 +92,63 @@ noa_options:
   details:
   - name: upgrade line from 275 kV to 400 kV from Beauly to Denny
     pypsa_operations:
+    - action: add
+      component_type: substation
+      names:
+      - Beauly Substation
+      - Fasnakyle Substation
+      - Fort Augustus Substation
+      - Kinardochy Substation
+      - Braco West Substation
+      - Denny Substation
+      voltage: 400
+      carrier: AC
     - action: update
       component_type: line
-      name: BBNC_400kV_OHL_Blackhillock_NewDeer
-      from: Beauly
-      to: Denny
-      voltage: 400
-      circuits: 2
+      name: BDUP_275kV_to_400kV_OHL_Beauly_Fasnakyle
+      from: Beauly Substation
+      to: Fasnakyle Substation
+      from_voltage: 275
+      to_voltage: 400
+      circuits: 1
       carrier: AC
+    - action: update
+      component_type: line
+      name: BDUP_275kV_to_400kV_OHL_Fasnakyle_FortAugustus
+      from: Fasnakyle Substation
+      to: Fort Augustus Substation
+      from_voltage: 275
+      to_voltage: 400
+      circuits: 1
+      carrier: AC
+    - action: update
+      component_type: line
+      name: BDUP_275kV_to_400kV_OHL_FortAugustus_Kinardochy
+      from: Fort Augustus Substation
+      to: Kinardochy Substation
+      from_voltage: 275
+      to_voltage: 400
+      circuits: 1
+      carrier: AC
+    - action: update
+      component_type: line
+      name: BDUP_275kV_to_400kV_OHL_Kinardochy_BracoWest
+      from: Kinardochy Substation
+      to: Braco West Substation
+      from_voltage: 275
+      to_voltage: 400
+      circuits: 1
+      carrier: AC
+    - action: update
+      component_type: line
+      name: BDUP_275kV_to_400kV_OHL_BracoWest_Denny
+      from: Braco West Substation
+      to: Denny Substation
+      from_voltage: 275
+      to_voltage: 400
+      circuits: 1
+      carrier: AC
+
 - id: BFHW
   grouped_name: BFHW
   name: Bramley to Fleet circuits thermal uprating
@@ -125,6 +167,7 @@ noa_options:
       # circuits: 2
       carrier: AC
       p_nom_max: 0.8
+
 - id: BFPC
   grouped_name: BFPC
   name: Power control device along Bramley to Fleet
@@ -143,6 +186,7 @@ noa_options:
       circuits: 2
       carrier: AC
       p_nom_max: 0.85
+
 - id: BFRE
   grouped_name: BFRE
   name: Bramley to Fleet reconductoring
@@ -161,6 +205,7 @@ noa_options:
       circuits: 2
       carrier: AC
       p_nom_max: 0.9
+
 - id: BLN2
   grouped_name: BLN2
   name: Beauly to Loch Buidhe 275 kV reinforcement
@@ -186,6 +231,7 @@ noa_options:
       voltage: 275
       circuits: 2
       carrier: AC
+
 - id: BLN4
   grouped_name: BLN4
   name: Beauly to Loch Buidhe 400 kV reinforcement
@@ -211,6 +257,7 @@ noa_options:
       voltage: 400
       circuits: 2
       carrier: AC
+
 - id: BMM2
   grouped_name: BMM2
   name: 225 MVAr MSCs at Burwell Main
@@ -219,6 +266,7 @@ noa_options:
   # details of individual components to change
   details:
   - name: unclear
+
 - id: BNRC
   grouped_name: BNRC
   name: Bolney and Ninfield additional reactive compensation
@@ -227,6 +275,7 @@ noa_options:
   # details of individual components to change
   details:
   - name: none
+
 - id: BPNC
   grouped_name: BBNC_BPNC
   name: Blackhillock - Peterhead 400 kV double circuit addition
@@ -238,17 +287,10 @@ noa_options:
     pypsa_operations:
     - action: add
       component_type: substation
-      name: Blackhillock Substation
-      voltage: 400
-      carrier: AC
-    - action: add
-      component_type: substation
-      name: Moray East Onshore substation # New Deer substation (two substations are at the same location)
-      voltage: 400
-      carrier: AC
-    - action: add
-      component_type: substation
-      name: Peterhead Substation
+      names:
+      - Blackhillock Substation
+      - Moray East Onshore substation # New Deer substation (two substations are at the same location)
+      - Peterhead Substation
       voltage: 400
       carrier: AC
     - action: add
@@ -273,9 +315,11 @@ noa_options:
     pypsa_operations:
     - action: add
       component_type: substation
-      name: Peterhead Substation
+      names:
+      - Peterhead Substation
       voltage: 132
       carrier: AC
+
 - id: BPRE
   grouped_name: BPRE
   name: Reconductor the newly formed second Bramford to Braintree to Rayleigh Main circuit
@@ -284,6 +328,7 @@ noa_options:
   # details of individual components to change
   details:
   - name: unclear
+
 - id: BRRE
   grouped_name: BRRE
   name: Reconductor remainder of Bramford to Braintree to Rayleigh route
@@ -307,6 +352,7 @@ noa_options:
       to: Rayleigh
       carrier: AC
       p_nom_max: 0.8
+
 - id: BTNO
   grouped_name: BTNO
   name: A new 400 kV double circuit between Bramford and Twinstead
@@ -318,7 +364,8 @@ noa_options:
     pypsa_operations:
     - action: add
       component_type: substation
-      name: Bramford Substation
+      names:
+      - Bramford Substation
       voltage: 400
       carrier: AC
     - action: add
