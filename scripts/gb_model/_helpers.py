@@ -70,6 +70,8 @@ def to_numeric(series: pd.Series) -> pd.Series:
 
 def standardize_year(series: pd.Series) -> pd.Series:
     """Standardize year format in a pandas Series."""
+    if series.dtype.kind == "M":
+        series = series.dt.year
     if series.dtype == "object" and "-" in str(series.iloc[0]):
         series = pd.to_datetime(series).dt.year
     return series.astype(int) if series.dtype == "object" else series
@@ -81,6 +83,52 @@ def pre_format(df: pd.DataFrame) -> pd.DataFrame:
     df["year"] = standardize_year(df["year"])
     df["data"] = to_numeric(df["data"])
     return df
+
+
+def parse_flexibility_data(
+    df_flexibility: pd.DataFrame,
+    fes_scenario: str,
+    year_range: list[int],
+    slice: dict[str, str],
+) -> pd.Series:
+    """
+    Parse the FES FLX workbook to obtain storage capacity in the required format.
+
+    Args:
+        df_flexibility (pd.DataFrame):
+            DataFrame containing flexibility capacity data by technology and year
+        fes_scenario (str):
+            FES scenario name to filter the data for
+        year_range (list[int]):
+            List of years to filter the data for
+        slice (dict[str, str]):
+            Dictionary to filter the data for (e.g., {'Detail': "V2G impact at peak"})
+
+    Returns:
+        pd.DataFrame:
+            DataFrame containing flexibility capacity data indexed by year with 'data' column representing flexibility capacity.
+    """
+
+    # Pre_format the dataframe
+    df_flexibility = pre_format(df_flexibility)
+
+    # Select scenario
+    df_flexibility = df_flexibility[
+        df_flexibility["Scenario"].str.lower() == fes_scenario.lower()
+    ]
+
+    detail_data = df_flexibility.copy()
+    for key, value in slice.items():
+        detail_data = detail_data[detail_data[key].str.lower() == value.lower()]
+
+    # Select year range
+    df_flexibility = df_flexibility[
+        df_flexibility["year"].between(year_range[0], year_range[1])
+    ]
+    # Select only required columns
+    detail_data = detail_data[["year", "data"]].set_index("year").data
+
+    return detail_data
 
 
 def get_regional_distribution(df: pd.Series) -> pd.Series:

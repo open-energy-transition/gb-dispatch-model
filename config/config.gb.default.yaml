@@ -83,9 +83,88 @@ costs:
   GBP_to_USD: 1.3757 # average in 2021: https://www.exchangerates.org.uk/GBP-USD-spot-exchange-rates-history-2021.html#:~:text=Average%20exchange%20rate%20in%202021,USD%20on%2008%20Dec%202021.
   relevant_cost_columns: ["CO2 intensity", "VOM", "FOM", "investment", "efficiency", "lifetime", "discount rate", "fuel"]
   marginal_cost_columns: ["CO2 intensity", "VOM", "efficiency", "fuel"]
-  carrier_fuel_mapping:
-    CCGT: gas
-    OCGT: gas
+  add_cols:
+    fes_powerplants: {}
+    regional_H2_storage_capacity_inc_eur:
+      set: Store
+      carrier: hydrogen
+    regional_grid_electrolysis_capacities_inc_eur:
+      set: Other
+      carrier: electrolysis
+  default_characteristics:
+    # Ensure all required columns exist with defaults
+    efficiency:
+      data: 1
+      unit: ""
+    lifetime:
+      data: 25.0
+      unit: "years"
+    marginal_cost:
+      data: 0.0
+      unit: "GBP/MWh"
+    FOM:
+      data: 0.0
+      unit: "GBP/MW"
+    VOM:
+      data: 0.0
+      unit: "GBP/MWh"
+    fuel:
+      data: 0.0
+      unit: "GBP/MWh"
+    CO2 intensity:
+      data: 0.0
+      unit: "tCO2/MWh_th"
+    investment:
+      data: 0.0
+      unit: "GBP/MW"
+    discount rate:
+      data: 0.07
+      unit: ""
+  carrier_gap_filling:
+    "CO2 intensity":
+      CCGT: gas
+      OCGT: gas
+      coal: coal
+      gas: gas
+      oil: oil
+    fuel:
+      CCGT: gas
+      OCGT: gas
+      coal: coal
+      gas: gas
+      oil: oil
+      biomass: biomass
+      waste: biomass
+    default:
+      CCGT PP: CCGT
+      OCGT PP: OCGT
+      CCGT CHP: central gas CHP
+      OCGT CHP: central gas CHP
+      PHS Store: PHS
+      battery Store: battery storage
+      biomass PP: biomass
+      biomass CHP: biomass CHP
+      coal PP: coal
+      coal CHP: central coal CHP
+      gas PP: direct firing gas
+      gas CHP: central gas CHP
+      geothermal PP: geothermal
+      hydrogen turbine PP: central hydrogen CHP
+      hydrogen turbine CHP: central hydrogen CHP
+      hydrogen fuel cell PP: fuel cell
+      nuclear PP: nuclear
+      offwind PP: offwind
+      oil PP: oil
+      oil CHP: oil
+      onwind PP: onwind
+      ror PP: ror
+      solar PP: solar
+      waste PP: biomass
+      waste CHP: waste CHP
+      hydro PP: hydro
+      hydrogen Store: hydrogen storage tank type 1 including compressor
+      electrolysis Other: electrolysis
+
   fes_VOM_carrier_mapping:
     battery Store: Storage-Battery
     biomass PP: Biomass-Biomass
@@ -97,8 +176,9 @@ costs:
     gas CHP: Gas-Gas CHP
     gas PP: Gas-Gas Reciprocating Engines
     hydro PP: Hydro-Hydro
-    hydrogen PP: Low Carbon-Hydrogen
-    hydrogen CHP: Low Carbon-Hydrogen CHP # there is no hydrogen CHP costs in FES
+    hydrogen turbine PP: Low Carbon-Hydrogen
+    hydrogen fuel cell PP: Storage-Fuel Cells
+    hydrogen turbine CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
     marine PP: Marine-Marine
     OCGT PP: Gas-OCGT
     offwind-dc PP: Offshore Wind-Offshore Wind
@@ -119,12 +199,23 @@ costs:
     coal CHP: Coal-Coal CHP
     gas CHP: Gas-GT CHP
     gas PP: Gas-Gas Reciprocating Engines
-    hydrogen PP: Low Carbon-Hydrogen
-    hydrogen CHP: Low Carbon-Hydrogen CHP # there is no hydrogen CHP fuel costs in FES
+    hydrogen turbine PP: Low Carbon-Hydrogen
+    hydrogen fuel cell PP: Storage-Fuel Cells
+    hydrogen turbine CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
     OCGT PP: Gas-OCGT
     oil PP: Other Thermal-Fuel Oil
-    waste PP: Waste-WoodPellets-Waste
-    waste CHP: Waste-Gas-Waste CHP
+    waste PP: WoodPellets-Waste
+    waste CHP: Gas-Waste CHP
+  voll: 6000 #£/MWh - based on `value_of_lost_load` from (https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf)
+
+low_carbon_register:
+  carrier_mapping:
+    Offshore Wind: offwind-dc
+    Onshore Wind: onwind
+    Solar PV: solar
+    Energy from Waste: waste
+    Biomass Conversion: biomass
+    Dedicated Biomass: biomass
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#solving
 solving:
@@ -176,6 +267,8 @@ urls:
   gsp-coordinates: https://api.neso.energy/dataset/963525d6-5d83-4448-a99c-663f1c76330a/resource/41fb4ca1-7b59-4fce-b480-b46682f346c9/download/fes2021_regional_breakdown_gsp_info.csv
   eur-supply-table: https://api.neso.energy/dataset/bd83ce0b-7b1e-4ff2-89e8-12d524c34d99/resource/6563801b-6da4-46e7-b147-3d81c0237779/download/fes2023_es2_v001.csv
   etys: https://www.neso.energy/document/223046/download # ETYS November 2021
+  low-carbon-contracts: https://dp.lowcarboncontracts.uk/dataset/5427b55f-cecc-4a72-b3ee-3533cbbd5555/resource/fa730219-fbd2-41b5-9510-ba2b0ff2c1ba/download/actual_cfd_generation_and_avoided_ghg_emissions.csv
+  eur_H2_demand_today: https://observatory.clean-hydrogen.europa.eu/sites/default/files/2025-09/Hydrogen%20demand%202022%20%28Update%202025%29.xlsx # 2022 data
 target_crs: "EPSG:27700"
 
 # Manual region merging configuration
@@ -452,14 +545,6 @@ region_operations:
     B0:
     - bus0: 29
       bus1: 27
-  # These are manually selected spurious lines originating from not removing stubs earlier
-  prune_lines:
-  - bus0: 10
-    bus1: 11
-  - bus0: 26
-    bus1: 29
-  - bus0: 11
-    bus1: 16
 
 # Note: Set ENTSO_E_API_KEY in your .env file or environment variables
 # Register at https://transparency.entsoe.eu/ to get API key
@@ -699,6 +784,18 @@ fes-sheet-config:
       rename:
         columns: year
 
+    FL.10:
+    - usecols: "L:AV"
+      skiprows: 60
+      nrows: 5
+      index_col: 0
+      header: 0
+      rename:
+        columns: year
+        index: flex_source
+      add_index:
+        scenario: leading the way
+
     # Annual storage data for 2030 and 2050
     # SHeet contains multiple tables, one for each scenario
     FL.14:
@@ -781,31 +878,8 @@ fes-costing-sheet-config:
       columns: year
 
 fes:
-  year_range_incl: [2022, 2041] # 20-year period over which we will run the simulation   
+  year_range_incl: [2022, 2041] # 20-year period over which we will run the simulation
   default_set: PP
-  default_characteristics:
-    # Ensure all required columns exist with defaults
-    efficiency:
-      data: 1
-      unit: ""
-    capital_cost:
-      data: 0.0
-      unit: ""
-    lifetime:
-      data: 25.0
-      unit: "years"
-    marginal_cost:
-      data: 0.0
-      unit: ""
-    VOM:
-      data: 0.0
-      unit: ""
-    fuel:
-      data: 0.0
-      unit: ""
-    CO2 intensity:
-      data: 0.0
-      unit: "tCO2/MWh_th"
   gb:
     scenario: leading the way   # fes workbook
     scenario_abbreviations:
@@ -821,7 +895,8 @@ fes:
         Coal: coal
         Geothermal: geothermal
         Hydro: ror # FIXME: should this be just "hydro?"
-        Hydrogen fuelled generation: hydrogen  # FIXME: something else here?
+        Hydrogen fuelled generation: hydrogen turbine  # FIXME: something else here?
+        Fuel Cells: hydrogen fuel cell
         Marine: marine
         Non-renewable Engines (Diesel) (non CHP): oil
         Non-renewable Engines (Gas) (non CHP): gas
@@ -847,6 +922,7 @@ fes:
         Non-renewable CHP: CHP
         Storage: Store
 
+
     demand:
       Technology Detail:
         baseline_electricity: ["baseline demand"]
@@ -855,32 +931,51 @@ fes:
         iandc_heat: ["i&c hp demand"]
       heat:
         electrified_heating_technologies: ["Electric resistive", "ASHP", "GSHP"]
+      bus_suffix:
+        baseline_electricity: " Baseline Electricity"
+        residential: " Baseline Electricity"
+        iandc: " Baseline Electricity"
+        ev: " EV"
+        residential_heat: " Residential Heat"
+        iandc_heat: " I&C Heat"
+
 
     flexibility:
-      Technology Detail:
-        ev_dsr: ["smart charging impact at peak"]
-        ev_v2g: ["v2g impact at peak"]
-        residential_dsr: ["residential peak shifting (smart/touts effect)"]
-        iandc_dsr: ["i&c dsr impact at peak (processes)"]
-        iandc_heat_dsr: ["i&c dsr impact at peak (heat)"]
+      carrier_mapping:
+        battery:
+          Data item: "Electricity storage energy storage potential"
+          Detail: "Battery"
+        ev_v2g:
+          Detail: "V2G impact at peak"
+        ev_dsr:
+          Detail: "smart charging impact at peak"
+        residential_dsr:
+          Detail: "residential peak shifting (smart/touts effect)"
+        iandc_dsr:
+          Detail: "i&c dsr impact at peak (processes)"
+        iandc_heat_dsr:
+          Detail: "i&c dsr impact at peak (heat)"
       regional_distribution_reference:
         ev_dsr: ["v2g"]
         ev_v2g: ["v2g"]
         residential_dsr: ["baseline demand"]
         iandc_dsr: ["i&c flexibility (tout)"]
         iandc_heat_dsr: ["i&c hp demand"]
-      eur_add_data_reference:
-        ev_dsr: "ev"
-        ev_v2g: "ev"
-        ev_v2g_storage: "ev"
-        residential_dsr: "baseline_electricity"
-        iandc_dsr: "baseline_electricity"
-        iandc_heat_dsr: "iandc_heat"
+        residential_heat_dsr: ["residential hp demand"]
       dsr_hours:  # hours during which demand-side management can occur (E.g., 5pm-8pm)
+        residential_heat_dsr: [0, 22]
         residential_dsr: [17, 20]
         iandc_dsr: [17, 20]
-        iandc_heat_dsr: [17, 20]
+        iandc_heat_dsr: [0, 22]
         ev_dsr: [8, 6]
+      carrier_suffix:
+        residential: " Baseline Electricity (Residential) DSR"
+        iandc: " Baseline Electricity (I&C) DSR"
+        ev: " EV DSR"
+        residential_heat: " Residential Heat DSR"
+        iandc_heat: " I&C Heat DSR"
+      residential_heat_flex_level: "Peak after flexing by storage heaters, Hybrid HPs, District Heat, and thermal storage"
+
 
   eur:
     scenario: CT & LW    # "Leading the Way" equivalent in the NESO european supply table
@@ -900,8 +995,8 @@ fes:
         Gas CHP: CCGT
         OCGT: OCGT
         Gas Reciprocating Engines: gas
-        Hydrogen: hydrogen # hydrogen-fueled turbine
-        Hydrogen CHP: hydrogen # hydrogen-fueled turbine
+        Hydrogen: hydrogen turbine # hydrogen-fueled turbine
+        Hydrogen CHP: hydrogen turbine # hydrogen-fueled turbine
         Fuel Oil: oil
         Battery: battery
         Pumped Hydro: PHS
@@ -942,6 +1037,16 @@ fes:
       baseline_electricity: [electricity residential, electricity services, electricity rail]
       residential_heat: [total residential space, total residential water]
       iandc_heat: [total services space, total services water]
+
+    add_data_reference:
+      # flexibility
+      ev_dsr: "ev"
+      ev_v2g: "ev"
+      ev_v2g_storage: "ev"
+      residential_dsr: "baseline_electricity"
+      iandc_dsr: "baseline_electricity"
+      iandc_heat_dsr: "iandc_heat"
+      residential_heat_dsr: "residential_heat"
 
   hydrogen:
     demand:
@@ -1243,3 +1348,18 @@ interconnectors:
     2030: [Cronos, Tarchon]
     2033: [Kulizumboo, SENECA, FAB Link, Gridlink, LirIC]
     2037: [Continental Link]
+
+redispatch:
+  # Source for bid and offers multipliers : https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf
+  bid_multiplier:
+    gas: 0.8
+    coal: 0.7
+    oil: 0.38
+    OCGT: 1.37
+    CCGT: 0.8 #using same value as that of gas
+  offer_multiplier:
+    gas: 1.63
+    coal: 1.56
+    oil: 4.16
+    OCGT: 1.31
+    CCGT: 1.63 #using same value as that of gas

@@ -181,5 +181,4 @@ if __name__ == "__main__":
     )
 
     # Save the storage data
-    df_hydrogen_storage.to_csv(snakemake.output.hydrogen_storage)
-    logger.info("Hydrogen data processing completed successfully.")
+    df_hydrogen_storage.to_csv(snakemake.output.csv)
