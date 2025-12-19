@@ -12,6 +12,12 @@ Release Notes
 Upcoming Release
 ================
 
+* Enable custom busmap to prevent incorrect clustering of offshore buses (#159) 
+* Fix H2 demands in Europe using TYNDP H2 NT scenario demands (#152)
+* Add bid/offers for generators (#147)
+* Distribute all loads into their own buses with independently linked DSR stores
+* Add residential heat demand DSR, including district heating flexibility (as it cannot be separated)
+* Process low carbon register CfD strike prices for use in redispatch
 * Define independent DSR hours for each demand type (#144)
 * Disassociate EV DSR and EV V2G components (#140)
 * Add DC links into boundary constraints (#136)

@@ -61,7 +61,7 @@ if __name__ == "__main__":
     regional_gb_data_path = snakemake.input.regional_gb_data
 
     # Parse input data
-    demand_type = snakemake.params.demand_type
+    demand_type = snakemake.wildcards.demand_type
     technology_detail = snakemake.params.technology_detail[demand_type]
     df_demand = parse_demand_data(regional_gb_data_path, technology_detail)
 

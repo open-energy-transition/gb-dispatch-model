@@ -9,10 +9,10 @@ import logging
 import os
 import re
 import time
+from collections.abc import Callable
 from functools import partial, wraps
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Callable, Union
 
 import atlite
 import fiona
@@ -23,14 +23,8 @@ import requests
 import xarray as xr
 import yaml
 from snakemake.utils import update_config
-from tenacity import (
-    retry as tenacity_retry,
-)
-from tenacity import (
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
+from tenacity import retry as tenacity_retry
+from tenacity import retry_if_exception_type, stop_after_attempt, wait_exponential
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -424,36 +418,30 @@ def aggregate_costs(n, flatten=False, opts=None, existing_only=False):
 )
 def progress_retrieve(url, file, disable=False):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-    # Hotfix - Bug, tqdm not working with disable=False
-    disable = True
+
+    Path(file).parent.mkdir(parents=True, exist_ok=True)
 
     # Raise HTTPError for transient errors
     # 429: Too Many Requests (rate limiting)
     # 500, 502, 503, 504: Server errors
-    if disable:
-        response = requests.get(url, headers=headers, stream=True)
-        if response.status_code in (429, 500, 502, 503, 504):
-            response.raise_for_status()
-        with open(file, "wb") as f:
-            f.write(response.content)
-    else:
-        response = requests.get(url, headers=headers, stream=True)
-        if response.status_code in (429, 500, 502, 503, 504):
-            response.raise_for_status()
-        total_size = int(response.headers.get("content-length", 0))
-        chunk_size = 1024
+    response = requests.get(url, headers=headers, stream=True)
+    if response.status_code in (429, 500, 502, 503, 504):
+        response.raise_for_status()
+    total_size = int(response.headers.get("content-length", 0))
+    chunk_size = 1024
 
-        with tqdm(
-            total=total_size,
-            unit="B",
-            unit_scale=True,
-            unit_divisor=1024,
-            desc=str(file),
-        ) as t:
-            with open(file, "wb") as f:
-                for data in response.iter_content(chunk_size=chunk_size):
-                    f.write(data)
-                    t.update(len(data))
+    with tqdm(
+        total=total_size,
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+        desc=str(file),
+        disable=disable,
+    ) as t:
+        with open(file, "wb") as f:
+            for data in response.iter_content(chunk_size=chunk_size):
+                f.write(data)
+                t.update(len(data))
 
 
 def retry(func: Callable) -> Callable:
@@ -1084,7 +1072,7 @@ def rename_techs(label: str) -> str:
 
 
 def load_cutout(
-    cutout_files: Union[str, list[str]], time: Union[None, pd.DatetimeIndex] = None
+    cutout_files: str | list[str], time: None | pd.DatetimeIndex = None
 ) -> atlite.Cutout:
     """
     Load and optionally combine multiple cutout files.
