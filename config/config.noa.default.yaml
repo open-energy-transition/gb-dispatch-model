@@ -215,20 +215,30 @@ noa_options:
   details:
   - name: upgrade the Beauly to Shin to Loch Buidhe from 132 kV double circuit to 275 kV double circuit
     pypsa_operations:
+    - action: add
+      component_type: substation
+      names:
+      - Beauly Substation
+      - Shin
+      - Loch Buidhe Substation
+      voltage: 275
+      carrier: AC
     - action: update
       component_type: line
-      name: BLN2_275kV_OHL_Beauly_Shin
-      from: Beauly
+      name: BLN2_132kV_to_275kV_OHL_Beauly_Shin
+      from: Beauly Substation
       to: Shin
-      voltage: 275
+      from_voltage: 132
+      to_voltage: 275
       circuits: 2
       carrier: AC
     - action: update
       component_type: line
       name: BLN2_275kV_OHL_Shin_LochBuidhe
       from: Shin
-      to: Loch Buidhe
-      voltage: 275
+      to: Loch Buidhe Substation
+      from_voltage: 132
+      to_voltage: 275
       circuits: 2
       carrier: AC
 
