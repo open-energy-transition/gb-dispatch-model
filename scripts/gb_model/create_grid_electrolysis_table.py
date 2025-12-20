@@ -80,10 +80,7 @@ def parse_grid_electrolysis_data(
         regional_grid_electrolysis_capacities + unmapped_grid_electrolysis_capacities
     )
 
-    # Rename series to 'p_nom'
-    grid_electrolysis_capacities.name = "p_nom"
-
-    return grid_electrolysis_capacities
+    return grid_electrolysis_capacities.to_frame("p_nom")
 
 
 if __name__ == "__main__":
@@ -103,7 +100,4 @@ if __name__ == "__main__":
     )
 
     # Save the grid-connected electrolysis capacities
-    grid_electrolysis_capacities.to_csv(snakemake.output.grid_electrolysis_capacities)
-    logger.info(
-        f"Grid-connected electrolysis capacities saved to {snakemake.output.grid_electrolysis_capacities}"
-    )
+    grid_electrolysis_capacities.to_csv(snakemake.output.csv)

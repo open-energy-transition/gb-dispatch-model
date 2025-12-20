@@ -238,4 +238,4 @@ if __name__ == "__main__":
     df_capacity = pd.concat([df_capacity_gb, df_capacity_eur], ignore_index=True)
 
     # Save with index (contains unique generator IDs)
-    df_capacity.to_csv(snakemake.output.csv, index=True)
+    df_capacity.to_csv(snakemake.output.csv, index=False)

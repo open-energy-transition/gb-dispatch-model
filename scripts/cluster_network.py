@@ -675,6 +675,24 @@ if __name__ == "__main__":
                 f"Imported custom shapes from {snakemake.input.custom_busshapes}"
             )
             if mode == "gb_shapes":
+                custom_gb_busmap = pd.read_csv(
+                    snakemake.input.custom_busmap,
+                    index_col="Index",
+                    dtype={"Index": "str"},
+                ).squeeze()
+
+                # Replace bus assignments based on gb custom busmap
+                overlapping_indices = custom_busmap.index.intersection(
+                    custom_gb_busmap.index
+                )
+                custom_busmap.update(custom_gb_busmap)
+                logger.info(
+                    f"Replaced {len(overlapping_indices)} entries in custom busmap from {snakemake.input.custom_busmap}"
+                )
+                assert len(overlapping_indices) == len(custom_gb_busmap), (
+                    "Some buses in the custom gb busmap do not exist in the network."
+                )
+
                 bus_to_country = custom_shapes.set_index("name").country.to_dict()
                 _update_bus_country(n, custom_busmap, bus_to_country)
 

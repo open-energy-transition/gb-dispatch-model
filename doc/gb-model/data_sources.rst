@@ -125,9 +125,23 @@ Energy storage capacity of EVs are obtained by interpolating EV storage data fro
 Storage data is regionally disaggregated based on EV flexibility data.
 Regional distribution of V2G and smart charging flexibility is based on V2G distribution provided in BB1 sheet of FES-2021.
 
--------------------
+------------------------------------
 DSM flexibility for base electricity
--------------------
+------------------------------------
 Demand-side management (DSM) flexibility data for base electricity (residential and I&C) is extracted from the FES-2021 workbook table FLX1.
 Regional distribution of residential demand side response (DSR) flexibility is based on Baseline demand distribution provided in BB1 sheet of FES-2021,
 while regional distribution of services DSR flexibility is based on I&C Flexibility (TouT) distribution provided in BB1 sheet of FES-2021.
+
+-------------------
+Low carbon register
+-------------------
+The `low carbon register <https://www.lowcarboncontracts.uk/our-schemes/contracts-for-difference/register/>`_ provides historical Contracts for Difference (CfD) strike price data.
+We use the average strike price data from all historical years before the first model run year to define the renewable generator offers.
+These are calculated relative to the GB wholesale market price as given by the solved unconstrained model output.
+
+------------
+ENTSOE TYNDP
+------------
+We use a data dump of the `ENTSO-E TYNDP <https://zenodo.org/records/14230568>`_ to define the future hydrogen demands in non-GB countries.
+To reduce intermediate data processing requirements in this workflow, we have pre-prepared the data using the `Open-TYNDP project <https://github.com/open-energy-transition/open-tyndp>`_ workflow, and stored outputs for the NT scenario here as ``data/gb-model/tyndp_h2_demand.csv``.
+To interpolate to 2030, we use historical "clean" hydrogen demand from the `European clean hydrogen observatory <https://observatory.clean-hydrogen.europa.eu/hydrogen-landscape/end-use/hydrogen-demand>`_.

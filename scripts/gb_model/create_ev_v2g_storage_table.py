@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 
 from scripts._helpers import configure_logging, set_scenario_config
-from scripts.gb_model._helpers import pre_format
+from scripts.gb_model._helpers import parse_flexibility_data, pre_format
 
 logger = logging.getLogger(__name__)
 
@@ -50,52 +50,9 @@ def parse_ev_v2g_storage_data(storage_sheet_path: str, scenario: str) -> pd.Data
     )
 
     # Pre-format dataframe
-    df_storage = pre_format(df_storage.reset_index()).set_index("year")
+    df_storage = pre_format(df_storage.reset_index()).set_index("year").data
 
     return df_storage
-
-
-def parse_ev_flexibility_data(
-    flexibility_sheet_path: str,
-    fes_scenario: str,
-) -> pd.DataFrame:
-    """
-    Parse the EV V2G storage data from FES workbook to obtain storage capacity in the required format.
-
-    Args:
-        storage_sheet_path (str): Filepath to the storage data CSV file containing
-                                 EV V2G storage capacity data by technology and year
-
-    Returns:
-        pd.DataFrame: DataFrame containing EV V2G storage capacity data indexed by year
-                     with 'data' column representing storage capacity in GWh for
-                     V2G (Vehicle-to-Grid) technology under Leading the Way scenario.
-
-    Processing steps:
-        1. Load storage data and filter for Leading the Way scenario
-        2. Select V2G technology and format dataframe
-    """
-
-    # Load flexibility data
-    df_flexibility = pd.read_csv(flexibility_sheet_path, index_col=0)
-
-    # Pre_format the dataframe
-    df_flexibility = pre_format(df_flexibility)
-
-    # Select scenario
-    df_flexibility = df_flexibility[
-        df_flexibility["Scenario"].str.lower() == fes_scenario
-    ]
-
-    # Select V2G technology discharge impact at peak
-    v2g_data = df_flexibility[
-        df_flexibility["Detail"].str.lower() == "v2g impact at peak"
-    ]
-
-    # Select only required columns
-    v2g_data = v2g_data[["year", "data"]].set_index("year")
-
-    return v2g_data
 
 
 def interpolate_storage_data(
@@ -120,11 +77,11 @@ def interpolate_storage_data(
     # Compute energy to power ratio
     energy_to_power_ratio = df_storage / df_flexibility.loc[df_storage.index]
     logger.info(
-        f"Computed energy to power ratio for EV V2G storage: {(-energy_to_power_ratio['data']).to_dict()}"
+        f"Computed energy to power ratio for EV V2G storage: {(-energy_to_power_ratio).to_dict()}"
     )
 
     # Compute mean energy to power ratio
-    mean_energy_to_power_ratio = energy_to_power_ratio["data"].mean()
+    mean_energy_to_power_ratio = energy_to_power_ratio.mean()
 
     # Determine storage capacity based on flexibility data and energy to power ratio
     df_storage_interp = df_flexibility * mean_energy_to_power_ratio
@@ -136,10 +93,7 @@ def interpolate_storage_data(
     ]
 
     # Convert GWh to MWh
-    df_storage_interp["data"] = df_storage_interp["data"] * 1000
-
-    # Set -0.0 to 0 with abs
-    df_storage_interp["data"] = df_storage_interp["data"].abs()
+    df_storage_interp["data"] = (df_storage_interp.data * 1000).abs()
 
     # Set name as MWh
     df_storage_interp = df_storage_interp.rename(columns={"data": "MWh"}).set_index(
@@ -159,19 +113,19 @@ if __name__ == "__main__":
 
     # Load the regional gb data file path
     storage_sheet_path = snakemake.input.storage_sheet
-    flexibility_sheet_path = snakemake.input.flexibility_sheet
+    flexibility_sheet = pd.read_csv(snakemake.input.flexibility_sheet)
 
     # Load parameters
     fes_scenario = snakemake.params.scenario
     year_range = snakemake.params.year_range
+    carrier_mapping = snakemake.params.carrier_mapping
 
     # Parse storage data
     df_storage = parse_ev_v2g_storage_data(storage_sheet_path, fes_scenario)
 
     # Parse flexibility data
-    df_flexibility = parse_ev_flexibility_data(
-        flexibility_sheet_path,
-        fes_scenario,
+    df_flexibility = parse_flexibility_data(
+        flexibility_sheet, fes_scenario, year_range, carrier_mapping
     )
 
     # Interpolate storage data based on energy to power ratio
