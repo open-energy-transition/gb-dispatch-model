@@ -23,3 +23,8 @@ noa_sets:
   name: "North of Scotland"
   noa_options:
   - BLN2 # Beauly to Loch Buidhe upgrade
+
+- id: 4
+  name: "North of Scotland High Voltage"
+  noa_options:
+  - BLN4 # Beauly to Loch Buidhe upgrade
