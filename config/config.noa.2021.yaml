@@ -449,20 +449,20 @@ noa_options:
     - action: add
       component_type: substation
       names:
-      - Birkhill Wood
+      - Creyke Beck Substation # Reference for new Birkhill Wood substation, because it is already located in Birkhill Wood
+      - High Marnham Substation
       voltage: 400
       carrier: AC
     - action: add
       component_type: line
       name: CGNC_400kV_OHL_BirkhillWood_HighMarnham
-      from: Birkhill Wood
-      to: High Marnham
+      from: Creyke Beck Substation
+      to: High Marnham Substation
       voltage: 400
       circuits: 1
       carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: CGNC_400kV_OHL_Brantingham_Broomfleet
       from: Brantingham
       to: Broomfleet
