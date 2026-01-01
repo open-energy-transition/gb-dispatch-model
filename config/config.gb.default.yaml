@@ -45,13 +45,25 @@ energy:
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#countries
 countries:
-- "BE"
-- "DK"
-- "FR"
-- "GB"
-- "IE"
-- "NL"
+- AT
+- BE
+- CH
+- CZ
+- DE
+- DK
+- ES
+- FI
+- FR
+- GB
+- IE
+- IT
+- LU
+- NL
 - "NO"
+- PL
+- PT
+- SE
+- SI
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#enable
 enable:
@@ -1047,6 +1059,9 @@ fes:
       iandc_dsr: "baseline_electricity"
       iandc_heat_dsr: "iandc_heat"
       residential_heat_dsr: "residential_heat"
+    # If not NaN, then the unconstrained load shedding generator will be set to have a marginal cost equal to that of the most expensive generator plus this value.
+    # This gives us slightly more realistic European marginal prices when we have load shedding.
+    load_shedding_cost_above_marginal: 1
 
   hydrogen:
     demand:
