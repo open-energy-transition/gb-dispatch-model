@@ -86,64 +86,51 @@ class OSMNameMapper:
         """
         logger.info(f"Reading OSM file: {file_path} for feature type: {feature_type}")
 
-        try:
-            with open(file_path, encoding="utf-8") as f:
-                osm_data = json.load(f)
+        osm_data = json.load(file_path.read_text(encoding="utf-8"))
 
-            elements = osm_data.get("elements", [])
-            logger.info(f"Found {len(elements)} elements in {file_path}")
+        elements = osm_data.get("elements", [])
+        logger.info(f"Found {len(elements)} elements in {file_path}")
 
-            # Extract data into list of dictionaries
-            data = []
-            for element in elements:
-                osm_id = element.get("id")
-                tags = element.get("tags", {})
-                geometry_data = element.get("geometry", {})
+        # Extract data into list of dictionaries
+        data = []
+        for element in elements:
+            osm_id = element.get("id")
+            tags = element.get("tags", {})
+            geometry_data = element.get("geometry", {})
 
-                geometry = None
-                if geometry_data:
-                    try:
-                        # OSM geometry is typically: [{"lat": 52.1, "lon": 1.2}, ...]
-                        coords = [
-                            (point["lon"], point["lat"]) for point in geometry_data
-                        ]
+            geometry = None
+            if geometry_data:
+                try:
+                    # OSM geometry is typically: [{"lat": 52.1, "lon": 1.2}, ...]
+                    coords = [(point["lon"], point["lat"]) for point in geometry_data]
 
-                        # Create Polygon if closed (first == last) and has enough points
-                        if len(coords) >= 3:
-                            if coords[0] == coords[-1] or len(coords) >= 4:
-                                geometry = Polygon(coords)
-                            else:
-                                # If not closed, close it
-                                geometry = Polygon(coords + [coords[0]])
-                    except (KeyError, TypeError, ValueError) as e:
-                        logger.debug(
-                            f"Could not create polygon for element {osm_id}: {e}"
-                        )
+                    # Create Polygon if closed (first == last)
+                    if len(coords) >= 3:
+                        # Check if polygon is closed
+                        is_closed = coords[0] == coords[-1]
 
-                data.append(
-                    {
-                        "id": osm_id,
-                        "name": tags.get("name", ""),
-                        "voltage": tags.get("voltage", ""),
-                        "geometry": geometry,
-                        "type": feature_type,
-                    }
-                )
+                        if is_closed:
+                            geometry = Polygon(coords)
+                        else:
+                            # If not closed, close it
+                            geometry = Polygon(coords + [coords[0]])
+                except (KeyError, TypeError, ValueError) as e:
+                    logger.debug(f"Could not create polygon for element {osm_id}: {e}")
 
-            df = pd.DataFrame(data)
-            logger.info(f"Created DataFrame with {len(df)} rows for {feature_type}")
+            data.append(
+                {
+                    "id": osm_id,
+                    "name": tags.get("name", ""),
+                    "voltage": tags.get("voltage", ""),
+                    "geometry": geometry,
+                    "type": feature_type,
+                }
+            )
 
-            return df
+        df = pd.DataFrame(data)
+        logger.info(f"Created DataFrame with {len(df)} rows for {feature_type}")
 
-        except FileNotFoundError:
-            logger.error(f"File not found: {file_path}")
-            return pd.DataFrame()
-        except json.JSONDecodeError as e:
-            logger.error(f"Error decoding JSON from {file_path}: {e}")
-            return pd.DataFrame()
-        except Exception as e:
-            logger.error(f"Unexpected error reading {file_path}: {e}")
-            return pd.DataFrame()
+        return df
 
     def _check_duplicate_ids(self, df: pd.DataFrame) -> None:
         """
@@ -156,8 +143,6 @@ class OSMNameMapper:
         if not duplicate_ids.empty:
             logger.warning(f"Found {len(duplicate_ids)} rows with duplicate IDs")
             logger.debug(f"Duplicate IDs: {duplicate_ids['id'].unique().tolist()}")
-        else:
-            logger.info("No duplicate IDs found")
 
     def _drop_empty_names(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -224,154 +209,6 @@ class OSMNameMapper:
             return combined_df
         else:
             raise ValueError("No data found in any OSM files")
-
-    # def _get_network_bus_from_raw_id(
-    #     self, network: pypsa.Network, raw_id: str, voltage: int | str
-    # ) -> tuple[str | None, str]:
-    #     """
-    #     Find network bus that corresponds to a raw OSM ID.
-
-    #     Strategy:
-    #     1. Find all buses where raw_id appears in bus_id
-    #     2. If multiple matches and voltage provided, filter by voltage suffix
-    #     3. Return best match or None
-
-    #     Args:
-    #         raw_id: The raw OSM ID to search for (e.g., "way/123456")
-    #         voltage: Optional voltage to use as tiebreaker (e.g., 400)
-
-    #     Returns:
-    #         Network bus ID and 'exists' status if found (with exact voltage match), else 'reference' status
-    #         None, None otherwise
-    #     """
-    #     # Find all buses that contain raw_id
-    #     matching_buses = [
-    #         bus_id for bus_id in network.buses.index if str(raw_id) in bus_id
-    #     ]
-
-    #     # Apply voltage filtering if matches found
-    #     if matching_buses:
-    #         matching_buses_with_voltage = [
-    #             bus_id for bus_id in matching_buses if bus_id.endswith(f"-{voltage}")
-    #         ]
-    #         if matching_buses_with_voltage:
-    #             return matching_buses_with_voltage[0], "exists"
-    #         else:
-    #             return matching_buses[0], "reference"
-    #     else:
-    #         logger.debug(f"No contains match for raw_id: {raw_id}")
-    #         return None, None
-
-    # def _find_substation_with_raw_id_fallback(
-    #     self, network: pypsa.Network, name: str, voltage: int | None = None
-    # ) -> tuple[str | None, str | None, str | None]:
-    #     """
-    #     Find substation using fallback matching strategies.
-
-    #     Tries in order:
-    #     1. Exact name + exact voltage
-    #     2. Exact name + any voltage
-    #     3. Contains name + exact voltage
-    #     4. Contains name + any voltage
-
-    #     Returns:
-    #         tuple: (reference_bus_id, bus_status, raw_names) or (None, None, None) if not found
-    #     """
-    #     strategies = [
-    #         ("exact", voltage, f"exact name + exact voltage ({voltage}kV)"),
-    #         ("exact", "", "exact name + any voltage"),
-    #         ("contains", voltage, f"contains name + exact voltage ({voltage}kV)"),
-    #         ("contains", "", "contains name + any voltage"),
-    #     ]  # We might need even more robust methods in the future for fallback
-
-    #     for method, voltage_filter, description in strategies:
-    #         logger.debug(f"Trying strategy: {description}")
-
-    #         raw_ids, raw_names = self.get_raw_id(
-    #             name=name,
-    #             component_type="substation",
-    #             method=method,
-    #             voltage=voltage_filter,
-    #         )
-
-    #         if not raw_ids:
-    #             continue
-
-    #         # Try to find network bus for each raw_id
-    #         for raw_id, raw_name in zip(raw_ids, raw_names):
-    #             network_bus_id, bus_status = self._get_network_bus_from_raw_id(
-    #                 network, raw_id, voltage
-    #             )
-
-    #             if network_bus_id:
-    #                 logger.debug(
-    #                     f"Match found using: {description}\n"
-    #                     f"OSM: {raw_name} (ID: {raw_id})\n"
-    #                     f"Network bus: {network_bus_id} (status: {bus_status})"
-    #                 )
-    #                 return network_bus_id, bus_status, raw_name
-
-    #         if raw_ids:  # This needs to be handled if such case happen
-    #             logger.debug(f"Found {len(raw_ids)} OSM matches but none in network")
-
-    #     raise ValueError(
-    #         f"Substation '{name}' not found in OSM data. "
-    #         f"Check spelling or add to OSM mapping."
-    #     )
-
-    # def get_raw_id(
-    #     self,
-    #     name: str,
-    #     component_type: str,
-    #     method: str,
-    #     voltage: int | str = "",
-    # ) -> tuple[list[int], list[str]]:
-    #     """
-    #     Get OSM entries matching both name and component type.
-
-    #     Args:
-    #         name (str): The name to search for.
-    #         component_type (str): The component type (e.g., 'cable', 'line', 'substation').
-    #         voltage (int): The voltage level in kV to filter by.
-    #         method (str): The matching method to use ('exact', 'contains', 'robust', etc.).
-
-    #     Returns:
-    #         pd.DataFrame: DataFrame with entries matching both name and type.
-    #     """
-    #     # Filter by component type
-    #     result = self.combined_df[self.combined_df["type"].str.contains(component_type)]
-
-    #     # Filter by name by simply checking if the name is contained (case-insensitive)
-    #     # TODO: Improve name matching if necessary with robust methods
-    #     if method == "exact":
-    #         result = result[result["name"].str.lower() == name.lower()]
-    #     elif method == "contains":
-    #         result = result[result["name"].str.lower().str.contains(name.lower())]
-    #     else:
-    #         logger.warning(
-    #             "For now, only 'exact' and 'contains' methods are implemented for name matching."
-    #         )
-
-    #     # Filter by voltage only if provided
-    #     if voltage is not None:
-    #         result = result[result.voltage.str.contains(str(voltage))]
-
-    #     if not result.empty:
-    #         ids = result["id"].tolist()
-    #         names = result["name"].tolist()
-
-    #         if len(ids) > 1:
-    #             voltage_info = f", voltage: {voltage}kV" if voltage is not None else ""
-    #             logger.warning(
-    #                 f"Multiple entries found for name: {name}, type: {component_type}{voltage_info}. IDs: {ids}, component names: {names}"
-    #             )
-    #         return ids, names
-    #     else:
-    #         voltage_info = f", voltage: {voltage}kV" if voltage is not None else ""
-    #         logger.warning(
-    #             f"No entries found for name: {name} and type: {component_type}{voltage_info}"
-    #         )
-    #         return [], []
 
     def _get_substation_x_y(
         self, name: str, voltage: int, tol: float = BUS_TOL / 2
