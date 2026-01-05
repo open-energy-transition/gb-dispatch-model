@@ -9,6 +9,7 @@ from datetime import datetime
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import pypsa
 import pytz
 from pytz import country_timezones
 
@@ -187,3 +188,41 @@ def time_difference_hours(country):
     diff = offset_country - offset_gb
 
     return int(diff)
+
+
+def filter_interconnectors(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Filter to obtain links between GB and EU
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Dataframe of Links components in PyPSA model
+    """
+    m1 = df["bus0"].str.startswith("GB")
+    m2 = df["bus1"].str.startswith("GB")
+
+    return df[(m1 & ~m2) | (~m1 & m2)].query("carrier == 'DC'")
+
+
+def marginal_costs_bus(bus: str, network: pypsa.Network) -> pd.DataFrame:
+    """
+    Get the marginal costs of generators present at a particular bus
+
+    Parameters
+    ----------
+    bus: str
+        Bus ID for which the marginal costs are required
+    network: pypsa.Network
+        pypsa model to be finalized
+    """
+
+    return pd.concat(
+        [
+            x.static.query("bus == @b and carrier != 'load'", local_dict={"b": bus})
+            .groupby("carrier")
+            .marginal_cost.mean()
+            .round(3)
+            for x in network.components[["Generator", "StorageUnit"]]
+        ]
+    )
