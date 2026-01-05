@@ -54,8 +54,8 @@ class AddNOAOption:
         - action='update', component_type='line' -> _update_component()
         - action='remove', component_type='line' -> _remove_component()
         """
-        action = operation.get("action")
-        component_type = operation.get("component_type")
+        action = operation["action"]
+        component_type = operation["component_type"]
 
         # Dispatch based on action and component_type
         if action == "add":
@@ -66,7 +66,7 @@ class AddNOAOption:
             elif component_type == "link":
                 self._add_link(operation)
             else:
-                logger.warning(f"Unknown component_type for add: {component_type}")
+                raise KeyError(f"Unknown component_type for add: {component_type}")
 
         elif action == "update":
             if component_type == "line":
@@ -74,19 +74,19 @@ class AddNOAOption:
             elif component_type == "link":
                 self._update_link(operation)
             else:
-                logger.warning(f"Unknown component_type for update: {component_type}")
+                raise KeyError(f"Unknown component_type for update: {component_type}")
 
         elif action == "remove":
             self._remove_component(operation)
 
         else:
-            logger.warning(f"Unknown action: {action}")
+            raise KeyError(f"Unknown action: {action}")
 
     def _add_substation(self, operation: dict) -> None:
         """Add substation to the network."""
         substation_names = operation.get("names", [])
-        voltage = operation.get("voltage")
-        carrier = operation.get("carrier")
+        voltage = operation["voltage"]
+        carrier = operation["carrier"]
 
         for substation_name in substation_names:
             # Determine bus closest to the substation
@@ -99,9 +99,7 @@ class AddNOAOption:
                 logger.info(
                     f"Substation '{substation_name}' with voltage '{voltage}'kV already exists in the network."
                 )
-                continue
-
-            if network_bus_id and bus_status == "reference":
+            elif network_bus_id and bus_status == "reference":
                 # Get attributes from reference bus
                 ref_attrs = self.network.buses.loc[network_bus_id].to_dict()
                 ref_attrs.update({"v_nom": voltage, "carrier": carrier})
@@ -118,9 +116,7 @@ class AddNOAOption:
                 logger.info(
                     f"Substation '{substation_name}' with voltage '{voltage}'kV added to the network."
                 )
-                continue
-
-            if not network_bus_id:
+            elif not network_bus_id:
                 raise ValueError(
                     f"Cannot add substation '{substation_name}' with voltage '{voltage}'kV using any strategy."
                 )
@@ -221,18 +217,18 @@ class AddNOAOption:
 
     def _add_line(self, operation: dict) -> None:
         """Add line to the network."""
-        line_name = operation.get("name")
-        voltage = operation.get("voltage")
+        line_name = operation["name"]
+        voltage = operation["voltage"]
 
         # Get line parameters using helper
         line_params = self._get_line_parameters(
             voltage=voltage,
-            from_name=operation.get("from"),
-            to_name=operation.get("to"),
-            carrier=operation.get("carrier"),
-            length=operation.get("length"),
+            from_name=operation["from"],
+            to_name=operation["to"],
+            carrier=operation["carrier"],
+            length=operation.get("length", 0.0),
             circuits=operation.get("circuits", 1),
-            capacity=operation.get("capacity"),
+            capacity=operation.get("capacity", None),
         )
 
         # Add new line
@@ -248,11 +244,11 @@ class AddNOAOption:
         Update line capacity by adding parallel line with povided capacity,
         or capacity difference between initial and final line types.
         """
-        line_name = operation.get("name")
-        from_voltage = operation.get("from_voltage")
-        to_voltage = operation.get("to_voltage")
+        line_name = operation["name"]
+        from_voltage = operation["from_voltage"]
+        to_voltage = operation["to_voltage"]
         circuits = operation.get("circuits", 1)
-        capacity = operation.get("capacity")
+        capacity = operation.get("capacity", None)
 
         # Calculate s_nom difference if capacity not provided
         if capacity is not None:
@@ -268,10 +264,10 @@ class AddNOAOption:
         # Get updated line parameters using helper
         line_params = self._get_line_parameters(
             voltage=to_voltage,
-            from_name=operation.get("from"),
-            to_name=operation.get("to"),
-            carrier=operation.get("carrier"),
-            length=operation.get("length"),
+            from_name=operation["from"],
+            to_name=operation["to"],
+            carrier=operation["carrier"],
+            length=operation.get("length", 0.0),
             circuits=circuits,
             capacity=s_nom,
         )
@@ -288,7 +284,7 @@ class AddNOAOption:
         """Add NOA option to the network."""
         option_details = self._get_noa_option()
         for sub_option in option_details.get("details", []):
-            sub_option_name = sub_option.get("name")
+            sub_option_name = sub_option["name"]
             logger.info(f"Applying NOA sub-option: {sub_option_name}")
             pypsa_operations = sub_option.get("pypsa_operations", [])
             for operation in pypsa_operations:
@@ -331,7 +327,7 @@ def add_noa_options(
             logger.warning(f"NOA set ID '{noa_set_id}' not found in config. Skipping.")
             continue
 
-        set_name = noa_set.get("name")
+        set_name = noa_set["name"]
         options = noa_set.get("noa_options", [])
 
         logger.info(f"\nApplying NOA set: '{set_name}' (options: {options})")

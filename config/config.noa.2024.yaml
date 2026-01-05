@@ -1,6 +1,6 @@
-# SPDX-FileCopyrightText: gb-dispatch-model contributors
+# SPDX-FileCopyrightText: gb-open-market-model contributors
 #
-# SPDX-License-Identifier: CC0-1.0
+# SPDX-License-Identifier: CC-BY-4.0
 
 noa_options:
 - id: BKUP
