@@ -11,13 +11,189 @@ Adds NOA options to the GB model.
 import logging
 from pathlib import Path
 
+import geopandas as gpd
 import numpy as np
+import pandas as pd
 import pypsa
+from shapely import wkt
+from shapely.algorithms.polylabel import polylabel
+from shapely.geometry import Point
 
 from scripts._helpers import configure_logging, set_scenario_config
-from scripts.gb_model.osm_name_mapper import OSMNameMapper
+from scripts.build_osm_network import BUS_TOL, DISTANCE_CRS, GEO_CRS
 
 logger = logging.getLogger(__name__)
+
+
+class NetworkBusMapper:
+    """Class to map OSM names to network bus IDs."""
+
+    def __init__(self, csv_path: Path):
+        self.geo_crs = GEO_CRS
+        self.distance_crs = DISTANCE_CRS
+        self.csv_path = csv_path
+        self.osm_mapping = self._read_osm_mapping_csv()
+
+    def _read_osm_mapping_csv(self) -> pd.DataFrame:
+        """
+        Read OSM mapping from CSV file.
+
+        Args:
+            csv_path (Path): Path to the CSV file.
+
+        Returns:
+            pd.DataFrame: DataFrame with OSM mapping data.
+        """
+        # Read the CSV file
+        osm_mapping = pd.read_csv(self.csv_path)
+
+        # Convert WKT strings back to Shapely geometries
+        osm_mapping["geometry"] = osm_mapping["geometry"].apply(
+            lambda x: wkt.loads(x) if pd.notna(x) else None
+        )
+        return osm_mapping
+
+    def _get_substation_x_y(
+        self, name: str, voltage: int, tol: float = BUS_TOL / 2
+    ) -> pd.DataFrame:
+        """
+        Get the x and y coordinates of substations using polylabel on their geometries.
+
+        Args:
+            name (str): The name of the substation.
+            voltage (int): The voltage level in kV.
+            tol (float): Tolerance for polylabel calculation.
+
+        Returns:
+            pd.DataFrame: DataFrame with columns 'id', 'x', 'y' for substations.
+        """
+        # Filter for substations
+        substations_df = self.osm_mapping[
+            self.osm_mapping["type"].str.contains("substations")
+        ].copy()
+
+        # Select the substations by name
+        substation_group = substations_df[
+            substations_df["name"].str.lower() == name.lower()
+        ]
+        if substation_group.empty:
+            raise ValueError(f"Substation '{name}' not found in OSM data.")
+
+        # Try to find exact voltage match
+        substation_exact_voltage = substation_group[
+            substation_group["voltage"].str.contains(str(voltage))
+        ]
+        if not substation_exact_voltage.empty:
+            substation = substation_exact_voltage
+            substation_status = "exists"
+        else:
+            substation = substation_group.iloc[[0]]  # select first match
+            substation_status = "reference"
+
+        # Ensure we have exactly one match
+        if substation.empty:
+            raise ValueError(f"Substation '{name}' not found in OSM data.")
+        elif len(substation) > 1:
+            raise ValueError(
+                f"Multiple substations found for name: {name} and voltage: {voltage}kV. IDs: {substation['id'].tolist()}"
+            )
+
+        # Get single substation row
+        row = substation.iloc[0]
+
+        # Raise error if geometry is missing
+        if row["geometry"] is None:
+            raise ValueError(
+                f"No geometry found for substation '{name}' (ID: {row['id']})."
+            )
+
+        # Apply polylabel to get the pole of inaccessibility
+        point = polylabel(row["geometry"], tol)
+        x = point.x
+        y = point.y
+
+        return row["id"], x, y, substation_status
+
+    def _get_closest_bus(
+        self,
+        network: pypsa.Network,
+        x: float,
+        y: float,
+        voltage: int,
+        tol: float = BUS_TOL,
+    ) -> str | None:
+        """
+        Find the closest bus in the network to the given x, y coordinates.
+
+        Args:
+            network: The PyPSA network to search in.
+            x: The x coordinate to search for.
+            y: The y coordinate to search for.
+            tol: Tolerance for coordinate matching.
+            voltage: Voltage level to filter by.
+
+        Returns:
+            The closest_bus_id of the closest buses within tolerance, raise error if none found.
+        """
+        buses = network.buses.copy()
+
+        # Create GeoDataFrame of OSM CRS
+        buses_gdf = gpd.GeoDataFrame(
+            buses,
+            geometry=gpd.points_from_xy(buses["x"], buses["y"]),
+            crs=self.geo_crs,
+        )
+
+        # Project to distance CRS for accurate distance calculations
+        buses_projected = buses_gdf.to_crs(self.distance_crs)
+
+        # Create target point and project it
+        target_point = gpd.GeoSeries([Point(x, y)], crs=self.geo_crs).to_crs(
+            self.distance_crs
+        )[0]
+
+        # Calculate distance in meters
+        buses_projected["distance_m"] = buses_projected.geometry.distance(target_point)
+
+        # Filter by tolerance
+        nearby_buses = buses_projected[buses_projected["distance_m"] <= tol]
+
+        if nearby_buses.empty:
+            raise ValueError(f"No buses found within {tol}m of point ({x}, {y}).")
+
+        # Filter by voltage
+        nearby_bus_exact_voltage = nearby_buses[nearby_buses["v_nom"] == voltage]
+
+        if not nearby_bus_exact_voltage.empty:
+            closest_bus_id = nearby_bus_exact_voltage["distance_m"].idxmin()
+            bus_status = "exists"
+        else:
+            closest_bus_id = nearby_buses["distance_m"].idxmin()
+            bus_status = "reference"
+
+        return closest_bus_id, bus_status
+
+    def _get_network_bus_id(
+        self, network: pypsa.Network, name: str, voltage: int, tol: float = BUS_TOL
+    ) -> str | None:
+        """
+        Find network bus that corresponds to given name.
+
+        Args:
+            network: The PyPSA network to search in.
+            name: The name of the substation.
+            voltage: Voltage level to filter by.
+            tol: Tolerance for coordinate matching.
+        """
+        # Get raw ID, x, y from OSM data
+        raw_id, x, y, substation_status = self._get_substation_x_y(name, voltage)
+
+        # Find closest buses in network within tolerance
+        network_bus_id, bus_status = self._get_closest_bus(
+            network=network, x=x, y=y, voltage=voltage, tol=tol
+        )
+
+        return network_bus_id, bus_status
 
 
 class AddNOAOption:
@@ -28,7 +204,7 @@ class AddNOAOption:
         network: pypsa.Network,
         noa_option: str,
         noa_options_config: dict,
-        mapper: OSMNameMapper,
+        mapper: NetworkBusMapper,
     ):
         self.network = network
         self.noa_option = noa_option
@@ -297,7 +473,7 @@ def add_noa_options(
     noa_options_config: dict,
     noa_sets_config: dict,
     noa_sets_selected: list[int],
-    mapper: OSMNameMapper,
+    mapper: NetworkBusMapper,
     output_network_path: str,
 ) -> None:
     """
@@ -308,7 +484,7 @@ def add_noa_options(
         noa_options_config (dict): Configuration for NOA options.
         noa_sets_config (dict): Configuration for NOA sets.
         noa_sets_selected (list[int]): List of NOA set IDs to apply.
-        mapper (OSMNameMapper): OSM name mapper instance.
+        mapper (NetworkBusMapper): Network bus mapper instance.
         output_network_path (Path): Path to save the updated network.
 
     Returns:
@@ -358,8 +534,8 @@ if __name__ == "__main__":
     noa_sets_config = snakemake.params.noa_sets
     noa_sets_selected = snakemake.params.noa_sets_selected
 
-    # Create OSM name mapper
-    mapper = OSMNameMapper(csv_path=osm_mapping_path)
+    # Create network bus mapper
+    mapper = NetworkBusMapper(csv_path=osm_mapping_path)
 
     # Add NOA option
     add_noa_options(

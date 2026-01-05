@@ -25,7 +25,7 @@ configfile: "config/plotting.default.yaml"
 
 
 # Load NOA year-specific config
-noa_year = config.get("noa_year")
+noa_year = config["noa_year"]
 noa_config_file = f"config/config.noa.{noa_year}.yaml"
 
 
