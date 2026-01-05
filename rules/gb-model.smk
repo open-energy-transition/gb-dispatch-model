@@ -988,6 +988,10 @@ rule prepare_unconstrained:
         network=resources("networks/composed_clustered/{year}.nc"),
     output:
         network=resources("networks/unconstrained_clustered/{year}.nc"),
+    params:
+        load_shedding_cost_above_marginal=config["fes"]["eur"][
+            "load_shedding_cost_above_marginal"
+        ],
     log:
         logs("prepare_unconstrained_network/{year}.log"),
     script:
@@ -1036,19 +1040,19 @@ rule solve_constrained:
         etys_boundaries_to_lines=config["region_operations"]["etys_boundaries_lines"],
         etys_boundaries_to_links=config["region_operations"]["etys_boundaries_links"],
     input:
-        network=resources("networks/constrained_clustered_{year}.nc"),
+        network=resources("networks/constrained_clustered/{year}.nc"),
         etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),
     output:
-        network=RESULTS + "networks/constrained_clustered_{year}.nc",
-        config=RESULTS + "configs/config.constrained_clustered_{year}.yaml",
+        network=RESULTS + "networks/constrained_clustered/{year}.nc",
+        config=RESULTS + "configs/config.constrained_clustered/{year}.yaml",
     log:
         solver=normpath(
-            RESULTS + "logs/solve_network/constrained_clustered_{year}_solver.log"
+            RESULTS + "logs/solve_network/constrained_clustered/{year}_solver.log"
         ),
-        memory=RESULTS + "logs/solve_network/constrained_clustered_{year}_memory.log",
-        python=RESULTS + "logs/solve_network/constrained_clustered_{year}_python.log",
+        memory=RESULTS + "logs/solve_network/constrained_clustered/{year}_memory.log",
+        python=RESULTS + "logs/solve_network/constrained_clustered/{year}_python.log",
     benchmark:
-        (RESULTS + "benchmarks/solve_network/constrained_clustered_{year}")
+        (RESULTS + "benchmarks/solve_network/constrained_clustered/{year}")
     threads: solver_threads
     resources:
         mem_mb=config_provider("solving", "mem_mb"),
@@ -1070,6 +1074,9 @@ rule prepare_constrained_network:
         renewable_payment_profile=resources(
             "gb-model/renewable_payment_profile/{year}.csv"
         ),
+        interconnector_bid_offer=resources(
+            "gb-model/bids_and_offers/{year}/interconnector_bid_offer_profile.csv"
+        ),
     output:
         network=resources("networks/constrained_clustered/{year}.nc"),
     log:
@@ -1090,3 +1097,20 @@ rule get_renewable_payment_profile:
         logs("get_renewable_payment_profile/{year}.log"),
     script:
         "../scripts/gb_model/get_renewable_payment_profile.py"
+
+
+rule calc_interconnector_bid_offer_profile:
+    message:
+        "Calculate interconnector bid/offer profiles"
+    params:
+        bids_and_offers=config_provider("redispatch"),
+    input:
+        unconstrained_result=RESULTS + "networks/unconstrained_clustered/{year}.nc",
+    output:
+        bid_offer_profile=resources(
+            "gb-model/bids_and_offers/{year}/interconnector_bid_offer_profile.csv"
+        ),
+    log:
+        logs("calc_interconnector_bid_offer_profile/{year}.log"),
+    script:
+        "../scripts/gb_model/calc_interconnector_bid_offer_profile.py"
