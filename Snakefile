@@ -23,6 +23,7 @@ configfile: "config/config.default.yaml"
 configfile: "config/config.gb.default.yaml"
 configfile: "config/plotting.default.yaml"
 configfile: "config/config.noa.2021.yaml"
+configfile: "config/config.noa.2024.yaml"
 configfile: "config/config.noa.sets.yaml"
 
 

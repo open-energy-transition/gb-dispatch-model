@@ -13,18 +13,19 @@ noa_options:
     - action: add
       component_type: substation
       names:
-      - Blackhillock
-      - Kintore
+      - Blackhillock Substation
+      - Kintore 400kV Substation
       voltage: 400
       carrier: AC
     - action: update
       component_type: line
       name: BKUP_275kV_to_400kV_OHL_Blackhillock_Kintore
-      from: Blackhillock
-      to: Kintore
+      from: Blackhillock Substation
+      to: Kintore 400kV Substation
       from_voltage: 275
       to_voltage: 400
       carrier: AC
+      circuits: 2
 
 - id: BTR2
   name: Upgrade the existing circuits between Brinsworth and Thorpe Marsh to allow for more capacity.
@@ -33,18 +34,18 @@ noa_options:
   details:
   - name: Upgrade the existing circuits between Brinsworth and Thorpe Marsh to allow for more capacity.
     pypsa_operations:
-   - action: add
+    - action: add
       component_type: substation
       names:
-      - Brinsworth
-      - Thorpe Marsh
+      - Brinsworth Substation
+      - Thorpe Marsh Substation
       voltage: 400
       carrier: AC
-    - action: update
+    - action: update # Not sure about this because there is already 400kV line between these substations, maybe we just provide additional capacity?
       component_type: line
       name: BTR2_275kV_to_400kV_OHL_Brinsworth_ThorpeMarsh
-      from: Brinsworth
-      to: Thorpe Marsh
+      from: Brinsworth Substation
+      to: Thorpe Marsh Substation
       from_voltage: 275
       to_voltage: 400
       carrier: AC
@@ -70,14 +71,22 @@ noa_options:
   details:
   - name: Upgrade the existing network to a higher voltage between Clydes Mill and Strathaven.
     pypsa_operations:
+    - action: add
+      component_type: substation
+      names:
+      - "Clyde's Mill Substation"
+      - Strathaven Substation
+      voltage: 400
+      carrier: AC
     - action: update
       component_type: line
       name: CVUP_275kV_to_400kV_ClydesMill_Strathaven
-      from: Clydes Mill
-      to: Strathaven
+      from: "Clyde's Mill Substation"
+      to: Strathaven Substation
       from_voltage: 275
       to_voltage: 400
       carrier: AC
+      citcuits: 2
 
 - id: DCR4
   name: Replace the conductors on the existing circuits between Carrington and Daines with higher capacity conductors.
@@ -311,7 +320,7 @@ noa_options:
     - action: add
       component_type: link
       name: LPDC_OHL_DC_WestEngland_NorthWales
-      from:  West England
+      from: West England
       to: North Wales
       capacity: 2000
       carrier: DC
