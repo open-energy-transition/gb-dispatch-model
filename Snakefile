@@ -76,7 +76,7 @@ include: "rules/postprocess.smk"
 include: "rules/development.smk"
 include: "rules/report.smk"
 include: "rules/gb-model.smk"
-include: "rules/gb-model/noa.smk"
+include: "rules/gb-model.noa.smk"
 
 
 if config["foresight"] == "overnight":
