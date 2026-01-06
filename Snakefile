@@ -24,6 +24,16 @@ configfile: "config/config.gb.default.yaml"
 configfile: "config/plotting.default.yaml"
 
 
+# Load NOA year-specific config
+noa_year = config["noa_year"]
+noa_config_file = f"config/config.noa.{noa_year}.yaml"
+
+
+configfile: noa_config_file
+# Load NOA sets
+configfile: "config/config.noa.sets.yaml"
+
+
 if Path("config/config.yaml").exists():
 
     configfile: "config/config.yaml"
@@ -66,6 +76,7 @@ include: "rules/postprocess.smk"
 include: "rules/development.smk"
 include: "rules/report.smk"
 include: "rules/gb-model.smk"
+include: "rules/gb-model.noa.smk"
 
 
 if config["foresight"] == "overnight":

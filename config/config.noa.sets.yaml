@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
+#
+# SPDX-License-Identifier: CC0-1.0
+
+noa_sets:
+- id: 0
+  name: "East Anglia GREEN (AENC and ATNC)"   # any meaningful name
+  noa_options:
+  - AENC # Norwich to Tilbury new circuit
+
+- id: 1
+  name: "North East Scotland (BBNC and BPNC)"
+  noa_options:
+  - BBNC # Beauly to Blackhillock new circuit
+  - BPNC # Blackhillock to Peterhead new circuit
+
+- id: 2
+  name: "North to South Scotland" # any meaningful name
+  noa_options:
+  - BDUP # Beauly to Denny upgrade
+
+- id: 3
+  name: "North of Scotland"
+  noa_options:
+  - BLN2 # Beauly to Loch Buidhe upgrade
+
+- id: 4
+  name: "North of Scotland High Voltage"
+  noa_options:
+  - BLN4 # Beauly to Loch Buidhe upgrade

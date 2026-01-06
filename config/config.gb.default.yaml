@@ -24,6 +24,9 @@ snapshots:
   end: "2013-01-01"
   inclusive: 'left'
 
+noa_sets_selected: [] # list of noa_set ids to include, e.g. [0, 2]
+noa_year: 2024 # year of NOA data to use for network reinforcement (either 2024 or 2021)
+
 atlite:
   default_cutout: europe-2012-sarah3-era5
   cutouts:
