@@ -227,8 +227,8 @@ class AddNOAOption:
         Dispatches based on action and component_type:
         - action='add', component_type='substation' -> _add_substation()
         - action='add', component_type='line' -> _add_line()
-        - action='update', component_type='line' -> _update_component()
-        - action='remove', component_type='line' -> _remove_component()
+        - action='add', component_type='link' -> _add_link()
+        - action='update', component_type='line' -> _update_line()
         """
         action = operation["action"]
         component_type = operation["component_type"]
@@ -454,6 +454,35 @@ class AddNOAOption:
         logger.info(
             f"Line upgrade '{line_name}' added: {from_voltage}kV → {to_voltage}kV, "
             f"capacity difference: {s_nom:.1f}MW"
+        )
+
+    def _add_link(self, operation: dict) -> None:
+        """Add link to the network."""
+        link_name = operation["name"]
+        voltage = operation["voltage"]
+
+        # Find buses
+        from_bus, _ = self._find_bus_cached(name=operation["from"], voltage=voltage)
+        to_bus, _ = self._find_bus_cached(name=operation["to"], voltage=voltage)
+
+        # Add new link
+        self.network.add(
+            "Link",
+            link_name,
+            bus0=from_bus,
+            bus1=to_bus,
+            carrier=operation["carrier"],
+            p_nom=operation["capacity"],
+            p_max_pu=1.0,
+            p_min_pu=-1.0,
+            efficiency=1.0,
+            length=operation.get("length", 0.0),
+            voltage=voltage,
+        )
+
+        logger.info(
+            f"Link '{link_name}' was added between '{from_bus}' and "
+            f"'{to_bus}' at voltage '{voltage}'kV with p_nom={operation['capacity']:.1f}MW"
         )
 
     def add_option(self):

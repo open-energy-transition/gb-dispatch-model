@@ -590,38 +590,52 @@ noa_options:
 - id: E2DC
   name: Eastern subsea HVDC link from Torness to Hawthorn Pit
   description: "Construct a new offshore 2 GW HVDC subsea link from the Torness area to Hawthorn Pit to provide additional transmission capacity. The onshore works involve the construction of AC/DC converter stations and the associated AC works at Torness and Hawthorn Pit."
-  commissioning_year: 2030
+  commissioning_year: 2029
   # details of individual components to change
   details:
   - name: new DC line with 525kV from Torness in Southeast Scotland to Hawthorn Pit substation in Murton, County Durham.
     pypsa_operations:
-    - action: new
-      component_type: line # subsea cable
-      line_type: Al/St 560/50 4-bundle 750.0
-      name: E2DC_525kV_subsea_Torness_HawthornPit
-      from: Torness
-      to: Hawthorn Pit
+    - action: add
+      component_type: substation
+      names:
+      - Torness Substation
+      - Hawthorn Pit Substation
       voltage: 525
-      p_nom: 2000 # MW 
+      carrier: DC
+    - action: add
+      component_type: link # subsea cable
+      name: E2DC_525kV_subsea_Torness_HawthornPit
+      from: Torness Substation
+      to: Hawthorn Pit Substation
+      voltage: 525
+      capacity: 2000 # MW
+      length: 196 # km
       circuits: 1
       carrier: DC
 
 - id: E4D3
   name: "Eastern Scotland to England link: Peterhead to Drax offshore HVDC"
   description: "Construct a new offshore 2 GW bipole HVDC subsea link from Peterhead in the north east of Scotland to Drax in the Yorkshire area of England. The onshore works involve the construction of AC/DC converter stations and the associated AC works at Peterhead and Drax."
-  commissioning_year: 2030
+  commissioning_year: 2029
   # details of individual components to change
   details:
   - name: new c505km from Sandford Bay, at Peterhead in Scotland, to the Drax Power Station in Yorkshire, England
     pypsa_operations:
-    - action: new
-      component_type: line # subsea cable
-      line_type: Al/St 560/50 4-bundle 750.0
-      name: E2DC_525kV_subsea_Peterhead_Yorkshire
-      from: Peterhead
-      to: Yorkshire
+    - action: add
+      component_type: substation
+      names:
+      - Peterhead Substation
+      - Drax
       voltage: 525
-      p_nom: 2000 # MW 
+      carrier: DC
+    - action: add
+      component_type: link # subsea cable
+      name: E4D3_525kV_subsea_Peterhead_Drax
+      from: Peterhead Substation
+      to: Drax
+      voltage: 525
+      capacity: 2000 # MW
+      length: 505 # km
       circuits: 1
       carrier: DC
 

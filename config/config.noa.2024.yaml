@@ -146,24 +146,18 @@ noa_options:
     - action: add
       component_type: substation
       names:
-      - Grimsby West
-      - Walpole
+      - Grimsby West Substation
+      - Walpole Substation
       voltage: 400
       carrier: AC
     - action: add
       component_type: line
-      name: E4L6_400kV_Banniskirk_Thurso
-      from: Grimsby West
-      to: Walpole
+      name: E4L6_400kV_GrimsbyWest_Walpole
+      from: Grimsby West Substation
+      to: Walpole Substation
       voltage: 400
-      carrier: AC
-    - action: update
-      component_type: line
-      name: E4L6_275kV_to_400kV_Banniskirk_Thurso
-      from: Grimsby West
-      to: Walpole
-      from_voltage: 275
-      to_voltage: 400
+      length: 140
+      circuits: 1
       carrier: AC
 
 - id: ECRE
