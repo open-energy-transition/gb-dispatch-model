@@ -248,7 +248,7 @@ class AddNOAOption:
             if component_type == "line":
                 self._update_line(operation)
             elif component_type == "link":
-                self._update_link(operation)
+                self._add_link(operation)
             else:
                 raise KeyError(f"Unknown component_type for update: {component_type}")
 
@@ -478,6 +478,7 @@ class AddNOAOption:
             efficiency=1.0,
             length=operation.get("length", 0.0),
             voltage=voltage,
+            dc=True,
         )
 
         logger.info(

@@ -12,6 +12,7 @@ Release Notes
 Upcoming Release
 ================
 
+* Add functionality to include HVDC links from NOA options (#27)
 * Set bus_id for virtual buses using line_id to ensure stable custom busmap mapping (#166)
 * Enable custom busmap to prevent incorrect clustering of offshore buses (#159) 
 * Add interconnector bids and offers to constrained network (#153)
