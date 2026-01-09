@@ -610,7 +610,6 @@ noa_options:
       voltage: 525
       capacity: 2000 # MW
       length: 196 # km
-      circuits: 1
       carrier: DC
 
 - id: E4D3
@@ -636,7 +635,6 @@ noa_options:
       voltage: 525
       capacity: 2000 # MW
       length: 505 # km
-      circuits: 1
       carrier: DC
 
 - id: E4L5
