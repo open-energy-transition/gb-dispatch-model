@@ -982,6 +982,7 @@ def add_battery_storage(
         all_data_battery.index,
         bus=all_data_battery.bus,
         carrier="Battery Storage",
+        p_nom=all_data_battery.p_nom,
         p_nom_extendable=False,
         marginal_cost=all_data_battery.marginal_cost,
         capital_cost=0,
@@ -1015,7 +1016,14 @@ def add_H2(
 
     n.add("Carrier", "H2")
     all_nodes = n.buses[n.buses.carrier == "AC"].index
-    n.add("Bus", all_nodes, suffix=" H2", carrier="H2", unit="MWh_LHV")
+    n.add(
+        "Bus",
+        all_nodes,
+        suffix=" H2",
+        carrier="H2",
+        unit="MWh_LHV",
+        country=n.buses.loc[all_nodes].country,
+    )
 
     n.add(
         "Load",
