@@ -28,7 +28,6 @@ noa_options:
       voltage: 400
       length_km: 60
       circuits: 2
-      carrier: AC # probably not needed, because it is AC for lines by default
   - name: 120km of new 400kV double circuit OHL between Bramford and Tilbury substations via a new connection substation to be located in the Tendring district
     pypsa_operations:
     - action: add
@@ -46,7 +45,6 @@ noa_options:
       voltage: 400
       length_km: 60 # approximate assumption based on provided map
       circuits: 2
-      carrier: AC
     - action: add
       component_type: line
       name: AENC_400kV_OHL_Tendring_Lawford_Tilbury
@@ -55,7 +53,6 @@ noa_options:
       voltage: 400
       length_km: 60 # approximate assumption based on provided map
       circuits: 2
-      carrier: AC
 
 - id: BBNC
   grouped_name: BBNC_BPNC
@@ -81,7 +78,6 @@ noa_options:
       voltage: 400
       length_km: 110
       circuits: 2
-      carrier: AC
 
 - id: BDUP
   grouped_name: BDUP
@@ -111,7 +107,6 @@ noa_options:
       from_voltage: 275
       to_voltage: 400
       circuits: 1
-      carrier: AC
     - action: update
       component_type: line
       name: BDUP_275kV_to_400kV_OHL_Fasnakyle_FortAugustus
@@ -120,7 +115,6 @@ noa_options:
       from_voltage: 275
       to_voltage: 400
       circuits: 1
-      carrier: AC
     - action: update
       component_type: line
       name: BDUP_275kV_to_400kV_OHL_FortAugustus_Kinardochy
@@ -129,7 +123,6 @@ noa_options:
       from_voltage: 275
       to_voltage: 400
       circuits: 1
-      carrier: AC
     - action: update
       component_type: line
       name: BDUP_275kV_to_400kV_OHL_Kinardochy_BracoWest
@@ -138,7 +131,6 @@ noa_options:
       from_voltage: 275
       to_voltage: 400
       circuits: 1
-      carrier: AC
     - action: update
       component_type: line
       name: BDUP_275kV_to_400kV_OHL_BracoWest_Denny
@@ -147,7 +139,6 @@ noa_options:
       from_voltage: 275
       to_voltage: 400
       circuits: 1
-      carrier: AC
 
 - id: BFHW
   grouped_name: BFHW
@@ -165,7 +156,6 @@ noa_options:
       to: Fleet
       # voltage: 400
       # circuits: 2
-      carrier: AC
       p_nom_max: 0.8
 
 - id: BFPC
@@ -184,7 +174,6 @@ noa_options:
       to: Fleet
       voltage: 400
       circuits: 2
-      carrier: AC
       p_nom_max: 0.85
 
 - id: BFRE
@@ -203,7 +192,6 @@ noa_options:
       to: Fleet
       voltage: 400
       circuits: 2
-      carrier: AC
       p_nom_max: 0.9
 
 - id: BLN2
@@ -231,7 +219,6 @@ noa_options:
       from_voltage: 132
       to_voltage: 275
       circuits: 2
-      carrier: AC
     - action: update
       component_type: line
       name: BLN2_132kV_to_275kV_OHL_Shin_LochBuidhe
@@ -240,7 +227,6 @@ noa_options:
       from_voltage: 132
       to_voltage: 275
       circuits: 2
-      carrier: AC
 
 - id: BLN4
   grouped_name: BLN4
@@ -267,7 +253,6 @@ noa_options:
       from_voltage: 132
       to_voltage: 400
       circuits: 2
-      carrier: AC
     - action: update
       component_type: line
       name: BLN4_132kV_to_400kV_OHL_Shin_LochBuidhe
@@ -276,7 +261,6 @@ noa_options:
       from_voltage: 132
       to_voltage: 400
       circuits: 2
-      carrier: AC
 
 - id: BMM2
   grouped_name: BMM2
@@ -321,7 +305,6 @@ noa_options:
       voltage: 400
       length_km: 41 # approximate assumption
       circuits: 2
-      carrier: AC
     - action: add
       component_type: line
       name: BPNC_400kV_OHL_NewDeer_Peterhead
@@ -330,7 +313,6 @@ noa_options:
       voltage: 400
       length_km: 41 # approximate assumption
       circuits: 2
-      carrier: AC
   - name: new 132kV substation at Peterhead
     pypsa_operations:
     - action: add
@@ -363,14 +345,12 @@ noa_options:
       name: BRRE_OHL_Bramford_Braintree
       from: Bramford
       to: Braintree
-      carrier: AC
       p_nom_max: 0.8
     - action: update
       component_type: line
       name: BRRE_OHL_Braintree_Rayleigh
       from: Braintree
       to: Rayleigh
-      carrier: AC
       p_nom_max: 0.8
 
 - id: BTNO
@@ -396,7 +376,6 @@ noa_options:
       voltage: 400
       length_km: 18
       circuits: 2
-      carrier: AC
   - name: removing c27 km of existing 132 kV and 400 kV overhead line between Burstall Bridge and Twinstead Tee
     pypsa_operations:
     - action: remove
@@ -405,14 +384,12 @@ noa_options:
       from: Burstall Bridge
       to: Twinstead Tee
       voltage: 132
-      carrier: AC
     - action: remove
       component_type: line
       name: BTNO_Burstall Bridge
       from: Burstall Bridge
       to: Twinstead Tee
       voltage: 400
-      carrier: AC
 
 - id: BWRE
   name: Reconductor Barking to West Ham double circuit
@@ -460,7 +437,6 @@ noa_options:
       to: High Marnham Substation
       voltage: 400
       circuits: 1
-      carrier: AC
     - action: update
       component_type: line
       name: CGNC_400kV_OHL_Brantingham_Broomfleet
@@ -468,16 +444,13 @@ noa_options:
       to: Broomfleet
       voltage: 400
       circuits: 1
-      carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: CGNC_400kV_OHL_Ealand_Keadby
       from: Ealand
       to: Keadby
       voltage: 400
       circuits: 1
-      carrier: AC
 
 - id: CKPC
   name: Power control device along Creyke Beck to Keadby to Killingholme
@@ -590,40 +563,50 @@ noa_options:
 - id: E2DC
   name: Eastern subsea HVDC link from Torness to Hawthorn Pit
   description: "Construct a new offshore 2 GW HVDC subsea link from the Torness area to Hawthorn Pit to provide additional transmission capacity. The onshore works involve the construction of AC/DC converter stations and the associated AC works at Torness and Hawthorn Pit."
-  commissioning_year: 2030
+  commissioning_year: 2029
   # details of individual components to change
   details:
   - name: new DC line with 525kV from Torness in Southeast Scotland to Hawthorn Pit substation in Murton, County Durham.
     pypsa_operations:
-    - action: new
-      component_type: line # subsea cable
-      line_type: Al/St 560/50 4-bundle 750.0
-      name: E2DC_525kV_subsea_Torness_HawthornPit
-      from: Torness
-      to: Hawthorn Pit
+    - action: add
+      component_type: substation
+      names:
+      - Torness Substation
+      - Hawthorn Pit Substation
       voltage: 525
-      p_nom: 2000 # MW 
-      circuits: 1
-      carrier: DC
+      carrier: AC
+    - action: add
+      component_type: link # subsea cable
+      name: E2DC_525kV_subsea_Torness_HawthornPit
+      from: Torness Substation
+      to: Hawthorn Pit Substation
+      voltage: 525
+      capacity: 2000 # MW
+      length: 196 # km
 
 - id: E4D3
   name: "Eastern Scotland to England link: Peterhead to Drax offshore HVDC"
   description: "Construct a new offshore 2 GW bipole HVDC subsea link from Peterhead in the north east of Scotland to Drax in the Yorkshire area of England. The onshore works involve the construction of AC/DC converter stations and the associated AC works at Peterhead and Drax."
-  commissioning_year: 2030
+  commissioning_year: 2029
   # details of individual components to change
   details:
   - name: new c505km from Sandford Bay, at Peterhead in Scotland, to the Drax Power Station in Yorkshire, England
     pypsa_operations:
-    - action: new
-      component_type: line # subsea cable
-      line_type: Al/St 560/50 4-bundle 750.0
-      name: E2DC_525kV_subsea_Peterhead_Yorkshire
-      from: Peterhead
-      to: Yorkshire
+    - action: add
+      component_type: substation
+      names:
+      - Peterhead Substation
+      - Drax
       voltage: 525
-      p_nom: 2000 # MW 
-      circuits: 1
-      carrier: DC
+      carrier: AC
+    - action: add
+      component_type: link # subsea cable
+      name: E4D3_525kV_subsea_Peterhead_Drax
+      from: Peterhead Substation
+      to: Drax
+      voltage: 525
+      capacity: 2000 # MW
+      length: 505 # km
 
 - id: E4L5
   name: "Eastern Scotland to England 3rd link: Peterhead to the south Humber offshore HVDC"
@@ -645,7 +628,6 @@ noa_options:
       carrier: AC
     - action: new
       component_type: line # subsea cable
-      line_type: Al/St 560/50 4-bundle 750.0
       name: E2DC_525kV_subsea_Peterhead_Lincolnshire
       from: Peterhead
       to: Lincolnshire
@@ -653,7 +635,6 @@ noa_options:
       length_km: 505
       p_nom: 2000 # MW 
       circuits: 2
-      carrier: DC
 
 - id: EAM1
   name: 225 MVAr MSCs at Eaton Socon
@@ -686,13 +667,11 @@ noa_options:
       carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: E2DC_525kV_OHL_Peterhead_Lincolnshire
       from: Brinsworth
       to: Chesterfield
       voltage: 400
       circuits: 2
-      carrier: AC
     - action: update
       component_type: substation
       name: High Marnham
@@ -700,13 +679,11 @@ noa_options:
       carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: E2DC_525kV_OHL_Peterhead_Lincolnshire
       from: Chesterfield
       to: High Marnham
       voltage: 400
       circuits: 2
-      carrier: AC
 
 - id: EDN2
   name: New Chesterfield to Ratcliffe-on-Soar 400 kV double circuit
@@ -755,49 +732,39 @@ noa_options:
       carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: GWNC_400kV_OHL_BracoWest_FortAugustus
       from: Braco West
       to: Fort Augustus
       voltage: 400
       circuits: 2
-      carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: GWNC_400kV_OHL_FortAugustus_Errochty
       from: Fort Augustus
       to: Errochty
       voltage: 400
       circuits: 2
-      carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: GWNC_400kV_OHL_Errochty_Kinardochy
       from: Errochty
       to: Kinardochy
       voltage: 400
       circuits: 2
-      carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: GWNC_400kV_OHL_Kinardochy_Tummel
       from: Kinardochy
       to: Tummel
       voltage: 400
       circuits: 2
-      carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: GWNC_400kV_OHL_Tummel_Fasnakyle
       from: Tummel
       to: Fasnakyle
       voltage: 400
       circuits: 2
-      carrier: AC
 
 - id: HAE2
   name: Harker supergrid transformer 6 replacement
@@ -848,22 +815,18 @@ noa_options:
       carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: HWUP_400kV_OHL_Hackney_Tottenham
       from: Hackney
       to: Tottenham
       voltage: 400
       circuits: 2
-      carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: HWUP_400kV_OHL_Tottenham_WalthamCross
       from: Tottenham
       to: Waltham Cross
       voltage: 400
       circuits: 2
-      carrier: AC
 
 - id: IFR1
   name: Feckenham to Ironbridge circuit reconductoring
@@ -1009,23 +972,19 @@ noa_options:
       carrier: AC
     - action: new
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: OPN2_400kV_OHL_Norton_Osbaldwick
       from: Norton
       to: Osbaldwick
       length_km: 8
       voltage: 400
       circuits: 2
-      carrier: AC
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: OPN2_400kV_OHL_YorkNorth_MonkFryston
       from: York North
       to: Monk Fryston
       voltage: 400
       circuits: 2
-      carrier: AC
 
 - id: PEM1
   name: 225 MVAr MSCs at Pelham
@@ -1049,14 +1008,12 @@ noa_options:
     pypsa_operations:
     - action: update
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: PTC1_400kV_OHL_Pentir_Trawsfynydd
       from: Pentir
       to: Trawsfynydd
       length_km: 45
       voltage: 400
       circuits: 1
-      carrier: AC
 
 - id: PTNO
   name: North Wales reinforcement
@@ -1068,14 +1025,12 @@ noa_options:
     pypsa_operations:
     - action: add
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: PTC1_400kV_OHL_Pentir_Trawsfynydd
       from: Pentir
       to: Trawsfynydd
       length_km: 45
       voltage: 400
       circuits: 2
-      carrier: AC
 
 - id: PWMS
   name: Two 225 MVAr MSCs at Penwortham
@@ -1173,7 +1128,6 @@ noa_options:
       carrier: AC
     - action: new
       component_type: line # subsea cable
-      line_type: Al/St 560/50 4-bundle 750.0
       name: TGDC_525kV_subsea_Westfield_NorthwestNorfolk
       from: Westfield
       to: Northwest Norfolk
@@ -1181,7 +1135,6 @@ noa_options:
       length_km: 100
       p_nom: 2000 # MW 
       circuits: 1
-      carrier: DC
 
 - id: TGP1
   name: Power control device along Tilbury to Grain
@@ -1213,14 +1166,12 @@ noa_options:
     pypsa_operations:
     - action: add
       component_type: line
-      line_type: Al/St 240/40 4-bundle 380.0
       name: PTC1_400kV_OHL_Tealing_Westfield
       from: Tealing
       to: Westfield
       length_km: 37
       voltage: 400
       circuits: 2
-      carrier: AC
 
 - id: TLNO
   name: Torness to north east England AC onshore reinforcement

@@ -24,7 +24,6 @@ noa_options:
       to: Kintore 400kV Substation
       from_voltage: 275
       to_voltage: 400
-      carrier: AC
       circuits: 2
 
 - id: BTR2
@@ -48,7 +47,6 @@ noa_options:
       to: Thorpe Marsh Substation
       from_voltage: 275
       to_voltage: 400
-      carrier: AC
 
 - id: CLN2
   name: New circuit across North West England
@@ -85,7 +83,6 @@ noa_options:
       to: Strathaven Substation
       from_voltage: 275
       to_voltage: 400
-      carrier: AC
       citcuits: 2
 
 - id: DCR4
@@ -102,7 +99,6 @@ noa_options:
       to: Daines
       voltage: 400
       capacity: 100
-      carrier: AC
 
 - id: DSUP
   name: Establish further connection capacity between Dounreay, Banniskirk (Spittal), and Thurso.
@@ -126,7 +122,6 @@ noa_options:
       to: Banniskirk
       from_voltage: 275
       to_voltage: 400
-      carrier: AC
     - action: update
       component_type: line
       name: CVUP_275kV_to_400kV_Banniskirk_Thurso
@@ -134,7 +129,6 @@ noa_options:
       to: Thurso
       from_voltage: 275
       to_voltage: 400
-      carrier: AC
 
 - id: E4L6
   name: Refine one of the proposed offshore HVDC link planned between Scotland and Eastern England with a third connection into Lincolnshire.
@@ -146,25 +140,18 @@ noa_options:
     - action: add
       component_type: substation
       names:
-      - Grimsby West
-      - Walpole
+      - Grimsby West Substation
+      - Walpole Substation
       voltage: 400
       carrier: AC
     - action: add
       component_type: line
-      name: E4L6_400kV_Banniskirk_Thurso
-      from: Grimsby West
-      to: Walpole
+      name: E4L6_400kV_GrimsbyWest_Walpole
+      from: Grimsby West Substation
+      to: Walpole Substation
       voltage: 400
-      carrier: AC
-    - action: update
-      component_type: line
-      name: E4L6_275kV_to_400kV_Banniskirk_Thurso
-      from: Grimsby West
-      to: Walpole
-      from_voltage: 275
-      to_voltage: 400
-      carrier: AC
+      length: 140
+      circuits: 1
 
 - id: ECRE
   name: Replace the conductors on a short section of the existing circuit between Errochty and Clunie with higher capacity conductors.
@@ -180,7 +167,6 @@ noa_options:
       to: Clunieaa
       voltage: 400
       capacity: 100
-      carrier: AC
 
 - id: ECSC
   name: Installation of series compensation on the existing circuit between East Anglia Coastal Node and Tilbury.
@@ -196,7 +182,6 @@ noa_options:
       to: Tilbury
       voltage: 400
       capacity: 100
-      carrier: AC
 
 - id: EDN3
   name: Replace the conductors on the existing circuits between Brinsworth and Thorpe Marsh, Brinsworth and Chesterfield, and Chesterfield and Ratcliffe with higher capacity conductors.
@@ -212,7 +197,6 @@ noa_options:
       to: Thorpe Marsh
       voltage: 400
       capacity: 100
-      carrier: AC
     - action: add
       component_type: line
       name: EDN3_400kV_Brinsworth_Chesterfield
@@ -220,7 +204,6 @@ noa_options:
       to: Chesterfield
       voltage: 400
       capacity: 100
-      carrier: AC
     - action: add
       component_type: line
       name: EDN3_400kV_Chesterfield_Ratcliffe
@@ -228,7 +211,6 @@ noa_options:
       to: Ratcliffe
       voltage: 400
       capacity: 100
-      carrier: AC
 
 - id: ESCF
   name: Reconfigure the network between Stalybridge and Thorpe Marsh.
@@ -244,7 +226,6 @@ noa_options:
       to: Thorpe Marsh
       voltage: 400
       capacity: 100
-      carrier: AC
 
 - id: ETRE
   name: Upgrade the existing circuits between Eggborough and Thorpe Marsh to allow for more capacity.
@@ -260,7 +241,6 @@ noa_options:
       to: Thorpe Marsh
       voltage: 400
       capacity: 100
-      carrier: AC
 
 - id: FSU1
   name: Upgrade the existing network to a higher voltage between Harker and Stella West.
@@ -276,7 +256,6 @@ noa_options:
       to: Stella West
       voltage: 400
       capacity: 100
-      carrier: AC
 
 - id: HGNC
   name: New circuit between Harburn and Gala North.
@@ -292,7 +271,6 @@ noa_options:
       to: Gala North
       voltage: 400
       capacity: 100
-      carrier: AC
 
 - id: HNRE
   name: Replace the conductors on the existing circuits between Hawthorn Pit and Norton with higher capacity conductors.
@@ -308,7 +286,6 @@ noa_options:
       to: Norton
       voltage: 400
       capacity: 100
-      carrier: AC
 
 - id: LPDC
   name: New HVDC link between North West England and North Wales.
@@ -323,7 +300,6 @@ noa_options:
       from: West England
       to: North Wales
       capacity: 2000
-      carrier: DC
 
 - id: LRN6
   name: New transmission capacity between the South Lincolnshire, Cambridgeshire and North West Norfolk boundary to Hertfordshire.
@@ -338,11 +314,9 @@ noa_options:
       from: South Lincolnshire
       to: Cambridgeshire
       voltage: 400
-      carrier: AC
     - action: add
       component_type: line
       name: LRN6_400kV_OHL_Cambridgeshire_NorthWestNorfolk
       from: Cambridgeshire
       to: North West Norfolk
       voltage: 400
-      carrier: AC

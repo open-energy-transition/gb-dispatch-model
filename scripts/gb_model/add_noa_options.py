@@ -69,7 +69,7 @@ class NetworkBusMapper:
         """
         # Filter for substations
         substations_df = self.osm_mapping[
-            self.osm_mapping["type"].str.contains("substations")
+            self.osm_mapping["type"].str.contains("substations_way")
         ].copy()
 
         # Select the substations by name
@@ -227,8 +227,8 @@ class AddNOAOption:
         Dispatches based on action and component_type:
         - action='add', component_type='substation' -> _add_substation()
         - action='add', component_type='line' -> _add_line()
-        - action='update', component_type='line' -> _update_component()
-        - action='remove', component_type='line' -> _remove_component()
+        - action='add', component_type='link' -> _add_link()
+        - action='update', component_type='line' -> _update_line()
         """
         action = operation["action"]
         component_type = operation["component_type"]
@@ -248,7 +248,7 @@ class AddNOAOption:
             if component_type == "line":
                 self._update_line(operation)
             elif component_type == "link":
-                self._update_link(operation)
+                self._add_link(operation)
             else:
                 raise KeyError(f"Unknown component_type for update: {component_type}")
 
@@ -345,7 +345,6 @@ class AddNOAOption:
         voltage: int,
         from_name: str,
         to_name: str,
-        carrier: str,
         length: float | None = None,
         circuits: int = 1,
         capacity: float | None = None,
@@ -357,7 +356,6 @@ class AddNOAOption:
             voltage: Voltage level in kV
             from_name: Start substation name
             to_name: End substation name
-            carrier: Line carrier
             length: Line length
             circuits: Number of circuits
             capacity: Optional fixed capacity (overrides calculation)
@@ -381,7 +379,7 @@ class AddNOAOption:
             "bus0": from_bus,
             "bus1": to_bus,
             "length": length,
-            "carrier": carrier,
+            "carrier": "AC",
             "type": line_type,
             "v_nom": voltage,
             "s_nom": s_nom,
@@ -401,7 +399,6 @@ class AddNOAOption:
             voltage=voltage,
             from_name=operation["from"],
             to_name=operation["to"],
-            carrier=operation["carrier"],
             length=operation.get("length", 0.0),
             circuits=operation.get("circuits", 1),
             capacity=operation.get("capacity", None),
@@ -442,7 +439,6 @@ class AddNOAOption:
             voltage=to_voltage,
             from_name=operation["from"],
             to_name=operation["to"],
-            carrier=operation["carrier"],
             length=operation.get("length", 0.0),
             circuits=circuits,
             capacity=s_nom,
@@ -452,8 +448,38 @@ class AddNOAOption:
         self.network.add("Line", line_name, **line_params)
 
         logger.info(
-            f"Line upgrade '{line_name}' added: {from_voltage}kV → {to_voltage}kV, "
+            f"Line upgrade '{line_name}' added: {from_voltage}kV -> {to_voltage}kV, "
             f"capacity difference: {s_nom:.1f}MW"
+        )
+
+    def _add_link(self, operation: dict) -> None:
+        """Add link to the network."""
+        link_name = operation["name"]
+        voltage = operation["voltage"]
+
+        # Find buses
+        from_bus, _ = self._find_bus_cached(name=operation["from"], voltage=voltage)
+        to_bus, _ = self._find_bus_cached(name=operation["to"], voltage=voltage)
+
+        # Add new link
+        self.network.add(
+            "Link",
+            link_name,
+            bus0=from_bus,
+            bus1=to_bus,
+            carrier="DC",
+            p_nom=operation["capacity"],
+            p_max_pu=1.0,
+            p_min_pu=-1.0,
+            efficiency=1.0,
+            length=operation.get("length", 0.0),
+            voltage=voltage,
+            dc=True,
+        )
+
+        logger.info(
+            f"Link '{link_name}' was added between '{from_bus}' and "
+            f"'{to_bus}' at voltage '{voltage}'kV with p_nom={operation['capacity']:.1f}MW"
         )
 
     def add_option(self):
