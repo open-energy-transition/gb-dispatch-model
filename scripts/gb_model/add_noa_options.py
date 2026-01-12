@@ -345,7 +345,6 @@ class AddNOAOption:
         voltage: int,
         from_name: str,
         to_name: str,
-        carrier: str,
         length: float | None = None,
         circuits: int = 1,
         capacity: float | None = None,
@@ -357,7 +356,6 @@ class AddNOAOption:
             voltage: Voltage level in kV
             from_name: Start substation name
             to_name: End substation name
-            carrier: Line carrier
             length: Line length
             circuits: Number of circuits
             capacity: Optional fixed capacity (overrides calculation)
@@ -381,7 +379,7 @@ class AddNOAOption:
             "bus0": from_bus,
             "bus1": to_bus,
             "length": length,
-            "carrier": carrier,
+            "carrier": "AC",
             "type": line_type,
             "v_nom": voltage,
             "s_nom": s_nom,
@@ -401,7 +399,6 @@ class AddNOAOption:
             voltage=voltage,
             from_name=operation["from"],
             to_name=operation["to"],
-            carrier=operation["carrier"],
             length=operation.get("length", 0.0),
             circuits=operation.get("circuits", 1),
             capacity=operation.get("capacity", None),
@@ -442,7 +439,6 @@ class AddNOAOption:
             voltage=to_voltage,
             from_name=operation["from"],
             to_name=operation["to"],
-            carrier=operation["carrier"],
             length=operation.get("length", 0.0),
             circuits=circuits,
             capacity=s_nom,
@@ -471,7 +467,7 @@ class AddNOAOption:
             link_name,
             bus0=from_bus,
             bus1=to_bus,
-            carrier=operation["carrier"],
+            carrier="DC",
             p_nom=operation["capacity"],
             p_max_pu=1.0,
             p_min_pu=-1.0,
