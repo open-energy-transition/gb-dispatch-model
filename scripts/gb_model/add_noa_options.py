@@ -69,7 +69,7 @@ class NetworkBusMapper:
         """
         # Filter for substations
         substations_df = self.osm_mapping[
-            self.osm_mapping["type"].str.contains("substations")
+            self.osm_mapping["type"].str.contains("substations_way")
         ].copy()
 
         # Select the substations by name
@@ -448,7 +448,7 @@ class AddNOAOption:
         self.network.add("Line", line_name, **line_params)
 
         logger.info(
-            f"Line upgrade '{line_name}' added: {from_voltage}kV → {to_voltage}kV, "
+            f"Line upgrade '{line_name}' added: {from_voltage}kV -> {to_voltage}kV, "
             f"capacity difference: {s_nom:.1f}MW"
         )
 

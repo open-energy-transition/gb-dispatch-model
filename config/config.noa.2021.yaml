@@ -574,7 +574,7 @@ noa_options:
       - Torness Substation
       - Hawthorn Pit Substation
       voltage: 525
-      carrier: DC
+      carrier: AC
     - action: add
       component_type: link # subsea cable
       name: E2DC_525kV_subsea_Torness_HawthornPit
@@ -598,7 +598,7 @@ noa_options:
       - Peterhead Substation
       - Drax
       voltage: 525
-      carrier: DC
+      carrier: AC
     - action: add
       component_type: link # subsea cable
       name: E4D3_525kV_subsea_Peterhead_Drax
