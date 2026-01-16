@@ -14,7 +14,6 @@ import pandas as pd
 import pypsa
 import xarray as xr
 from linopy import merge
-
 from snakemake.script import Snakemake
 
 from scripts.gb_model._helpers import get_lines
