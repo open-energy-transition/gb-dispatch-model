@@ -1059,6 +1059,7 @@ rule solve_constrained:
     output:
         network=RESULTS + "networks/constrained_clustered/{year}.nc",
         config=RESULTS + "configs/config.constrained_clustered/{year}.yaml",
+        boundary_duals=RESULTS + "boundary_constraint_duals/{year}.csv",
     log:
         solver=normpath(
             RESULTS + "logs/solve_network/constrained_clustered/{year}_solver.log"

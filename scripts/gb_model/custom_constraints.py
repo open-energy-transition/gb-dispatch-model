@@ -88,11 +88,6 @@ def set_boundary_constraints(
                 f"Cannot apply ETYS constraint. Check configuration."
             )
 
-        logger.info(
-            f"Boundary {boundary}: {len(boundary_lines)} lines, {len(boundary_links)} DC links, "
-            f"capacity={capacity_mw} MW"
-        )
-
         # Get Line-s and Link-p for boundary lines and links
         line_s_boundary = line_s.sel(snapshot=snapshots, Line=boundary_lines)
         link_p_boundary = link_p.sel(snapshot=snapshots, Link=boundary_links)
@@ -101,7 +96,7 @@ def set_boundary_constraints(
         lhs = line_s_boundary.sum("Line") + link_p_boundary.sum("Link")
         lhs_exprs.append(lhs)
 
-    lhs_merged = merge(lhs_exprs, dim=boundary_index)
+    lhs_merged = merge(lhs_exprs, dim="boundary").assign_coords(boundary=boundary_index)
 
     upper_bounds = xr.DataArray(
         etys_capacities["capability_mw"].values,
@@ -110,15 +105,35 @@ def set_boundary_constraints(
 
     aux_var = n.model.add_variables(
         lower=0,
-        upper=upper_bounds,
+        coords=[boundary_index],
         name="etys_boundary_aux",
     )
 
     n.model.add_constraints(lhs_merged <= aux_var, name="etys_boundary_forward")
     n.model.add_constraints(lhs_merged >= -aux_var, name="etys_boundary_backward")
+
+    n.model.add_constraints(aux_var <= upper_bounds, name="etys_boundary")
     logger.info(
         f"Added {len(boundary_index)} boundary constraints with explicit 'boundary' dimension"
     )
+
+
+def save_boundary_constraint_duals(n: pypsa.Network, output_path: str) -> None:
+    """
+    Extract and save dual values from boundary constraints to CSV.
+
+    Args:
+        n (pypsa.Network): The solved PyPSA network.
+        output_path (str): Path to save the CSV file.
+    """
+    name = "etys_boundary"
+    if name not in n.model.constraints:
+        logger.warning(f"Constraint '{name}' not found. Skipping dual export.")
+        return
+
+    dual = n.model.constraints[name].dual
+    dual.to_pandas().to_csv(output_path)
+    logger.info(f"Saved boundary constraint duals to {output_path}")
 
 
 def custom_constraints(
