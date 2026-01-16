@@ -12,6 +12,9 @@ import logging
 
 import pandas as pd
 import pypsa
+import xarray as xr
+from linopy import merge
+
 from snakemake.script import Snakemake
 
 from scripts.gb_model._helpers import get_lines
@@ -37,12 +40,15 @@ def set_boundary_constraints(
     etys_boundaries_lines = snakemake.params.etys_boundaries_to_lines
     etys_boundaries_links = snakemake.params.etys_boundaries_to_links
 
+    boundary_index = pd.Index(etys_capacities.index, name="boundary")
+
     # Define Line-s and Link-p variable (power flow)
     line_s = n.model["Line-s"]
     link_p = n.model["Link-p"]
 
-    for boundary in etys_capacities.index:
-        # Get boundary capability
+    lhs_exprs = []
+
+    for boundary in boundary_index:
         capacity_mw = etys_capacities.loc[boundary, "capability_mw"]
 
         # Get all lines crossing the given boundary
@@ -56,8 +62,7 @@ def set_boundary_constraints(
                 )
             boundary_lines_mask = boundary_lines_mask | lines_mask
 
-        if boundary_lines_mask.any():
-            boundary_lines = n.lines[boundary_lines_mask].index
+        boundary_lines = n.lines[boundary_lines_mask].index
 
         # Get all DC links crossing the given boundary
         boundary_links_mask = pd.Series(False, index=n.links.index)
@@ -95,18 +100,26 @@ def set_boundary_constraints(
 
         # Sum across lines and DC links to get total flow at the boundary
         lhs = line_s_boundary.sum("Line") + link_p_boundary.sum("Link")
+        lhs_exprs.append(lhs)
 
-        # Add bidirectional constraint: total flow ≤ boundary capability
-        n.model.add_constraints(
-            lhs <= capacity_mw, name=f"etys_boundary_{boundary}_forward"
-        )
-        n.model.add_constraints(
-            lhs >= -capacity_mw, name=f"etys_boundary_{boundary}_backward"
-        )
+    lhs_merged = merge(lhs_exprs, dim=boundary_index)
 
-        logger.info(
-            f"Added boundary constraint: -{capacity_mw:.0f} <= '{boundary}' <= {capacity_mw:.0f} MW"
-        )
+    upper_bounds = xr.DataArray(
+        etys_capacities["capability_mw"].values,
+        coords=[boundary_index],
+    )
+
+    aux_var = n.model.add_variables(
+        lower=0,
+        upper=upper_bounds,
+        name="etys_boundary_aux",
+    )
+
+    n.model.add_constraints(lhs_merged <= aux_var, name="etys_boundary_forward")
+    n.model.add_constraints(lhs_merged >= -aux_var, name="etys_boundary_backward")
+    logger.info(
+        f"Added {len(boundary_index)} boundary constraints with explicit 'boundary' dimension"
+    )
 
 
 def custom_constraints(
