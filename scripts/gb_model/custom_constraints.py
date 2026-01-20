@@ -12,6 +12,8 @@ import logging
 
 import pandas as pd
 import pypsa
+import xarray as xr
+from linopy import merge
 from snakemake.script import Snakemake
 
 from scripts.gb_model._helpers import get_lines
@@ -37,12 +39,15 @@ def set_boundary_constraints(
     etys_boundaries_lines = snakemake.params.etys_boundaries_to_lines
     etys_boundaries_links = snakemake.params.etys_boundaries_to_links
 
+    boundary_index = pd.Index(etys_capacities.index, name="boundary")
+
     # Define Line-s and Link-p variable (power flow)
     line_s = n.model["Line-s"]
     link_p = n.model["Link-p"]
 
-    for boundary in etys_capacities.index:
-        # Get boundary capability
+    lhs_exprs = []
+
+    for boundary in boundary_index:
         capacity_mw = etys_capacities.loc[boundary, "capability_mw"]
 
         # Get all lines crossing the given boundary
@@ -56,8 +61,7 @@ def set_boundary_constraints(
                 )
             boundary_lines_mask = boundary_lines_mask | lines_mask
 
-        if boundary_lines_mask.any():
-            boundary_lines = n.lines[boundary_lines_mask].index
+        boundary_lines = n.lines[boundary_lines_mask].index
 
         # Get all DC links crossing the given boundary
         boundary_links_mask = pd.Series(False, index=n.links.index)
@@ -78,16 +82,11 @@ def set_boundary_constraints(
 
         boundary_links = n.links[boundary_links_mask].index
 
-        if boundary_lines.empty:
-            logger.warning(
-                f"No lines found for boundary '{boundary}'. "
+        if boundary_lines.empty and boundary_links.empty:
+            raise ValueError(
+                f"No lines or links found for boundary '{boundary}'. "
                 f"Cannot apply ETYS constraint. Check configuration."
             )
-
-        logger.info(
-            f"Boundary {boundary}: {len(boundary_lines)} lines, {len(boundary_links)} DC links, "
-            f"capacity={capacity_mw} MW"
-        )
 
         # Get Line-s and Link-p for boundary lines and links
         line_s_boundary = line_s.sel(snapshot=snapshots, Line=boundary_lines)
@@ -95,19 +94,44 @@ def set_boundary_constraints(
 
         # Sum across lines and DC links to get total flow at the boundary
         lhs = line_s_boundary.sum("Line") + link_p_boundary.sum("Link")
+        lhs_exprs.append(lhs)
 
-        # Add bidirectional constraint: total flow ≤ boundary capability
-        n.model.add_constraints(
-            lhs <= capacity_mw, name=f"etys_boundary_{boundary}_forward"
-        )
-        n.model.add_constraints(
-            lhs >= -capacity_mw, name=f"etys_boundary_{boundary}_backward"
-        )
+    lhs_merged = merge(lhs_exprs, dim="boundary").assign_coords(boundary=boundary_index)
 
-        logger.info(
-            f"Added boundary constraint: -{capacity_mw:.0f} <= '{boundary}' <= {capacity_mw:.0f} MW"
-        )
+    bounds = xr.DataArray(
+        etys_capacities["capability_mw"].values,
+        coords=[boundary_index],
+    )
 
+    n.model.add_constraints(lhs_merged <= bounds, name="etys_boundary_forward")
+    n.model.add_constraints(lhs_merged >= -bounds, name="etys_boundary_backward")
+
+    logger.info(
+        f"Added {len(boundary_index)} boundary constraints with explicit 'boundary' dimension"
+    )
+
+def save_boundary_constraint_duals(n: pypsa.Network, output_path: str) -> None:
+    """
+    Extract and save dual values from boundary constraints to CSV.
+
+    The dual value represents the marginal cost of the boundary constraint.
+    Forward constraint: flow <= capacity (negative dual when binding)
+    Backward constraint: flow >= -capacity (positive dual when binding)
+
+    The absolute sum dual (backward - forward) indicates, the total cost benefits
+    when relaxing the boundary constraints by one unit.
+    """
+    names = ["etys_boundary_forward", "etys_boundary_backward"]
+
+    if not set(names).issubset(n.model.constraints.keys()):
+        raise ValueError(f"Constraints {', '.join(names)} not found in model.")
+
+    forward = n.model.constraints["etys_boundary_forward"].dual.sum("snapshot").to_pandas()
+    backward = n.model.constraints["etys_boundary_backward"].dual.sum("snapshot").to_pandas()
+    dual = backward - forward
+
+    dual.to_csv(output_path)
+    logger.info(f"Saved boundary constraint duals to {output_path}")
 
 def custom_constraints(
     n: pypsa.Network,

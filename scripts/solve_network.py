@@ -1445,6 +1445,13 @@ if __name__ == "__main__":
 
     logger.info(f"Maximum memory usage: {mem.mem_usage}")
 
+    # Save boundary constraint duals if output is specified
+    boundary_duals_path: str | None = snakemake.output.get("boundary_duals")
+    if boundary_duals_path is not None:
+        from scripts.gb_model.custom_constraints import save_boundary_constraint_duals
+
+        save_boundary_constraint_duals(n, boundary_duals_path)
+
     n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.export_to_netcdf(snakemake.output.network)
 
