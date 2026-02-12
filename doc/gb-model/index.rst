@@ -56,4 +56,4 @@ The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windo
 
    release_notes
    data_sources
-   ../_index
+   pypsa-eur

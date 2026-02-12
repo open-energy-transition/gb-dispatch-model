@@ -100,7 +100,6 @@ source_suffix = ".rst"
 
 # The master toctree document.
 master_doc = "gb-model/index"
-root_doc = "gb-model/index"
 
 # General information about the project.
 project = "gb-dispatch-model"
