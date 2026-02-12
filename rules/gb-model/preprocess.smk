@@ -23,20 +23,6 @@ rule download_data:
         "curl -sSLo {output} {params.url}"
 
 
-rule extract_etys_boundary_capabilities:
-    message:
-        "Extract boundary capability data from ETYS PDF report"
-    input:
-        pdf_report="data/gb-model/downloaded/etys.pdf",
-        boundaries="data/gb-model/downloaded/gb-etys-boundaries.zip",
-    output:
-        csv=resources("gb-model/etys_boundary_capabilities.csv"),
-    log:
-        logs("extract_etys_boundary_capabilities.log"),
-    script:
-        scripts("gb_model/preprocess/extract_etys_boundary_capabilities.py")
-
-
 rule create_region_shapes:
     input:
         country_shapes=resources("country_shapes.geojson"),

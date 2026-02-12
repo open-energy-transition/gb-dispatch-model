@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Allow for boundary capabilities to increase in line with outputs from an ETYS report (configurable, defaults to True) (#219).
 * Use correct currency (GBP, not EUR) in docs.
 * Clean SPDX copyright text where an outdated repository name was being used.
 * Add docs page detailing our dispatch/redispatch methodology (#158).
