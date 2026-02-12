@@ -16,6 +16,9 @@ gb-dispatch-model is an extension of `PyPSA-Eur <../_index.html>`_., used to qua
 Workflow
 ========
 
+The full workflow rulegraph is shown below.
+Open the image in a new tab/window to view it in more detail.
+
 .. image:: img/workflow.svg
     :class: full-width
     :align: center
