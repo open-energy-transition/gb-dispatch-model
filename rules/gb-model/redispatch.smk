@@ -39,7 +39,7 @@ rule fetch_bid_offer_data_elexon:
     log:
         logs("fetch_bid_offer_data_elexon_{bod_year}.log"),
     script:
-        "../../scripts/gb_model/redispatch/fetch_bid_offer_data_elexon.py"
+        scripts("gb_model/redispatch/fetch_bid_offer_data_elexon.py")
 
 
 rule calculate_bid_offer_multipliers:
@@ -62,7 +62,7 @@ rule calculate_bid_offer_multipliers:
     log:
         logs("calculate_bid_offer_multipliers_{fes_scenario}.log"),
     script:
-        "../../scripts/gb_model/redispatch/calculate_bid_offer_multipliers.py"
+        scripts("gb_model/redispatch/calculate_bid_offer_multipliers.py")
 
 
 rule calc_interconnector_bid_offer_profile:
