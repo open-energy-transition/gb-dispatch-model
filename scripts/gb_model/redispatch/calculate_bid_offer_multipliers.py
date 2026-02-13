@@ -12,7 +12,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from scripts._helpers import configure_logging, get_scenario_name, set_scenario_config
+from scripts._helpers import configure_logging, set_scenario_config
+from scripts.gb_model._helpers import get_scenario_name
 from scripts.gb_model.generators.assign_costs import (
     _load_costs,
     _load_fes_carbon_costs,
@@ -122,7 +123,7 @@ def calc_bid_offer_multipliers(
     )
 
     df_bid_offer_avg = df_bid_offer.groupby(df_bid_offer.index).mean()
-
+    
     df_multipliers = df_bid_offer_avg.join(df_cost)
 
     df_multipliers["bid_multiplier"] = (
@@ -153,7 +154,7 @@ if __name__ == "__main__":
     df_cost = calculate_costs(
         fes_power_costs_path=snakemake.input.fes_power_costs,
         fes_carbon_costs_path=snakemake.input.fes_carbon_costs,
-        fes_scenario=get_scenario_name(snakemake),
+        fes_scenario = get_scenario_name(snakemake),
         tech_costs_path=snakemake.input.tech_costs,
         costs_config=snakemake.params.costs_config,
         technology_mapping=snakemake.params.technology_mapping,

@@ -58,9 +58,9 @@ rule calculate_bid_offer_multipliers:
             bod_year=config["redispatch"]["elexon"]["years"],
         ),
     output:
-        csv=resources("gb-model/bid_offer_multipliers.csv"),
+        csv=resources("gb-model/{fes_scenario}/bid_offer_multipliers.csv"),
     log:
-        logs("calculate_bid_offer_multipliers.log"),
+        logs("calculate_bid_offer_multipliers_{fes_scenario}.log"),
     script:
         "../../scripts/gb_model/redispatch/calculate_bid_offer_multipliers.py"
 
