@@ -69,7 +69,7 @@ rule calc_interconnector_bid_offer_profile:
     message:
         "Calculate interconnector bid/offer profiles"
     input:
-        bids_and_offers=resources("gb-model/bid_offer_multipliers.csv"),
+        bids_and_offers=resources("gb-model/{fes_scenario}/bid_offer_multipliers.csv"),
         unconstrained_result=RESULTS
         + "networks/{fes_scenario}/unconstrained_clustered/{year}.nc",
     output:
@@ -93,7 +93,7 @@ rule prepare_constrained_network:
         interconnector_bid_offer=resources(
             "gb-model/{fes_scenario}/interconnector_bid_offer_profile/{year}.csv"
         ),
-        bids_and_offers=resources("gb-model/bid_offer_multipliers.csv"),
+        bids_and_offers=resources("gb-model/{fes_scenario}/bid_offer_multipliers.csv"),
     output:
         network=resources("networks/{fes_scenario}/constrained_clustered/{year}.nc"),
     log:
