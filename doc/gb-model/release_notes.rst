@@ -9,6 +9,11 @@
 Release Notes
 ##########################################
 
+Unreleased
+==========
+
+* Adding `async` for API request that fetches the mapping of Elexon BMU units to a fueltype (#225). 
+
 v0.2.0 (2026-02-13)
 ===================
 
