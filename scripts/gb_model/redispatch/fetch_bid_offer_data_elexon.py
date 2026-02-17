@@ -52,9 +52,9 @@ async def fetch_api_request_data(
                     json_data = await response.json()
 
                     # Convert JSON data to Dataframe
-                    if isinstance(json_data,dict):
+                    if isinstance(json_data, dict):
                         df = pd.DataFrame(json_data.get("data", []))
-                    elif isinstance(json_data,list):
+                    elif isinstance(json_data, list):
                         df = pd.DataFrame(json_data)
 
                     break  # Exit retry loop if successful
@@ -167,7 +167,9 @@ async def fetch_BM_units(
 
         # Fetch BM unit data
         async with aiohttp.ClientSession() as session:
-            df_bmu = await fetch_api_request_data(url, retrieval_message="BMU Unit Data",session=session)
+            df_bmu = await fetch_api_request_data(
+                url, retrieval_message="BMU Unit Data", session=session
+            )
     else:
         df_bmu = pd.read_excel(bmu_fuel_map_path).rename(
             columns={"NESO BMU ID": "nationalGridBmUnit", "REG FUEL TYPE": "fuelType"}
@@ -204,10 +206,10 @@ if __name__ == "__main__":
 
     bmu_carrier_map = asyncio.run(
         fetch_BM_units(
-        base_url,
-        technology_mapping=snakemake.params.technology_mapping,
-        bmu_fuel_map_path=snakemake.input.bmu_fuel_map_path,
-        api_bmu_fuel_map=snakemake.params.api_bmu_fuel_map,
+            base_url,
+            technology_mapping=snakemake.params.technology_mapping,
+            bmu_fuel_map_path=snakemake.input.bmu_fuel_map_path,
+            api_bmu_fuel_map=snakemake.params.api_bmu_fuel_map,
         )
     )
 
