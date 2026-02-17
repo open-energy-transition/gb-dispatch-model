@@ -195,6 +195,11 @@ if __name__ == "__main__":
 
     # tune if HTTP 429 error occurs
     max_concurrent_requests = int(snakemake.params.max_concurrent_requests)
+    logger.info(
+        "N concurrent requests set to %d. "
+        "Tune this parameter if you encounter HTTP 429 errors.",
+        max_concurrent_requests,
+    )
     global SEM
     SEM = asyncio.Semaphore(max_concurrent_requests)
 

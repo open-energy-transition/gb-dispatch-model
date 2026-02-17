@@ -9,6 +9,11 @@
 Release Notes
 ##########################################
 
+Unreleased
+==========
+
+* Fix reaching Elexon API request limit when running snakemake with multiple cores by forcing all cores to be used for the data fetching rule.
+
 v0.2.0 (2026-02-13)
 ===================
 

@@ -36,6 +36,10 @@ rule fetch_bid_offer_data_elexon:
         bmu_fuel_map_path="data/gb-model/BMUFuelType.xlsx",
     output:
         csv=resources("gb-model/bids_and_offers/Elexon/{bod_year}.csv"),
+    # To avoid the same rule running simultaneously (and exceeding max concurrent requests),
+    # we force it to use as all cores for this process.
+    # It's a bottleneck we have to accept to avoid risking HTTP 429 errors.
+    threads: workflow.cores
     log:
         logs("fetch_bid_offer_data_elexon_{bod_year}.log"),
     script:
