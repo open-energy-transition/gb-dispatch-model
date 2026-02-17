@@ -35,14 +35,14 @@ def set_boundary_constraints(
     # Load ETYS capacities
     etys_capacities = pd.read_csv(
         snakemake.input.current_etys_caps, index_col="boundary_name"
-    )
+    ).capability_mw
 
     # If future ETYS caps are provided, use them instead of initial levels,
     # gap filling with initial levels where future caps are missing.
     if snakemake.input.future_etys_caps:
         future_caps = pd.read_csv(
             snakemake.input.future_etys_caps, index_col=["boundary_name", "year"]
-        ).xs(int(snakemake.wildcards.year), level="year")
+        ).capability_mw.xs(int(snakemake.wildcards.year), level="year")
         etys_capacities_all_boundaries = future_caps.reindex(etys_capacities.index)
         if (isna := etys_capacities_all_boundaries.isna()).any():
             logger.warning(
@@ -61,7 +61,7 @@ def set_boundary_constraints(
 
     for boundary in etys_capacities.index:
         # Get boundary capability
-        capacity_mw = etys_capacities.loc[boundary, "capability_mw"]
+        capacity_mw = etys_capacities.loc[boundary]
 
         # Get all lines crossing the given boundary
         boundary_lines_mask = pd.Series(False, index=n.lines.index)
