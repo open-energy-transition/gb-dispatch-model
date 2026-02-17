@@ -166,7 +166,10 @@ def _integrate_fes_power_costs(
         pd.DataFrame: Updated powerplants DataFrame with integrated FES power costs.
     """
     # Create a carrier_set column for mapping
-    carrier_set = df["carrier"] + " " + df["set"]
+    if "set" in df.columns:
+        carrier_set = df["carrier"] + " " + df["set"]
+    else:
+        carrier_set = df["carrier"]
 
     for col in ["VOM", "fuel"]:
         techs = carrier_set.map(costs_config[f"fes_{col}_carrier_mapping"])
@@ -178,6 +181,71 @@ def _integrate_fes_power_costs(
             f"Some mapped FES technologies for {col} costs are missing in FES power costs data: {missing}"
         )
         df[col] = fes_power_costs[[col]].reindex([techs, df.year]).values
+
+    return df
+
+
+def calculate_marginal_costs(
+    df: pd.DataFrame,
+    costs: pd.DataFrame,
+    costs_config: dict,
+    fes_carbon_costs: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Function to calculate marginal costs
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        DataFrame to finalize
+    costs: pd.DataFrame
+        Technology costs dataframe
+    costs_config: dict
+        config dictionary to map technology names and fill default characteristics
+    fes_carbon_costs: pd.DataFrame
+        Carbon costs indexed by year from FES data
+
+    """
+    for param in costs_config["relevant_cost_columns"]:
+        if param in costs_config["carrier_gap_filling"]:
+            df[param] = df[param].fillna(
+                df["carrier"]
+                .map(costs_config["carrier_gap_filling"][param])
+                .map(costs[param])
+            )
+        elif "set" in df.columns:
+            df[param] = df[param].fillna(
+                (df["carrier"] + " " + df["set"])
+                .map(costs_config["carrier_gap_filling"]["default"])
+                .map(costs[param])
+            )
+
+    # Fill VOM, fuel costs, efficiency, and CO2 intensity with default characteristics from config where FES data is missing
+    for col in costs_config["marginal_cost_columns"]:
+        df = _ensure_column_with_default(
+            df=df,
+            col=col,
+            default=costs_config["default_characteristics"][col]["data"],
+            units=costs_config["default_characteristics"][col]["unit"],
+        )
+
+    # Integrate FES carbon costs
+    df = df.join(fes_carbon_costs, on="year")
+
+    # Calculate marginal cost if possible
+    df["marginal_cost"] = (
+        df["VOM"]
+        + df["fuel"] / df["efficiency"]
+        + df["CO2 intensity"] * df["carbon_cost"] / df["efficiency"]
+    )
+    # Fill gaps in all remaining columns
+    for col in costs_config["relevant_cost_columns"]:
+        df = _ensure_column_with_default(
+            df,
+            col,
+            default=costs_config["default_characteristics"][col]["data"],
+            units=costs_config["default_characteristics"][col]["unit"],
+        )
 
     return df
 
@@ -229,19 +297,11 @@ def assign_technical_and_costs_defaults(
     # Join cost data
     df = df.join(costs[costs_config["relevant_cost_columns"]], on="carrier")
 
-    for param in costs_config["relevant_cost_columns"]:
-        if param in costs_config["carrier_gap_filling"]:
-            df[param] = df[param].fillna(
-                df["carrier"]
-                .map(costs_config["carrier_gap_filling"][param])
-                .map(costs[param])
-            )
-        else:
-            df[param] = df[param].fillna(
-                (df["carrier"] + " " + df["set"])
-                .map(costs_config["carrier_gap_filling"]["default"])
-                .map(costs[param])
-            )
+    # Integrate FES power costs
+    df = _integrate_fes_power_costs(df, fes_power_costs, costs_config)
+
+    # Calculate marginal costs
+    df = calculate_marginal_costs(df, costs, costs_config, fes_carbon_costs)
 
     # Format bus and build_year columns
     df["bus"] = df["bus"].astype(str)
@@ -249,35 +309,6 @@ def assign_technical_and_costs_defaults(
 
     # Add country columns
     df["country"] = df["bus"].str[:2]
-
-    # Integrate FES power costs
-    df = _integrate_fes_power_costs(df, fes_power_costs, costs_config)
-    # Fill VOM, fuel costs, efficiency, and CO2 intensity with default characteristics from config where FES data is missing
-    for col in costs_config["marginal_cost_columns"]:
-        df = _ensure_column_with_default(
-            df=df,
-            col=col,
-            default=costs_config["default_characteristics"][col]["data"],
-            units=costs_config["default_characteristics"][col]["unit"],
-        )
-
-    # Integrate FES carbon costs
-    df = df.join(fes_carbon_costs, on="year")
-
-    # Calculate marginal cost if possible
-    df["marginal_cost"] = (
-        df["VOM"]
-        + df["fuel"] / df["efficiency"]
-        + df["CO2 intensity"] * df["carbon_cost"] / df["efficiency"]
-    )
-    # Fill gaps in all remaining columns
-    for col in costs_config["relevant_cost_columns"]:
-        df = _ensure_column_with_default(
-            df,
-            col,
-            default=costs_config["default_characteristics"][col]["data"],
-            units=costs_config["default_characteristics"][col]["unit"],
-        )
 
     # Create unique index: "bus carrier-year-idx"
     df["idx_counter"] = df.groupby(["bus", "carrier", "year"]).cumcount()

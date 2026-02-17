@@ -1,13 +1,14 @@
 # SPDX-FileCopyrightText: Contributors to PyPSA-Eur <https://github.com/pypsa/pypsa-eur>
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
 #
 # SPDX-License-Identifier: MIT
 
 [workspace]
-authors = ["Contributors to PyPSA-Eur"]
+authors = ["Contributors to PyPSA-Eur", "gb-dispatch-model contributors"]
 channels = ["conda-forge", "bioconda", "gurobi"]
-name = "pypsa-eur"
+name = "gb-dispatch-model"
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
-version = "2025.07.0"
+version = "0.2.0"
 
 [tasks]
 

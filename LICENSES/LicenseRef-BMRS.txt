@@ -1,0 +1,55 @@
+This licence applies to You if you are not a BSC Party. BSC Parties’ are parties to the Balancing and Settlement Code and their use of BMRS Data is governed by the terms of the Balancing and Settlement Code.
+
+If You are not a BSC Party, this licence governs Your access to and Use of the BMRS Data made available by Elexon Limited at https://bmrs.elexon.co.uk/
+
+Use of copyright and database right material expressly made available under this licence indicates Your acceptance of the terms and conditions below.
+
+Elexon Limited hereby grants You a worldwide, royalty-free, perpetual, non-exclusive licence to Use the BMRS Data subject to the conditions below.
+Attributions
+
+When You Use BMRS Data, You must always use the following attribution statement to acknowledge the source of the information: Contains BMRS data © Elexon Limited copyright and database right [year]. Where possible You must also contain a link to this licence.
+
+The same attribution statements must be contained in any sub-licences of the BMRS Data that You grant, together with a requirement that any further sub-licences do the same.
+Using BMRS Open Data under this licence
+You are free to:
+
+    copy, publish, distribute and transmit the BMRS Data
+    adapt the BMRS Data
+    exploit the BMRS Data, including commercially, or by including it in your own product or application
+
+You must, where you do any of the above:
+
+    acknowledge the source of the BMRS Data by including any attribution statement stated above and, where possible, provide a link to this licence
+    ensure that You do not use the BMRS Data in a way that suggests any official status or that Elexon endorses you or your use of the BMRS Data
+    ensure that You do not mislead others or misrepresent the BMRS Data or its source
+
+These are important conditions of this licence and if You fail to comply with them the rights granted to you under this licence, or any similar licence granted by the Elexon, will end automatically.
+Exemptions
+
+This licence does not cover the use of:
+
+    personal data
+    third party rights that Elexon is not authorised to licence
+    Information subject to other intellectual property rights, including patents, trademarks, and design rights
+
+No warranty
+
+To the extent possible, Elexon offers the BMRS DATA as-is and as-available, and makes no representations or warranties of any kind concerning the Licensed Material, whether express, implied, statutory, or other. This includes, without limitation, warranties of title, merchantability, fitness for a particular purpose, non-infringement, absence of latent or other defects, accuracy, or the presence or absence of errors, whether or not known or discoverable. Where disclaimers of warranties are not allowed in full or in part, this disclaimer may not apply to You.
+
+To the extent possible, in no event will Elexon be liable to You on any legal theory (including, without limitation, negligence) or otherwise for any direct, special, indirect, incidental, consequential, punitive, exemplary, or other losses, costs, expenses, or damages arising out of this License or use of the BMRS DATA, even if Elexon Limited has been advised of the possibility of such losses, costs, expenses, or damages. Where a limitation of liability is not allowed in full or in part, this limitation may not apply to You.
+General
+
+Elexon may, from time to time, issue new versions of this licence. However, You may continue to Use the BMRS Data licensed under this version should you wish to do so.
+
+This licence is governed by the laws of England and Wales and any dispute arising under it shall be submitted to the exclusive jurisdiction of the courts of England and Wales.
+Definitions
+
+In this licence, the terms below have the following meanings:
+
+‘BMRS Data’ means the BMRS Data made available on the Insights Solution website or (for historic BMRS Data) the Elexon Portal website;
+
+‘Elexon’ means Elexon Limited (Company Registration Number 3782949) being the Balancing and Settlement Code Company;
+
+‘Use’ as a verb, means doing any act which is restricted by copyright or database right, whether in the original medium or in any other medium, and includes without limitation distributing, copying, adapting, modifying as may be technically necessary to use it in a different mode or format.
+
+‘You’ or ‘Your’ means the natural or legal person, or body of persons corporate or incorporate, acquiring rights under this licence.

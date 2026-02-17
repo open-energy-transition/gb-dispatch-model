@@ -5,6 +5,13 @@ SPDX-PackageDownloadLocation = "https://github.com/open-energy-transition/gb-dis
 
 [[annotations]]
 path = [
+    "data/gb-model/BMUFuelType.xlsx",
+]
+SPDX-FileCopyrightText = "Elexon Limited 2026"
+SPDX-License-Identifier = "LicenseRef-BMRS"
+
+[[annotations]]
+path = [
     "doc/gb-model/**",
     "data/gb-model/custom_busmap/*.csv"
 ]

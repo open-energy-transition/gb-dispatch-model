@@ -54,12 +54,53 @@ rule prepare_future_etys_caps:
         scripts("gb_model/redispatch/prepare_future_etys_caps.py")
 
 
+rule fetch_bid_offer_data_elexon:
+    message:
+        "Get bid/offer data from Elexon"
+    params:
+        technology_mapping=config_provider("redispatch", "elexon", "technology_mapping"),
+        api_bmu_fuel_map=config_provider("redispatch", "elexon", "api_bmu_fuel_map"),
+        max_concurrent_requests=config_provider(
+            "redispatch", "elexon", "max_concurrent_requests"
+        ),
+    input:
+        bmu_fuel_map_path="data/gb-model/BMUFuelType.xlsx",
+    output:
+        csv=resources("gb-model/bids_and_offers/Elexon/{bod_year}.csv"),
+    log:
+        logs("fetch_bid_offer_data_elexon_{bod_year}.log"),
+    script:
+        scripts("gb_model/redispatch/fetch_bid_offer_data_elexon.py")
+
+
+rule calculate_bid_offer_multipliers:
+    message:
+        "Calculate bid / offer multipliers for conventional generators"
+    params:
+        costs_config=config["costs"],
+        technology_mapping=config_provider("redispatch", "elexon", "technology_mapping"),
+    input:
+        fes_power_costs=resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
+        fes_carbon_costs=resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
+        tech_costs=Path(COSTS_DATASET["folder"])
+        / f"costs_{config['scenario']['planning_horizons'][0]}.csv",
+        bid_offer_data=expand(
+            resources("gb-model/bids_and_offers/Elexon/{bod_year}.csv"),
+            bod_year=config["redispatch"]["elexon"]["years"],
+        ),
+    output:
+        csv=resources("gb-model/{fes_scenario}/bid_offer_multipliers.csv"),
+    log:
+        logs("calculate_bid_offer_multipliers_{fes_scenario}.log"),
+    script:
+        scripts("gb_model/redispatch/calculate_bid_offer_multipliers.py")
+
+
 rule calc_interconnector_bid_offer_profile:
     message:
         "Calculate interconnector bid/offer profiles"
-    params:
-        bids_and_offers=config_provider("redispatch"),
     input:
+        bids_and_offers=resources("gb-model/{fes_scenario}/bid_offer_multipliers.csv"),
         unconstrained_result=RESULTS
         + "networks/{fes_scenario}/unconstrained_clustered/{year}.nc",
     output:
@@ -75,8 +116,6 @@ rule calc_interconnector_bid_offer_profile:
 rule prepare_constrained_network:
     message:
         "Prepare network for constrained optimization"
-    params:
-        bids_and_offers=config_provider("redispatch"),
     input:
         network=resources("networks/{fes_scenario}/composed_clustered/{year}.nc"),
         unconstrained_result=RESULTS
@@ -85,6 +124,7 @@ rule prepare_constrained_network:
         interconnector_bid_offer=resources(
             "gb-model/{fes_scenario}/interconnector_bid_offer_profile/{year}.csv"
         ),
+        bids_and_offers=resources("gb-model/{fes_scenario}/bid_offer_multipliers.csv"),
     output:
         network=resources("networks/{fes_scenario}/constrained_clustered/{year}.nc"),
     log:

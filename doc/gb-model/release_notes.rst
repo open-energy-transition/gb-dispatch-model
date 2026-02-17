@@ -13,6 +13,19 @@ Unreleased
 ==========
 
 * Allow for boundary capabilities to increase in line with outputs from an ETYS report (configurable, defaults to True) (#219).
+
+v0.2.0 (2026-02-13)
+===================
+
+This release of the GB dispatch model is configured for use with FES2024 data.
+Due to the differences in data structure compared to FES2021, it is not possible to use this version for FES years prior to 2023.
+Instead, development for <= FES2022 should branch off from v0.1.0.
+
+This version was synchronised with the upstream PyPSA-Eur repository on 2026-02-10.
+
+* Publish documentation on readthedocs.org.
+* Calculate Elexon API to calculate up-to-date Bid/Offer multipliers (#161).
+* Add BritNed as an existing interconnector in default config (#210).
 * Use correct currency (GBP, not EUR) in docs.
 * Clean SPDX copyright text where an outdated repository name was being used.
 * Add docs page detailing our dispatch/redispatch methodology (#158).
@@ -22,6 +35,7 @@ Unreleased
 * Impose nuclear capacity factor range to enforce nuclear power plant usage where it would otherwise have unrealistically low generation / high dispatchability (#201 and #202).
 * Fix storage flows in redispatch (both for the original asset and the ramp up/down assets) (#196).
 * Use `Generator` component for all ramp up/down assets to simplify optimisation problem.
+* Update to FES2024, with the side effect of fixing load shedding issues (#163, #155, #156).
 
 v0.1.0 (2026-01-23)
 ===================

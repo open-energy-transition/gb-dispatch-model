@@ -295,6 +295,7 @@ urls:
   etys_chart_data: https://www.neso.energy/document/280936/download # ETYS November 2022 (uses the NOA 2022 recommendations)
   low-carbon-contracts: https://dp.lowcarboncontracts.uk/dataset/8e8ca0d5-c774-4dc8-a079-347f1c180c0f/resource/5279a55d-4996-4b1e-ba07-f411d8fd31f0/download/actual_cfd_generation_and_avoided_ghg_emissions.csv
   eur_H2_demand_today: https://observatory.clean-hydrogen.europa.eu/sites/default/files/2025-09/Hydrogen%20demand%202024%20%28Update%202025%29.xlsx # 2024 data
+
 target_crs: "EPSG:27700"
 
 # Manual region merging configuration
@@ -1285,16 +1286,16 @@ interconnectors:
 redispatch:
   year_range_incl: [2025, 2044] # 20-year period over which we will run the simulation
   constraint_cost_extra_years: 20  # number of years to extend the constraint cost calculation beyond the final year (using the data from the final year)
-  # Source for bid and offers multipliers : https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf
-  bid_multiplier:
-    gas: 0.8
-    coal: 0.7
-    oil: 0.38
-    OCGT: 1.37
-    CCGT: 0.8 #using same value as that of gas
-  offer_multiplier:
-    gas: 1.63
-    coal: 1.56
-    oil: 4.16
-    OCGT: 1.31
-    CCGT: 1.63 #using same value as that of gas
+  elexon: # Elexon API data 
+    technology_mapping: # ignoring renewables in mapping as they come from CfD data
+      coal: coal
+      CCGT: CCGT
+      OCGT: OCGT
+      BATTERY: battery storage
+      BIOMASS: biomass
+      DIESEL: oil
+      GAS: engine
+      NUCLEAR: nuclear
+    years: [2020, 2021, 2022, 2023, 2024]
+    api_bmu_fuel_map: false # Boolean to decide source of Elexon BMU unit - fuel map, If True - data is fetched using API else uses data uploaded to the repo
+    max_concurrent_requests: 8

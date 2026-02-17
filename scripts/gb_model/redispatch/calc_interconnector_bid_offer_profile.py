@@ -353,7 +353,7 @@ def assign_bid_offer(
 
 def compose_data(
     unconstrained_result: pypsa.Network,
-    bids_and_offers_multipliers: dict[dict[str, float]],
+    bids_and_offers_multipliers_path: str,
 ):
     """
     Main composition function to process the data
@@ -362,9 +362,13 @@ def compose_data(
     ----------
     unconstrained_result: pypsa.Network
         Unconstrained optimization network
-    bids_and_offers_multipliers: dict[dict[str,float]]
-        Bid and offer multiplier to be applied for conventional generation
+    bids_and_offers_multipliers: str
+        Path to Bids and offers multipliers CSV data
     """
+    # Bids and offers multipliers
+    bids_and_offers_multipliers = pd.read_csv(
+        bids_and_offers_multipliers_path, index_col="carrier"
+    ).to_dict()
 
     # Get list of interconnectors between GB and Eur
     interconnectors = filter_interconnectors(
@@ -420,7 +424,7 @@ if __name__ == "__main__":
 
     interconnector_profile = compose_data(
         unconstrained_result=pypsa.Network(snakemake.input.unconstrained_result),
-        bids_and_offers_multipliers=snakemake.params.bids_and_offers,
+        bids_and_offers_multipliers_path=snakemake.input.bids_and_offers,
     )
 
     interconnector_profile.to_csv(snakemake.output.bid_offer_profile)
