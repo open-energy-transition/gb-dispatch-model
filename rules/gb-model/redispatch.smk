@@ -23,6 +23,37 @@ rule process_CfD_strike_prices:
         scripts("gb_model/redispatch/process_CfD_strike_prices.py")
 
 
+rule extract_etys_boundary_capabilities:
+    message:
+        "Extract boundary capability data from ETYS PDF report"
+    input:
+        pdf_report="data/gb-model/downloaded/etys.pdf",
+        boundaries="data/gb-model/downloaded/gb-etys-boundaries.zip",
+    output:
+        csv=resources("gb-model/etys_boundary_capabilities.csv"),
+    log:
+        logs("extract_etys_boundary_capabilities.log"),
+    script:
+        scripts("gb_model/redispatch/extract_etys_boundary_capabilities.py")
+
+
+rule prepare_future_etys_caps:
+    message:
+        "Prepare future ETYS boundary capabilities for {wildcards.fes_scenario} scenario"
+    params:
+        sheet_name=config_provider("etys", "future_capacities_sheet_name"),
+        year_range=config_provider("redispatch", "year_range_incl"),
+    input:
+        current_caps=resources("gb-model/etys_boundary_capabilities.csv"),
+        future_caps="data/gb-model/downloaded/etys_chart_data.xlsx",
+    output:
+        csv=resources("gb-model/{fes_scenario}/future_etys_boundary_capabilities.csv"),
+    log:
+        logs("prepare_future_etys_caps_{fes_scenario}.log"),
+    script:
+        scripts("gb_model/redispatch/prepare_future_etys_caps.py")
+
+
 rule fetch_bid_offer_data_elexon:
     message:
         "Get bid/offer data from Elexon"
@@ -111,11 +142,16 @@ rule solve_constrained:
         ),
         custom_extra_functionality=Path(workflow.snakefile).parent
         / scripts("gb_model/redispatch/custom_constraints.py"),
-        etys_boundaries_to_lines=config["region_operations"]["etys_boundaries_lines"],
-        etys_boundaries_to_links=config["region_operations"]["etys_boundaries_links"],
+        etys_boundaries_to_lines=config_provider("etys", "boundaries_lines"),
+        etys_boundaries_to_links=config_provider("etys", "boundaries_links"),
     input:
         network=resources("networks/{fes_scenario}/constrained_clustered/{year}.nc"),
-        etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),
+        current_etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),
+        future_etys_caps=(
+            resources("gb-model/{fes_scenario}/future_etys_boundary_capabilities.csv")
+            if config["etys"]["use_future_capacities"]
+            else []
+        ),
     output:
         network=RESULTS + "networks/{fes_scenario}/constrained_clustered/{year}.nc",
         config=RESULTS

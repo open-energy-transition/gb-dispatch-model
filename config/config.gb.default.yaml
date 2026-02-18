@@ -292,6 +292,7 @@ urls:
   gsp-coordinates: https://api.neso.energy/dataset/963525d6-5d83-4448-a99c-663f1c76330a/resource/21c2b09c-24ff-4837-a3b1-b6aea88f8124/download/fes2024_regional_breakdown_gsp_info.csv
   eur-supply-table: https://api.neso.energy/dataset/bd83ce0b-7b1e-4ff2-89e8-12d524c34d99/resource/7902b197-ada0-47ae-bd2e-db566a8d0fab/download/fes2024_es2_v001.csv
   etys: https://www.neso.energy/document/286591/download # ETYS November 2023
+  etys_chart_data: https://www.neso.energy/document/280936/download # ETYS November 2022 (uses the NOA 2022 recommendations)
   low-carbon-contracts: https://dp.lowcarboncontracts.uk/dataset/8e8ca0d5-c774-4dc8-a079-347f1c180c0f/resource/5279a55d-4996-4b1e-ba07-f411d8fd31f0/download/actual_cfd_generation_and_avoided_ghg_emissions.csv
   eur_H2_demand_today: https://observatory.clean-hydrogen.europa.eu/sites/default/files/2025-09/Hydrogen%20demand%202024%20%28Update%202025%29.xlsx # 2024 data
 
@@ -421,7 +422,11 @@ region_operations:
   add_group_to_neighbour:
     IE: ["GB 30"]
 
-  etys_boundaries_lines:
+etys:
+  # ETYS2024 chart data has two valid sheets that can be selected
+  future_capacities_sheet_name: ETYS 2022 Chart Data
+  use_future_capacities: true
+  boundaries_lines:
     B3b:
     - bus0: 28
       bus1: 25
@@ -561,7 +566,7 @@ region_operations:
     NW1:
     - bus0: 22
       bus1: 31
-  etys_boundaries_links:
+  boundaries_links:
     B6:
     - bus0: 23
       bus1: 17
