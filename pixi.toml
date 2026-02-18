@@ -169,6 +169,11 @@ gb-test = """
 	snakemake gb_all -n --configfile config/config.gb.etys-subset.yaml &&
 	echo "All GB tests completed successfully."
     """
+[feature.gb-model.tasks.gb_all]
+args = [
+    {"arg" = "snakemake_options", "default" = "--cores all"},
+    ]
+cmd = "snakemake gb_all {{ snakemake_options }}"
 
 [feature.gb-model.dependencies]
 curl = ">=8.17.0"
