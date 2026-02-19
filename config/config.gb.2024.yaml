@@ -97,7 +97,24 @@ conventional:
     max_annual_capacity_factor: 1
     min_annual_capacity_factor: 0.50
 
-costs:
+fes_costs:
+  sheet-config:
+    AS.7 (Carbon Cost):
+      usecols: "A:AG"
+      skiprows: 6
+      index_col: [0, 1]
+      header: 0
+      rename:
+        columns: year
+
+    AS.1 (Power Gen):
+      usecols: "A:AK"
+      skiprows: 6
+      index_col: [0, 1, 2, 3, 4, 5]
+      header: 0
+      rename:
+        columns: year
+
   GBP_to_EUR: 1.1632 # average in 2021: https://www.exchangerates.org.uk/GBP-EUR-spot-exchange-rates-history-2021.html#:~:text=This%20is%20the%20British%20Pound,rate%20in%202021%3A%201.1632%20EUR.
   GBP_to_USD: 1.3757 # average in 2021: https://www.exchangerates.org.uk/GBP-USD-spot-exchange-rates-history-2021.html#:~:text=Average%20exchange%20rate%20in%202021,USD%20on%2008%20Dec%202021.
   relevant_cost_columns: ["CO2 intensity", "VOM", "FOM", "investment", "efficiency", "lifetime", "discount rate", "fuel"]
@@ -290,9 +307,8 @@ urls:
   fes-costing-workbook: https://www.neso.energy/document/181961/download
   dukes-5.11: https://assets.publishing.service.gov.uk/media/688cb64ee8ba9507fc1b0953/DUKES_5.11.xlsx
   gsp-coordinates: https://api.neso.energy/dataset/963525d6-5d83-4448-a99c-663f1c76330a/resource/21c2b09c-24ff-4837-a3b1-b6aea88f8124/download/fes2024_regional_breakdown_gsp_info.csv
-  eur-supply-table: https://api.neso.energy/dataset/bd83ce0b-7b1e-4ff2-89e8-12d524c34d99/resource/7902b197-ada0-47ae-bd2e-db566a8d0fab/download/fes2024_es2_v001.csv
   etys: https://www.neso.energy/document/286591/download # ETYS November 2023
-  etys_chart_data: https://www.neso.energy/document/280936/download # ETYS November 2022 (uses the NOA 2022 recommendations)
+  etys-chart-data: https://www.neso.energy/document/280936/download # ETYS November 2022 (uses the NOA 2022 recommendations)
   low-carbon-contracts: https://dp.lowcarboncontracts.uk/dataset/8e8ca0d5-c774-4dc8-a079-347f1c180c0f/resource/5279a55d-4996-4b1e-ba07-f411d8fd31f0/download/actual_cfd_generation_and_avoided_ghg_emissions.csv
   eur_H2_demand_today: https://observatory.clean-hydrogen.europa.eu/sites/default/files/2025-09/Hydrogen%20demand%202024%20%28Update%202025%29.xlsx # 2024 data
 
@@ -586,7 +602,7 @@ entsoe_unavailability:
   business_types: ["planned", "forced"]  # planned maintenance and forced outages
   max_request_days: 366  # Maximum days per API request to avoid timeouts
   max_unavailable_days: 366 # Maximum days to consider an outage in availability profile generation.
-  entsoe_carrier_mapping:
+  carrier_mapping:
     Biomass: biomass
     Fossil Lignite: lignite
     Fossil Gas: CCGT
@@ -703,85 +719,6 @@ grid_supply_points:
     Port Ham: # Substation lat/lon from openinframap
       Latitude: 51.87165
       Longitude: -2.26621
-fes-sheet-config:
-  BB1:
-    usecols: "A:C,E,G:AH" # Ignore columns: "Share of GSP" (empty), "DNO License Area"
-    skiprows: 0
-    index_col: [0, 1, 2, 3]
-    header: 0
-    rename:
-      columns: year
-
-  # Annual H2 demand, production & storage across all sectors
-  WS1:
-    usecols: "A:AM"
-    skiprows: 7
-    index_col: [0, 1, 2, 3, 4, 5, 6, 7]
-    header: 0
-    rename:
-      columns: year
-
-  # Annual flexibility data for 2021-2050
-  FLX1:
-    usecols: "E:AM"
-    skiprows: 6
-    index_col: [0, 1, 2, 3, 4]
-    header: 0
-    rename:
-      columns: year
-
-  # Annual unmanaged EV charging demand peak 2020-2050
-  ED5:
-    usecols: "D:AM"
-    skiprows: 4
-    index_col: [0, 1, 2, 3, 4]
-    header: 0
-    rename:
-      columns: year
-
-  BB2:
-    usecols: "A:E"
-    skiprows: 2
-    index_col: [0, 1, 3]
-    header: 0
-    rename:
-      columns: Parameter
-
-  # heat technology uptake trends
-  ED3:
-    usecols: "C:AM"
-    skiprows: 4
-    index_col: [0, 1, 2, 3, 4, 5]
-    header: 0
-    rename:
-      columns: year
-
-  # European data
-  ES2:
-    usecols: "E:AM"
-    skiprows: 9
-    index_col: [0, 1, 2, 3, 4, 5, 6]
-    header: 0
-    rename:
-      columns: year
-fes-costing-sheet-config:
-
-  AS.7 (Carbon Cost):
-    usecols: "A:AG"
-    skiprows: 6
-    index_col: [0, 1]
-    header: 0
-    rename:
-      columns: year
-
-  AS.1 (Power Gen):
-    usecols: "A:AK"
-    skiprows: 6
-    index_col: [0, 1, 2, 3, 4, 5]
-    header: 0
-    rename:
-      columns: year
-
 fes:
   fes_year: 2024
   scenario_mapping:
@@ -790,6 +727,68 @@ fes:
     EE: Electric Engagement
     HE: Hydrogen Evolution
   default_set: PP
+  sheet-config:
+    BB1:
+      usecols: "A:C,E,G:AH" # Ignore columns: "Share of GSP" (empty), "DNO License Area"
+      skiprows: 0
+      index_col: [0, 1, 2, 3]
+      header: 0
+      rename:
+        columns: year
+
+    # Annual H2 demand, production & storage across all sectors
+    WS1:
+      usecols: "A:AM"
+      skiprows: 7
+      index_col: [0, 1, 2, 3, 4, 5, 6, 7]
+      header: 0
+      rename:
+        columns: year
+
+    # Annual flexibility data for 2021-2050
+    FLX1:
+      usecols: "E:AM"
+      skiprows: 6
+      index_col: [0, 1, 2, 3, 4]
+      header: 0
+      rename:
+        columns: year
+
+    # Annual unmanaged EV charging demand peak 2020-2050
+    ED5:
+      usecols: "D:AM"
+      skiprows: 4
+      index_col: [0, 1, 2, 3, 4]
+      header: 0
+      rename:
+        columns: year
+
+    BB2:
+      usecols: "A:E"
+      skiprows: 2
+      index_col: [0, 1, 3]
+      header: 0
+      rename:
+        columns: Parameter
+
+    # heat technology uptake trends
+    ED3:
+      usecols: "C:AM"
+      skiprows: 4
+      index_col: [0, 1, 2, 3, 4, 5]
+      header: 0
+      rename:
+        columns: year
+
+    # European data
+    ES2:
+      usecols: "E:AM"
+      skiprows: 9
+      index_col: [0, 1, 2, 3, 4, 5, 6]
+      header: 0
+      rename:
+        columns: year
+
   gb:
     carrier_mapping:
       # Mapping undertaken in different columns for different carriers
@@ -1286,7 +1285,7 @@ interconnectors:
 redispatch:
   year_range_incl: [2025, 2044] # 20-year period over which we will run the simulation
   constraint_cost_extra_years: 20  # number of years to extend the constraint cost calculation beyond the final year (using the data from the final year)
-  elexon: # Elexon API data 
+  elexon: # Elexon API data
     technology_mapping: # ignoring renewables in mapping as they come from CfD data
       coal: coal
       CCGT: CCGT
@@ -1298,4 +1297,4 @@ redispatch:
       NUCLEAR: nuclear
     years: [2020, 2021, 2022, 2023, 2024]
     api_bmu_fuel_map: false # Boolean to decide source of Elexon BMU unit - fuel map, If True - data is fetched using API else uses data uploaded to the repo
-    max_concurrent_requests: 8
+    max_concurrent_requests: 2

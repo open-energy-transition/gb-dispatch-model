@@ -72,7 +72,7 @@ rule extract_fes_workbook_sheet:
     output:
         csv=resources("gb-model/fes/{fes_sheet}.csv"),
     params:
-        sheet_extract_config=lambda wildcards: config["fes-sheet-config"][
+        sheet_extract_config=lambda wildcards: config["fes"]["sheet-config"][
             wildcards.fes_sheet
         ],
     log:
@@ -100,7 +100,7 @@ use rule extract_fes_workbook_sheet as extract_fes_costing_workbook_sheet with:
     output:
         csv=resources("gb-model/fes-costing/{fes_sheet}.csv"),
     params:
-        sheet_extract_config=lambda wildcards: config["fes-costing-sheet-config"][
+        sheet_extract_config=lambda wildcards: config["fes_costs"]["sheet-config"][
             wildcards.fes_sheet
         ],
     log:

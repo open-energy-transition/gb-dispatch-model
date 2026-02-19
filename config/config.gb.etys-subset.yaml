@@ -102,7 +102,8 @@ region_operations:
   add_group_to_neighbour:
     IE: ["GB NI"]
 
-  etys_boundaries_lines:
+etys:
+  boundaries_lines:
     B3b:
     - bus0: B3b
       bus1: B4-B2-B3b
@@ -208,7 +209,7 @@ region_operations:
     NW1:
     - bus0: NW1
       bus1: NW2-NW1
-  etys_boundaries_links:
+  boundaries_links:
     B6:
     - bus0: B6-B5
       bus1: B8-NW3-B7a
@@ -218,13 +219,3 @@ region_operations:
     B0:
     - bus0: B0
       bus1: B1a-B0
-  # These are manually selected spurious lines originating from not removing stubs earlier
-  prune_lines:
-  - bus0: B8-NW3-B7a
-    bus1: EC5
-  - bus0: EC5
-    bus1: SC3-SC2
-  - bus0: B0
-    bus1: B2-B1a
-  - bus0: LE1-B14-SC3-SC1.5
-    bus1: SC1.5-B13-LE1
