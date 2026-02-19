@@ -92,18 +92,6 @@ rule compose_network:
         scripts("gb_model/compose_network.py")
 
 
-rule compose_all:
-    input:
-        expand(
-            resources("networks/{fes_scenario}/composed_clustered/{year}.nc"),
-            fes_scenario=config["fes"]["scenario_mapping"].keys(),
-            year=range(
-                config["redispatch"]["year_range_incl"][0],
-                config["redispatch"]["year_range_incl"][0] + 1,
-            ),
-        ),
-
-
 rule gb_all:
     input:
         expand(

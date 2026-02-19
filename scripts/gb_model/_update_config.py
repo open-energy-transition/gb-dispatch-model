@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
+#
+# SPDX-License-Identifier: MIT
+
+
 from collections.abc import Hashable
 from typing import Annotated, Any, Literal, Self, TypeVar, Union
 

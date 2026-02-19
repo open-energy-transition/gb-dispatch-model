@@ -13,8 +13,11 @@ SPDX-License-Identifier = "LicenseRef-BMRS"
 [[annotations]]
 path = [
     "doc/gb-model/**",
-    "data/gb-model/custom_busmap/*.csv"
+    "data/gb-model/custom_busmap/*.csv",
+    "config/config.default.gb.yaml",
+    "config/schema.default.gb.json"
 ]
+
 SPDX-FileCopyrightText = "gb-dispatch-model contributors"
 SPDX-License-Identifier = "CC-BY-4.0"
 
