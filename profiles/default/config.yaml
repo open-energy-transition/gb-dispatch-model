@@ -9,3 +9,5 @@ logger: pypsa
 cores: 1
 storage-http-max-requests-per-second: 2
 keep-storage-local-copies: true
+resources:
+  parallel_elexon_download: 1
