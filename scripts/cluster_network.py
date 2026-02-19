@@ -689,8 +689,10 @@ if __name__ == "__main__":
                 logger.info(
                     f"Replaced {len(overlapping_indices)} entries in custom busmap from {snakemake.input.custom_busmap}"
                 )
-                assert len(overlapping_indices) == len(custom_gb_busmap), (
-                    "Some buses in the custom gb busmap do not exist in the network."
+                assert (
+                    diff := custom_gb_busmap.index.difference(overlapping_indices)
+                ).empty, (
+                    f"Some buses in the custom gb busmap do not exist in the network: {diff.tolist()}"
                 )
 
                 bus_to_country = custom_shapes.set_index("name").country.to_dict()

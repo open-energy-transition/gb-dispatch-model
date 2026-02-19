@@ -1300,12 +1300,14 @@ def compose_network(
     attach_conventional_generators(
         network,
         costs,
-        ppl.assign(),
+        ppl,
         conventional_carriers,
         extendable_carriers={"Generator": []},
+        renewable_carriers=set(electricity_config["renewable_carriers"]),
         conventional_params={},
         conventional_inputs={},
         unit_commitment=None,
+        fuel_price=None,
     )
 
     # Add simplified CHP constraints if enabled
