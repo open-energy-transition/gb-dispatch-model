@@ -52,7 +52,10 @@ async def fetch_api_request_data(
                     json_data = await response.json()
 
                     # Convert JSON data to Dataframe
-                    df = pd.DataFrame(json_data.get("data", []))
+                    if isinstance(json_data, dict):
+                        df = pd.DataFrame(json_data.get("data", []))
+                    elif isinstance(json_data, list):
+                        df = pd.DataFrame(json_data)
 
                     break  # Exit retry loop if successful
 
@@ -90,7 +93,7 @@ async def get_historical_bod(
 
     current = start
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         while current <= end:
             # There are 48 settlement periods per day - every 30 mins
             for settlement_period in np.arange(1, 49):
@@ -137,7 +140,7 @@ async def get_historical_bod(
     return df_bod_mean
 
 
-def fetch_BM_units(
+async def fetch_BM_units(
     base_url: str,
     technology_mapping: dict[str, str],
     bmu_fuel_map_path: str,
@@ -163,7 +166,10 @@ def fetch_BM_units(
         url = f"{base_url}/reference/bmunits/all"
 
         # Fetch BM unit data
-        df_bmu = fetch_api_request_data(url, retrieval_message="BMU Unit Data")
+        async with aiohttp.ClientSession(trust_env=True) as session:
+            df_bmu = await fetch_api_request_data(
+                url, retrieval_message="BMU Unit Data", session=session
+            )
     else:
         df_bmu = pd.read_excel(bmu_fuel_map_path).rename(
             columns={"NESO BMU ID": "nationalGridBmUnit", "REG FUEL TYPE": "fuelType"}
@@ -195,14 +201,21 @@ if __name__ == "__main__":
 
     # tune if HTTP 429 error occurs
     max_concurrent_requests = int(snakemake.params.max_concurrent_requests)
+    logger.info(
+        "N concurrent requests set to %d. "
+        "Tune this parameter if you encounter HTTP 429 errors.",
+        max_concurrent_requests,
+    )
     global SEM
     SEM = asyncio.Semaphore(max_concurrent_requests)
 
-    bmu_carrier_map = fetch_BM_units(
-        base_url,
-        technology_mapping=snakemake.params.technology_mapping,
-        bmu_fuel_map_path=snakemake.input.bmu_fuel_map_path,
-        api_bmu_fuel_map=snakemake.params.api_bmu_fuel_map,
+    bmu_carrier_map = asyncio.run(
+        fetch_BM_units(
+            base_url,
+            technology_mapping=snakemake.params.technology_mapping,
+            bmu_fuel_map_path=snakemake.input.bmu_fuel_map_path,
+            api_bmu_fuel_map=snakemake.params.api_bmu_fuel_map,
+        )
     )
 
     df_bod = asyncio.run(

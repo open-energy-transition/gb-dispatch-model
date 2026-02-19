@@ -7,6 +7,10 @@ Boundary constrained redispatch run rules.
 """
 
 
+localrules:
+    fetch_bid_offer_data_elexon,
+
+
 rule process_CfD_strike_prices:
     message:
         "get strike price for low carbon contracts"
@@ -68,7 +72,8 @@ rule fetch_bid_offer_data_elexon:
     output:
         csv=resources("gb-model/bids_and_offers/Elexon/{bod_year}.csv"),
     resources:
-        elexon=1
+        # Used to avoid the same rule running simultaneously (and exceeding max concurrent requests).
+        parallel_elexon_download=1,
     log:
         logs("fetch_bid_offer_data_elexon_{bod_year}.log"),
     script:

@@ -27,8 +27,9 @@ def limit_annual_nuclear_operation(n, snapshots, snakemake):
     min_annual_cf = snakemake.params.nuclear_min_annual_capacity_factor
     nuclear_generators = n.generators[n.generators.carrier == "nuclear"].index
     total_generation = (
-        n.model["Generator-p"].sel(name=nuclear_generators).sum("snapshot")
-    )
+        n.model["Generator-p"].sel(name=nuclear_generators)
+        * n.snapshot_weightings["generators"].to_xarray()
+    ).sum("snapshot")
     max_generation = (
         n.generators.loc[nuclear_generators, "p_nom"]
         .rename_axis(index="name")

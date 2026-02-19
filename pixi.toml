@@ -177,6 +177,7 @@ python-dotenv = ">=1.2.1"
 gurobi = "<13.0"
 shapely = ">=2.1"
 pypsa = ">=1.0.7"
+libabseil = "<20260107" # revert once https://github.com/grpc/grpc/issues/41672 is closed
 
 [feature.gb-model.pypi-dependencies]
 pdfplumber = "==0.9.0"
