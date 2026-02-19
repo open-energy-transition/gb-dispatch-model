@@ -7,6 +7,10 @@ Boundary constrained redispatch run rules.
 """
 
 
+localrules:
+    fetch_bid_offer_data_elexon,
+
+
 rule process_CfD_strike_prices:
     message:
         "get strike price for low carbon contracts"
