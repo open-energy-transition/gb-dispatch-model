@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Fix interconnector capacity plan to align with FES2024 results (with high degree of subjectivity on project choice) (#232).
 * Fix reaching Elexon API request limit when running snakemake with multiple cores by forcing all cores to be used for the data fetching rule.
 * Adding `async` for API request that fetches the mapping of Elexon BMU units to a fueltype (#225).
 * Allow for boundary capabilities to increase in line with outputs from an ETYS report (configurable, defaults to True) (#219).
