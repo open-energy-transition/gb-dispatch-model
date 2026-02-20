@@ -30,6 +30,7 @@ rule compose_network:
         dsr_hours_dict=config["fes"]["gb"]["flexibility"]["dsr_hours"],
         load_bus_suffixes=config["fes"]["gb"]["demand"]["bus_suffix"],
         flex_carrier_suffixes=config["fes"]["gb"]["flexibility"]["carrier_suffix"],
+        time_aggregation=config["time_aggregation"],
     input:
         unpack(input_profile_tech),
         demands=expand(
