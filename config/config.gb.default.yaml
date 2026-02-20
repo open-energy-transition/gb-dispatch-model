@@ -43,7 +43,7 @@ atlite:
 data:
   osm:
     source: archive
-    version: "0.7"
+    version: "2026.02"
 
 energy:
   energy_totals_year: 2013
