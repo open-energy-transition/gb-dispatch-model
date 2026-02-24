@@ -123,6 +123,8 @@ rule calc_interconnector_bid_offer_profile:
 rule prepare_constrained_network:
     message:
         "Prepare network for constrained optimization"
+    params:
+        unconstrain_lines_and_links=config["redispatch"]["unconstrain_lines_and_links"],
     input:
         network=resources("networks/{fes_scenario}/composed_clustered/{year}.nc"),
         unconstrained_result=RESULTS

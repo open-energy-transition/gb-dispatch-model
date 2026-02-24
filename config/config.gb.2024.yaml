@@ -1314,6 +1314,7 @@ interconnectors:
 redispatch:
   year_range_incl: [2025, 2044] # 20-year period over which we will run the simulation
   constraint_cost_extra_years: 20  # number of years to extend the constraint cost calculation beyond the final year (using the data from the final year)
+  unconstrain_lines_and_links: true # Set s_nom (p_nom) to infinity for lines and links of GB to make sure boundary capabilities are bounding, not physical line limits.
   elexon: # Elexon API data
     technology_mapping: # ignoring renewables in mapping as they come from CfD data
       coal: coal

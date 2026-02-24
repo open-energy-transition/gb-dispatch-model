@@ -13,6 +13,7 @@ Unreleased
 ==========
 
 * Add config validation and associated documentation for the additional configuration required for the gb-dispatch-model (#235).
+* Set line capacities to large number for constrained network to make sure only boundary capabilities are limiting (#241).
 * New config option to enable aggregating the PyPSA network time dimensions, to reduce solve times (#229).
 * Created new OSM pre-built network, available at https://zenodo.org/records/18712831, to include updates made in upstream PyPSA-Eur (incl. ignoring unbuilt lines) (#237).
 * Fix reaching Elexon API request limit when running snakemake with multiple cores by forcing all cores to be used for the data fetching rule.
