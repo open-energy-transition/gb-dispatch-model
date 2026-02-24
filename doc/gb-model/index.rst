@@ -16,9 +16,12 @@ gb-dispatch-model is an extension of `PyPSA-Eur <../pypsa_eur.html>`_., used to 
 Quick start
 ===========
 
-You can run the full workflow by calling:
+First, follow our :ref:`installation steps <gb_installation>`.
+
+You can then run the full workflow by calling:
 
 .. code:: bash
+
    pixi run model
 
 This will run all the data processing and dispatch (unconstrained) + redispatch (constrained) optimisation steps using the default GB configuration.
@@ -27,12 +30,16 @@ The optimisation steps are the most resource intensive parts of the process.
 To run only the data processing steps, call:
 
 .. code:: bash
+
    pixi run compose_networks
 
 To run the optimisation steps but with a simplified network (namely, with a coarser time dimension to create a smaller optimisation problem), call:
 
 .. code:: bash
+
    pixi run model --configfile 'config/config.gb.time-segment.yaml'
+
+You can further aggregate the time dimension by updating the content of ``config/config.gb.time-segment.yaml``, considering the available `PyPSA options <https://docs.pypsa.org/latest/examples/time-series-aggregation>`_.
 
 Workflow
 ========
