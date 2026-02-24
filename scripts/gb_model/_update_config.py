@@ -763,11 +763,9 @@ class GBConfigUpdater(ConfigUpdater):
             "time_aggregation": (
                 list[TimeAggregationConfig],
                 Field(
-                    description="""
-                List of time aggregation configurations to apply sequentially.
-                If multiple configurations are provided, they will be applied in the order they appear in the list.
-                See `PyPSA documentation <https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal>`_ for details on the available time aggregation methods and their parameters.
-                """,
+                    description="List of time aggregation configurations to apply sequentially. "
+                    "If multiple configurations are provided, they will be applied in the order they appear in the list. "
+                    "See `PyPSA documentation <https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal>`_ for details on the available time aggregation methods and their parameters.",
                     default_factory=list,
                 ),
             ),

@@ -2265,6 +2265,16 @@
           "description": "Whether to use future boundary capacities (a.k.a. capabilities) from ETYS chart data, instead of today's capacities.",
           "type": "boolean"
         },
+        "manual_future_capacities": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "description": "Manual future boundary capacities, to fill gaps in the ETYS chart data, if necessary. Top-level key is the boundary name, then key-value pairs of year and capacity in MW.",
+          "type": "object"
+        },
         "boundaries_lines": {
           "additionalProperties": {
             "items": {
@@ -7318,6 +7328,29 @@
         }
       }
     },
+    "TimeAggregationConfig": {
+      "additionalProperties": false,
+      "description": "Time aggregation configuration.",
+      "properties": {
+        "method": {
+          "description": "Time aggregation method to use, of those available in PyPSA.",
+          "enum": [
+            "segment",
+            "downsample",
+            "resample"
+          ],
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "description": "Parameters for given PyPSA time aggregation method.",
+          "type": "object"
+        }
+      },
+      "required": [
+        "method"
+      ]
+    },
     "TransformersConfig": {
       "description": "Configuration for `transformers` settings.",
       "properties": {
@@ -9988,7 +10021,8 @@
     }
   },
   "additionalProperties": true,
-  "description": "Combined configuration schema for PyPSA-EUR.\n\n\nIncludes additional GB-specific configuration sections:\n- `fes_costs`: GB-specific cost configuration.\n- `low_carbon_register`: Low carbon register configuration.\n- `chp`: Simplified CHP configuration for GB model.\n- `urls`: URLs for GB data sources.\n- `target_crs`: Target coordinate reference system (e.g., EPSG:27700)\n- `region_operations`: Manual region merging and splitting configuration.\n- `etys`: Configuration for ETYS boundaries.\n- `entsoe_unavailability`: ENTSO-E unavailability data configuration.\n- `transmission_availability`: Transmission availability configuration.\n- `dukes_5_11`: DUKES 5.11 data configuration\n- `grid_supply_points`: Grid supply points configuration.\n- `fes`: Future Energy Scenarios (FES) configuration.\n- `ev`: Electric vehicle configuration.\n- `interconnectors`: Interconnectors configuration.\n- `redispatch`: Redispatch config.",
+  "description": "Combined configuration schema for PyPSA-EUR.\n\n\nIncludes additional GB-specific configuration sections:\n- `fes_costs`: GB-specific cost configuration.\n- `low_carbon_register`: Low carbon register configuration.\n- `chp`: Simplified CHP configuration for GB model.\n- `urls`: URLs for GB data sources.\n- `target_crs`: Target coordinate reference system (e.g., EPSG:27700)\n- `region_operations`: Manual region merging and splitting configuration.\n- `etys`: Configuration for ETYS boundaries.\n- `entsoe_unavailability`: ENTSO-E unavailability data configuration.\n- `transmission_availability`: Transmission availability configuration.\n- `dukes_5_11`: DUKES 5.11 data configuration\n- `grid_supply_points`: Grid supply points configuration.\n- `fes`: Future Energy Scenarios (FES) configuration.\n- `ev`: Electric vehicle configuration.\n- `interconnectors`: Interconnectors configuration.\n- `redispatch`: Redispatch config.\n- `time_aggregation`: List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See `PyPSA documentation <https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal>`_ for details on the available time aggregation methods and their parameters.",
+  "markdownDescription": "Combined configuration schema for PyPSA-EUR.\n\n\nIncludes additional GB-specific configuration sections:\n- `fes_costs`: GB-specific cost configuration.\n- `low_carbon_register`: Low carbon register configuration.\n- `chp`: Simplified CHP configuration for GB model.\n- `urls`: URLs for GB data sources.\n- `target_crs`: Target coordinate reference system (e.g., EPSG:27700)\n- `region_operations`: Manual region merging and splitting configuration.\n- `etys`: Configuration for ETYS boundaries.\n- `entsoe_unavailability`: ENTSO-E unavailability data configuration.\n- `transmission_availability`: Transmission availability configuration.\n- `dukes_5_11`: DUKES 5.11 data configuration\n- `grid_supply_points`: Grid supply points configuration.\n- `fes`: Future Energy Scenarios (FES) configuration.\n- `ev`: Electric vehicle configuration.\n- `interconnectors`: Interconnectors configuration.\n- `redispatch`: Redispatch config.\n- `time_aggregation`: List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See [PyPSA documentation ](https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal) for details on the available time aggregation methods and their parameters.",
   "properties": {
     "version": {
       "default": "v2025.07.0",
@@ -15956,6 +15990,16 @@
           "description": "Whether to use future boundary capacities (a.k.a. capabilities) from ETYS chart data, instead of today's capacities.",
           "type": "boolean"
         },
+        "manual_future_capacities": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "description": "Manual future boundary capacities, to fill gaps in the ETYS chart data, if necessary. Top-level key is the boundary name, then key-value pairs of year and capacity in MW.",
+          "type": "object"
+        },
         "boundaries_lines": {
           "additionalProperties": {
             "items": {
@@ -16773,6 +16817,34 @@
           }
         }
       }
+    },
+    "time_aggregation": {
+      "description": "List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See `PyPSA documentation <https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal>`_ for details on the available time aggregation methods and their parameters.",
+      "markdownDescription": "List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See [PyPSA documentation ](https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal) for details on the available time aggregation methods and their parameters.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Time aggregation configuration.",
+        "properties": {
+          "method": {
+            "description": "Time aggregation method to use, of those available in PyPSA.",
+            "enum": [
+              "segment",
+              "downsample",
+              "resample"
+            ],
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "description": "Parameters for given PyPSA time aggregation method.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "method"
+        ]
+      },
+      "type": "array"
     }
   },
   "title": "PyPSA-Eur Configuration",

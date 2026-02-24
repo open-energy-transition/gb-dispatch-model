@@ -278,3 +278,19 @@ To use your custom configuration file, you need to pass it to the ``snakemake`` 
    :language: yaml
    :start-after: # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#redispatch
    :end-before: # docs
+
+
+``time_aggregation``
+===============================
+
+.. jsonschema:: ../../config/schema.default.gb.json#/properties/time_aggregation
+   :lift_description:
+   :hide_key: /**/additionalProperties
+
+**YAML Syntax**
+
+.. literalinclude:: ../../config/config.default.gb.yaml
+   :language: yaml
+   :start-after: # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#time_aggregation
+   :end-before: # docs
+

@@ -1511,6 +1511,7 @@ region_operations:
 etys:
   future_capacities_sheet_name: ETYS 2022 Chart Data
   use_future_capacities: true
+  manual_future_capacities: {}
   boundaries_lines: {}
   boundaries_links: {}
 
@@ -1608,3 +1609,6 @@ redispatch:
     years: []
     api_bmu_fuel_map: false
     max_concurrent_requests: 4
+
+# docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#time_aggregation
+time_aggregation: []
