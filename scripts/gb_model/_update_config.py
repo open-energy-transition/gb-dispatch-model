@@ -218,6 +218,10 @@ class ETYSConfig(GBBaseConfig):
         description="Whether to use future boundary capacities (a.k.a. capabilities) from ETYS chart data, instead of today's capacities.",
         default=True,
     )
+    manual_future_capacities: dict[str, dict[int, float]] = Field(
+        description="Manual future boundary capacities, to fill gaps in the ETYS chart data, if necessary. Top-level key is the boundary name, then key-value pairs of year and capacity in MW.",
+        default_factory=dict,
+    )
 
     boundaries_lines: dict[str, list[ETYSBoundaryLineConfig]] = Field(
         default_factory=dict,
@@ -652,6 +656,18 @@ class RedispatchConfig(GBBaseConfig):
         return v
 
 
+class TimeAggregationConfig(GBBaseConfig):
+    """Time aggregation configuration."""
+
+    method: Literal["segment", "downsample", "resample"] = Field(
+        description="Time aggregation method to use, of those available in PyPSA."
+    )
+    parameters: dict = Field(
+        description="Parameters for given PyPSA time aggregation method.",
+        default_factory=dict,
+    )
+
+
 class GBConfigUpdater(ConfigUpdater):
     name: str = "gb"
 
@@ -744,6 +760,17 @@ class GBConfigUpdater(ConfigUpdater):
             "ev": EVConfig,
             "interconnectors": InterconnectorsConfig,
             "redispatch": RedispatchConfig,
+            "time_aggregation": (
+                list[TimeAggregationConfig],
+                Field(
+                    description="""
+                List of time aggregation configurations to apply sequentially.
+                If multiple configurations are provided, they will be applied in the order they appear in the list.
+                See `PyPSA documentation <https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal>`_ for details on the available time aggregation methods and their parameters.
+                """,
+                    default_factory=list,
+                ),
+            ),
         }
         new_sections_processed = {
             k: v
