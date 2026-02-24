@@ -40,10 +40,14 @@ def set_boundary_constraints(
     # If future ETYS caps are provided, use them instead of initial levels,
     # gap filling with initial levels where future caps are missing.
     if snakemake.input.future_etys_caps:
+        year = int(snakemake.wildcards.year)
         future_caps = pd.read_csv(
             snakemake.input.future_etys_caps, index_col=["boundary_name", "year"]
-        ).capability_mw.xs(int(snakemake.wildcards.year), level="year")
-        etys_capacities_all_boundaries = future_caps.reindex(etys_capacities.index)
+        ).capability_mw.xs(year, level="year")
+        manual_caps = pd.DataFrame(snakemake.params.manual_future_etys_caps).loc[year]
+        etys_capacities_all_boundaries = pd.concat([future_caps, manual_caps]).reindex(
+            etys_capacities.index
+        )
         if (isna := etys_capacities_all_boundaries.isna()).any():
             logger.warning(
                 f"Future ETYS capacities are missing for some boundaries: "

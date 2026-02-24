@@ -151,6 +151,11 @@ rule solve_constrained:
         / scripts("gb_model/redispatch/custom_constraints.py"),
         etys_boundaries_to_lines=config_provider("etys", "boundaries_lines"),
         etys_boundaries_to_links=config_provider("etys", "boundaries_links"),
+        manual_future_etys_caps=(
+            config_provider("etys", "manual_future_capacities")
+            if config["etys"]["use_future_capacities"]
+            else {}
+        ),
     input:
         network=resources("networks/{fes_scenario}/constrained_clustered/{year}.nc"),
         current_etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),
