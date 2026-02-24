@@ -187,7 +187,7 @@ curl = ">=8.17.0"
 python-dotenv = ">=1.2.1"
 gurobi = "<13.0"
 shapely = ">=2.1"
-pypsa = ">=1.0.7"
+pypsa = ">=1.1.0"
 libabseil = "<20260107" # revert once https://github.com/grpc/grpc/issues/41672 is closed
 
 [feature.gb-model.pypi-dependencies]

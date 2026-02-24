@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
+#
+# SPDX-License-Identifier: CC0-1.0
+
+# Use this config when you need to optimise more quickly or with limited computational resources:
+# `pixi run -e gb_model snakemake --configfile 'config/config.gb.time-segment.yaml' gb_all`
+
+# see https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal for options
+time_aggregation:
+- method: segment
+  parameters:
+    num_segments: 2190   # 4x smaller snapshots size
+    exclude_attrs: ["e_min_pu", "e_max_pu"]

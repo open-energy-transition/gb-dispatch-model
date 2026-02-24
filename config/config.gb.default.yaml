@@ -41,9 +41,12 @@ atlite:
       # sarah_dir: ""
 
 data:
+  # We use a custom version of the OSM pre-built network, to include voltage levels relevant to GB.
+  # To update this version, run `pixi run -e gb_model snakemake osm_release` and upload the resulting files
+  # to a reputable data store, then add that entry to `data/versions.py` for `osm` data.
   osm:
     source: archive
-    version: "0.7"
+    version: "2026.02"
 
 energy:
   energy_totals_year: 2013
@@ -86,6 +89,9 @@ clustering:
     to_substations: false
     remove_stubs: false
     remove_stubs_across_borders: false
+
+# see https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal for options
+time_aggregation: []
 
 renewable:
   hydro:
@@ -426,6 +432,29 @@ etys:
   # ETYS2024 chart data has two valid sheets that can be selected
   future_capacities_sheet_name: ETYS 2022 Chart Data
   use_future_capacities: true
+  manual_future_capacities:
+    B3b: # See ETYS 2022 report, page 26; Leading the Way 2022 scenario
+      2022: 750
+      2023: 810
+      2024: 820
+      2025: 1180
+      2026: 1720
+      2027: 1880
+      2028: 2040
+      2029: 2060
+      2030: 2070
+      2031: 2080
+      2032: 2160
+      2033: 2180
+      2034: 2200
+      2035: 2240
+      2036: 2250
+      2037: 2270
+      2038: 2280
+      2039: 2420
+      2040: 2440
+      2041: 2460
+      2042: 2490
   boundaries_lines:
     B3b:
     - bus0: 28
