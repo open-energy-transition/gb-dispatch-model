@@ -90,6 +90,9 @@ clustering:
     remove_stubs: false
     remove_stubs_across_borders: false
 
+# see https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal for options
+time_aggregation: []
+
 renewable:
   hydro:
     cutout: default
