@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Created new OSM pre-built network, available at https://zenodo.org/records/18712831, to include updates made in upstream PyPSA-Eur (incl. ignoring unbuilt lines) (#237).
 * Fix reaching Elexon API request limit when running snakemake with multiple cores by forcing all cores to be used for the data fetching rule.
 * Adding `async` for API request that fetches the mapping of Elexon BMU units to a fueltype (#225).
 * Allow for boundary capabilities to increase in line with outputs from an ETYS report (configurable, defaults to True) (#219).
