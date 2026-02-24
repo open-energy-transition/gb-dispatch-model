@@ -642,6 +642,11 @@ class RedispatchConfig(GBBaseConfig):
         gt=0,
         description="number of years to extend the constraint cost calculation beyond the final year (using the data from the final year)",
     )
+    unconstrain_lines_and_links: bool = Field(
+        default=True,
+        description="Whether to unconstrain lines and links in the redispatch model. "
+        "This will Set s_nom (p_nom) to infinity for lines (links) between GB regions to ensure only boundary capabilities are bounding, not physical line limits.",
+    )
 
     elexon: ElexonConfig = Field(
         description="Elexon API configuration", default_factory=ElexonConfig
