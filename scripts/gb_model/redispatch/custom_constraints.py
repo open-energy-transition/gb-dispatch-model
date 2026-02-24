@@ -15,6 +15,7 @@ import pypsa
 from snakemake.script import Snakemake
 
 from scripts.gb_model._helpers import get_lines
+from scripts.gb_model.dispatch.custom_constraints import remove_KVL_constraints
 
 logger = logging.getLogger(__name__)
 
@@ -187,5 +188,6 @@ def custom_constraints(
     """
     # Apply boundary constraints
     set_boundary_constraints(n, snapshots, snakemake)
+    remove_KVL_constraints(n, snapshots, snakemake)
     update_storage_p_bounds(n)
     update_storage_balance(n)
