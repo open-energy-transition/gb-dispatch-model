@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* New config option to enable aggregating the PyPSA network time dimensions, to reduce solve times (#229).
 * Created new OSM pre-built network, available at https://zenodo.org/records/18712831, to include updates made in upstream PyPSA-Eur (incl. ignoring unbuilt lines) (#237).
 * Fix reaching Elexon API request limit when running snakemake with multiple cores by forcing all cores to be used for the data fetching rule.
 * Adding `async` for API request that fetches the mapping of Elexon BMU units to a fueltype (#225).

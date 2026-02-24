@@ -13,6 +13,27 @@ About
 
 gb-dispatch-model is an extension of `PyPSA-Eur <../pypsa_eur.html>`_., used to quantify dispatch decisions in Great Britain under the conditions set out by the UK Future Energy Scenarios.
 
+Quick start
+===========
+
+You can run the full workflow by calling:
+
+.. code:: bash
+   pixi run model
+
+This will run all the data processing and dispatch (unconstrained) + redispatch (constrained) optimisation steps using the default GB configuration.
+
+The optimisation steps are the most resource intensive parts of the process.
+To run only the data processing steps, call:
+
+.. code:: bash
+   pixi run compose_networks
+
+To run the optimisation steps but with a simplified network (namely, with a coarser time dimension to create a smaller optimisation problem), call:
+
+.. code:: bash
+   pixi run model --configfile 'config/config.gb.time-segment.yaml'
+
 Workflow
 ========
 
@@ -26,7 +47,6 @@ Open the image in a new tab/window to view it in more detail.
 .. note::
     The graph above was generated using
     ``snakemake --rulegraph -F | sed -n "/digraph/,/}/p" | dot -Tsvg -o doc/gb-model/img/workflow.svg``
-
 
 Operating Systems
 =================
