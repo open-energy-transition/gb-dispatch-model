@@ -132,7 +132,7 @@ If you also add your own unit tests, update the unit test runner to use your env
 ## 2. Run the analysis
 
 ```sh
-snakemake -call
+pixi run model
 ```
 
 This will run all analysis steps to reproduce results and build the report.
@@ -140,7 +140,7 @@ This will run all analysis steps to reproduce results and build the report.
 To generate a PDF of the dependency graph of all steps `resources/dag.pdf` run:
 
 ```sh
-snakemake -c1 dag
+pixi run snakemake -c1 dag
 ```
 
 <sup>*</sup> Open Energy Transition (g)GmbH, Königsallee 52, 95448 Bayreuth, Germany

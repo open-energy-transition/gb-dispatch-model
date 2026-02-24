@@ -41,9 +41,12 @@ atlite:
       # sarah_dir: ""
 
 data:
+  # We use a custom version of the OSM pre-built network, to include voltage levels relevant to GB.
+  # To update this version, run `pixi run -e gb_model snakemake osm_release` and upload the resulting files
+  # to a reputable data store, then add that entry to `data/versions.py` for `osm` data.
   osm:
     source: archive
-    version: "0.7"
+    version: "2026.02"
 
 energy:
   energy_totals_year: 2013
