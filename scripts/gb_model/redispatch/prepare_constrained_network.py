@@ -332,8 +332,9 @@ if __name__ == "__main__":
 
     add_single_eur_bus(network, unconstrained_result)
 
-    # Set line capacities to large number, so only boundary capabilities bound the optimization instead of line capacities.
-    copperplate_gb(network)
+    if snakemake.params["unconstrain_lines_and_links"]:
+        # Set line capacities to infinity, so only boundary capabilities bound the optimization instead of line capacities.
+        copperplate_gb(network)
 
     network.export_to_netcdf(snakemake.output.network)
     logger.info(f"Exported network to {snakemake.output.network}")
