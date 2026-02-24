@@ -464,7 +464,7 @@ def add_EV_V2G(
     # Add EV V2G carrier to the PyPSA network
     n.add(
         "Carrier",
-        "ev V2G",
+        "EV V2G",
     )
 
     # Add EV V2G bus to the PyPSA network
@@ -472,7 +472,7 @@ def add_EV_V2G(
         "Bus",
         ev_v2g_df.index,
         suffix=" EV V2G bus",
-        carrier="ev V2G",
+        carrier="EV V2G",
         x=n.buses.loc[ev_v2g_df.index].x,
         y=n.buses.loc[ev_v2g_df.index].y,
         country=n.buses.loc[ev_v2g_df.index].country,
@@ -488,7 +488,7 @@ def add_EV_V2G(
         p_nom=ev_v2g_df.p_nom.abs(),
         p_max_pu=ev_availability_profile.loc[:, ev_v2g_df.index],
         efficiency=1.0,
-        carrier="ev V2G",
+        carrier="EV V2G",
     )
 
     # Add link from V2G bus to AC bus to the PyPSA network
@@ -501,7 +501,7 @@ def add_EV_V2G(
         p_nom=ev_v2g_df.p_nom.abs(),
         p_max_pu=ev_availability_profile.loc[:, ev_v2g_df.index],
         efficiency=1.0,
-        carrier="ev V2G",
+        carrier="EV V2G",
     )
 
     # Add the EV V2G store to the PyPSA network
@@ -512,7 +512,7 @@ def add_EV_V2G(
         bus=ev_v2g_df.index + " EV V2G bus",
         e_nom=ev_v2g_storage_capacity.e_nom,
         e_cyclic=True,
-        carrier="ev V2G",
+        carrier="EV V2G",
     )
 
 
@@ -709,7 +709,9 @@ def add_DSR(
         storage_capacity = df_dsr.p_nom.abs() * (dsr_duration)
         e_max_pu = dsr_profile.loc[:, df_dsr.index]
         p_max_pu = (
-            1.0 if dsr_type != "ev" else ev_availability_profile.loc[:, df_dsr.index]
+            1.0
+            if dsr_type.lower() != "ev"
+            else ev_availability_profile.loc[:, df_dsr.index]
         )
 
         _add_dsr_pypsa_components(
@@ -1038,6 +1040,7 @@ def add_H2(
         demand_fixed.index,
         suffix=" Electricity for off-grid electrolysis",
         bus=demand_fixed.index,
+        carrier="AC",
         p_set=demand_fixed.p_set / n.snapshot_weightings.objective.sum(),
     )
 
