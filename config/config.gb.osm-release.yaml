@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 # Use this config when you want to create a new release of the pre-built OSM-derived transmission network:
-# `pixi run -e gb_model snakemake osm_release`
+# `pixi run -e gb_model snakemake --configfile 'config/config.gb.osm-release.yaml' osm_release`
 
 run:
   name: "osm-release"

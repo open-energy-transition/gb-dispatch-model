@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
+# Use this config when you need to optimise more quickly or with limited computational resources:
+# `pixi run -e gb_model snakemake --configfile 'config/config.gb.time-segment.yaml' gb_all`
+
 # see https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal for options
 time_aggregation:
 - method: segment
