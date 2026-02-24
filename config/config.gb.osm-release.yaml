@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../schema.default.json
+# SPDX-FileCopyrightText: Contributors to PyPSA-Eur <https://github.com/pypsa/pypsa-eur>
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
+#
+# SPDX-License-Identifier: CC0-1.0
+
+# Use this config when you want to create a new release of the pre-built OSM-derived transmission network:
+# `pixi run -e gb_model snakemake osm_release`
+
+run:
+  name: "osm-release"
+
+electricity:
+  voltages: [132, 220., 275., 300., 330., 380., 400., 500., 750.]
+  base_network: osm
+
+transmission_projects:
+  enable: false
+
+data:
+  osm:
+    source: build
+    version: unknown
+
+# Please provide your own user agent details when using the Overpass API
+overpass_api:
+  url: https://overpass-api.de/api/interpreter
+  max_tries: 5
+  timeout: 600
+  user_agent:
+    project_name: gb-dispatch-model
+    email: info@openenergytransition.org
+    website: https://github.com/open-energy-transition/gb-dispatch-model
+
+osm_network_release:
+  release_version: "2026.02"
+  under_construction: remove
+  remove_after: "2025-12-31"
+  compare_to:
+    version: "0.7"
+    source: archive
