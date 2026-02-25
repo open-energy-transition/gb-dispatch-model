@@ -611,7 +611,7 @@ etys:
       bus1: 25
     NW1:
     - bus0: 22
-      bus1: 31
+      bus1: 30
   boundaries_links:
     B6:
     - bus0: 23
