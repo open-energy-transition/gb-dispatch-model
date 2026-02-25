@@ -1239,6 +1239,7 @@ def compose_network(
     renewable_profiles: dict[str, str],
     countries: list[str],
     costs_config: dict[str, Any],
+    voll: float,
     electricity_config: dict[str, Any],
     renewable_config: dict[str, Any],
     demands: dict[str, str],
@@ -1279,6 +1280,8 @@ def compose_network(
         List of country codes to include
     costs_config : dict
         Costs configuration dictionary
+    voll : float
+        Value of lost load in £/MWh
     electricity_config : dict
         Electricity configuration dictionary
     clustering_config : dict
@@ -1380,7 +1383,7 @@ def compose_network(
 
     add_battery_storage(network, ppl, battery_e_nom_path, year)
     _add_generator_availability(network, generator_availability_path)
-    add_load_shedding(network, costs_config["voll"])
+    add_load_shedding(network, voll)
 
     finalise_composed_network(network, context)
 
@@ -1418,6 +1421,7 @@ if __name__ == "__main__":
         battery_e_nom_path=snakemake.input.battery_e_nom,
         countries=snakemake.params.countries,
         costs_config=snakemake.params.costs_config,
+        voll=snakemake.params.voll,
         electricity_config=snakemake.params.electricity,
         renewable_config=snakemake.params.renewable,
         demands=_input_list_to_dict(snakemake.input.demands, parent=True),

@@ -433,16 +433,17 @@ region_operations:
     TO: SHETL
 
   - id: 30
-    merge: [79, 80, 81, 82]
-    TO: N-IRL
-
-  - id: 31
     merge: [77]
     TO: NGET
 
+  - id: NI
+    merge: [79, 80, 81, 82]
+    TO: N-IRL
+
   # List for merging regions into neighbouring countries
   add_group_to_neighbour:
-    IE: ["GB 30"]
+    IE: ["GB NI"]
+
 
 etys:
   # ETYS2024 chart data has two valid sheets that can be selected
@@ -1313,8 +1314,8 @@ interconnectors:
 
 redispatch:
   year_range_incl: [2025, 2044] # 20-year period over which we will run the simulation
-  constraint_cost_extra_years: 20  # number of years to extend the constraint cost calculation beyond the final year (using the data from the final year)
-  unconstrain_lines_and_links: true # Set s_nom (p_nom) to infinity for lines and links of GB to make sure boundary capabilities are bounding, not physical line limits.
+  constraint_cost_extra_years: 20
+  unconstrain_lines_and_links: true
   elexon: # Elexon API data
     technology_mapping: # ignoring renewables in mapping as they come from CfD data
       coal: coal

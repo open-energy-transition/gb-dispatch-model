@@ -63,7 +63,7 @@ class CostsGBConfig(GBBaseConfig):
     fes_fuel_carrier_mapping: dict[str, str] = Field(
         default_factory=dict, description="FES fuel carrier mapping"
     )
-    voll: float = Field(gt=0, description="Value of lost load in £/MWh", default=0)
+    voll: float = Field(ge=0, description="Value of lost load in £/MWh", default=0)
 
 
 class LowCarbonRegisterConfig(GBBaseConfig):
