@@ -417,16 +417,16 @@ region_operations:
     TO: SHETL
 
   - id: 30
-    merge: [79, 80, 81, 82]
-    TO: N-IRL
-
-  - id: 31
     merge: [77]
     TO: NGET
 
+  - id: NI
+    merge: [79, 80, 81, 82]
+    TO: N-IRL
+
   # List for merging regions into neighbouring countries
   add_group_to_neighbour:
-    IE: ["GB 30"]
+    IE: ["GB NI"]
 
 etys:
   # ETYS2024 chart data has two valid sheets that can be selected
@@ -594,7 +594,7 @@ etys:
       bus1: 25
     NW1:
     - bus0: 22
-      bus1: 31
+      bus1: 30
   boundaries_links:
     B6:
     - bus0: 23
