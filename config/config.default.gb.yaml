@@ -1604,6 +1604,7 @@ interconnectors:
 redispatch:
   year_range_incl: []
   constraint_cost_extra_years: 20
+  unconstrain_lines_and_links: true
   elexon:
     technology_mapping: {}
     years: []

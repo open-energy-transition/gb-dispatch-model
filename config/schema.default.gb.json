@@ -950,7 +950,7 @@
         "voll": {
           "default": 0,
           "description": "Value of lost load in \u00a3/MWh",
-          "exclusiveMinimum": 0,
+          "minimum": 0,
           "type": "number"
         }
       }
@@ -4490,6 +4490,11 @@
           "description": "number of years to extend the constraint cost calculation beyond the final year (using the data from the final year)",
           "exclusiveMinimum": 0,
           "type": "integer"
+        },
+        "unconstrain_lines_and_links": {
+          "default": true,
+          "description": "Whether to unconstrain lines and links in the redispatch model. This will Set s_nom (p_nom) to infinity for lines (links) between GB regions to ensure only boundary capabilities are bounding, not physical line limits.",
+          "type": "boolean"
         },
         "elexon": {
           "additionalProperties": false,
@@ -15688,7 +15693,7 @@
         "voll": {
           "default": 0,
           "description": "Value of lost load in \u00a3/MWh",
-          "exclusiveMinimum": 0,
+          "minimum": 0,
           "type": "number"
         }
       }
@@ -16785,6 +16790,11 @@
           "description": "number of years to extend the constraint cost calculation beyond the final year (using the data from the final year)",
           "exclusiveMinimum": 0,
           "type": "integer"
+        },
+        "unconstrain_lines_and_links": {
+          "default": true,
+          "description": "Whether to unconstrain lines and links in the redispatch model. This will Set s_nom (p_nom) to infinity for lines (links) between GB regions to ensure only boundary capabilities are bounding, not physical line limits.",
+          "type": "boolean"
         },
         "elexon": {
           "additionalProperties": false,
