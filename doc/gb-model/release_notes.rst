@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Automate ETYS boundary line/link crossings.
 * Update config filenames. `config/config.gb.2024.yaml` defines the FES2024 configuration; `config/config.default.gb.yaml` is automatically generated and should not be edited directly (#235).
 * Add config validation and associated documentation for the additional configuration required for the gb-dispatch-model (#235).
 * Switch regions `GB 30` and `GB 31` and rename new `GB 31` to `GB NI` to more explicitly represent the Northern Ireland region.

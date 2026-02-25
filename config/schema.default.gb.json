@@ -2219,38 +2219,6 @@
         }
       }
     },
-    "ETYSBoundaryLineConfig": {
-      "additionalProperties": false,
-      "description": "Configuration for ETYS boundary line.",
-      "properties": {
-        "bus0": {
-          "anyOf": [
-            {
-              "type": "integer"
-            },
-            {
-              "type": "string"
-            }
-          ],
-          "description": "Starting GB bus ID (without preceding `GB`)"
-        },
-        "bus1": {
-          "anyOf": [
-            {
-              "type": "integer"
-            },
-            {
-              "type": "string"
-            }
-          ],
-          "description": "Ending GB bus ID (without preceding `GB`)"
-        }
-      },
-      "required": [
-        "bus0",
-        "bus1"
-      ]
-    },
     "ETYSConfig": {
       "additionalProperties": false,
       "description": "Configuration for ETYS boundaries.",
@@ -2273,84 +2241,6 @@
             "type": "object"
           },
           "description": "Manual future boundary capacities, to fill gaps in the ETYS chart data, if necessary. Top-level key is the boundary name, then key-value pairs of year and capacity in MW.",
-          "type": "object"
-        },
-        "boundaries_lines": {
-          "additionalProperties": {
-            "items": {
-              "additionalProperties": false,
-              "description": "Configuration for ETYS boundary line.",
-              "properties": {
-                "bus0": {
-                  "anyOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "string"
-                    }
-                  ],
-                  "description": "Starting GB bus ID (without preceding `GB`)"
-                },
-                "bus1": {
-                  "anyOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "string"
-                    }
-                  ],
-                  "description": "Ending GB bus ID (without preceding `GB`)"
-                }
-              },
-              "required": [
-                "bus0",
-                "bus1"
-              ]
-            },
-            "type": "array"
-          },
-          "description": "ETYS boundary lines configuration. Key is the name of the boundary ETYS boundary.",
-          "type": "object"
-        },
-        "boundaries_links": {
-          "additionalProperties": {
-            "items": {
-              "additionalProperties": false,
-              "description": "Configuration for ETYS boundary line.",
-              "properties": {
-                "bus0": {
-                  "anyOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "string"
-                    }
-                  ],
-                  "description": "Starting GB bus ID (without preceding `GB`)"
-                },
-                "bus1": {
-                  "anyOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "string"
-                    }
-                  ],
-                  "description": "Ending GB bus ID (without preceding `GB`)"
-                }
-              },
-              "required": [
-                "bus0",
-                "bus1"
-              ]
-            },
-            "type": "array"
-          },
-          "description": "ETYS boundary links configuration. Key is the name of the boundary ETYS boundary.",
           "type": "object"
         }
       }
@@ -16003,84 +15893,6 @@
             "type": "object"
           },
           "description": "Manual future boundary capacities, to fill gaps in the ETYS chart data, if necessary. Top-level key is the boundary name, then key-value pairs of year and capacity in MW.",
-          "type": "object"
-        },
-        "boundaries_lines": {
-          "additionalProperties": {
-            "items": {
-              "additionalProperties": false,
-              "description": "Configuration for ETYS boundary line.",
-              "properties": {
-                "bus0": {
-                  "anyOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "string"
-                    }
-                  ],
-                  "description": "Starting GB bus ID (without preceding `GB`)"
-                },
-                "bus1": {
-                  "anyOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "string"
-                    }
-                  ],
-                  "description": "Ending GB bus ID (without preceding `GB`)"
-                }
-              },
-              "required": [
-                "bus0",
-                "bus1"
-              ]
-            },
-            "type": "array"
-          },
-          "description": "ETYS boundary lines configuration. Key is the name of the boundary ETYS boundary.",
-          "type": "object"
-        },
-        "boundaries_links": {
-          "additionalProperties": {
-            "items": {
-              "additionalProperties": false,
-              "description": "Configuration for ETYS boundary line.",
-              "properties": {
-                "bus0": {
-                  "anyOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "string"
-                    }
-                  ],
-                  "description": "Starting GB bus ID (without preceding `GB`)"
-                },
-                "bus1": {
-                  "anyOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "string"
-                    }
-                  ],
-                  "description": "Ending GB bus ID (without preceding `GB`)"
-                }
-              },
-              "required": [
-                "bus0",
-                "bus1"
-              ]
-            },
-            "type": "array"
-          },
-          "description": "ETYS boundary links configuration. Key is the name of the boundary ETYS boundary.",
           "type": "object"
         }
       }

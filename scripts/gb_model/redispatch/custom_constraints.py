@@ -12,9 +12,10 @@ import logging
 
 import pandas as pd
 import pypsa
+import xarray as xr
+from linopy import merge
 from snakemake.script import Snakemake
 
-from scripts.gb_model._helpers import get_lines
 from scripts.gb_model.dispatch.custom_constraints import remove_KVL_constraints
 
 logger = logging.getLogger(__name__)
@@ -57,81 +58,59 @@ def set_boundary_constraints(
             )
         etys_capacities = etys_capacities_all_boundaries.fillna(etys_capacities)
 
-    etys_boundaries_lines = snakemake.params.etys_boundaries_to_lines
-    etys_boundaries_links = snakemake.params.etys_boundaries_to_links
+    etys_boundary_crossings = pd.read_csv(snakemake.input.boundary_crossings)
 
     # Define Line-s and Link-p variable (power flow)
     line_s = n.model["Line-s"]
     link_p = n.model["Link-p"]
 
-    for boundary in etys_capacities.index:
+    lhs_exprs = []
+
+    boundary_index = pd.Index(etys_capacities.index, name="boundary")
+    for boundary in boundary_index:
         # Get boundary capability
         capacity_mw = etys_capacities.loc[boundary]
 
-        # Get all lines crossing the given boundary
-        boundary_lines_mask = pd.Series(False, index=n.lines.index)
-        for buses in etys_boundaries_lines.get(boundary, []):
-            lines_mask = get_lines(n.lines, buses["bus0"], buses["bus1"])
-            if not lines_mask.any():
-                logger.warning(
-                    f"No lines found for boundary '{boundary}' between "
-                    f"buses '{buses['bus0']}' and '{buses['bus1']}'"
-                )
-            boundary_lines_mask = boundary_lines_mask | lines_mask
-
-        if boundary_lines_mask.any():
-            boundary_lines = n.lines[boundary_lines_mask].index
-
-        # Get all DC links crossing the given boundary
-        boundary_links_mask = pd.Series(False, index=n.links.index)
-
-        for buses in etys_boundaries_links.get(boundary, []):
-            links_mask = get_lines(n.links, buses["bus0"], buses["bus1"])
-
-            # Filter only DC links
-            dc_links_mask = n.links.carrier == "DC"
-            combined_mask = links_mask & dc_links_mask
-
-            if not combined_mask.any():
-                logger.warning(
-                    f"No DC links found for boundary '{boundary}' between "
-                    f"buses '{buses['bus0']}' and '{buses['bus1']}'"
-                )
-            boundary_links_mask = boundary_links_mask | combined_mask
-
-        boundary_links = n.links[boundary_links_mask].index
-
-        if boundary_lines.empty:
-            logger.warning(
-                f"No lines found for boundary '{boundary}'. "
-                f"Cannot apply ETYS constraint. Check configuration."
-            )
-
-        logger.info(
-            f"Boundary {boundary}: {len(boundary_lines)} lines, {len(boundary_links)} DC links, "
-            f"capacity={capacity_mw} MW"
+        boundary_lines_mask = etys_boundary_crossings.query(
+            "Boundary_n == @boundary and component == 'Line'"
+        )
+        boundary_links_mask = etys_boundary_crossings.query(
+            "Boundary_n == @boundary and component == 'Link'"
         )
 
-        # Get Line-s and Link-p for boundary lines and links
+        if boundary_lines_mask.empty and boundary_links_mask.empty:
+            logger.warning(
+                f"No lines or links found for boundary '{boundary}'. "
+                f"Cannot apply ETYS constraint. Check configuration."
+            )
+            continue
+
+        logger.info(
+            f"Boundary {boundary}: {len(boundary_lines_mask)} lines, {len(boundary_links_mask)} DC links, "
+            f"capacity={capacity_mw} MW"
+        )
+        boundary_lines = boundary_lines_mask["name"].tolist()
+        boundary_links = boundary_links_mask["name"].tolist()
         line_s_boundary = line_s.sel(snapshot=snapshots, name=boundary_lines)
         link_p_boundary = link_p.sel(snapshot=snapshots, name=boundary_links)
 
         # Sum across lines and DC links to get total flow at the boundary
         lhs = line_s_boundary.sum("name") + link_p_boundary.sum("name")
+        lhs_exprs.append(lhs)
 
-        # Add bidirectional constraint: total flow ≤ boundary capability
-        n.model.add_constraints(
-            lhs <= capacity_mw,
-            name=f"GlobalConstraint-etys_boundary_{boundary}_forward",
-        )
-        n.model.add_constraints(
-            lhs >= -capacity_mw,
-            name=f"GlobalConstraint-etys_boundary_{boundary}_backward",
-        )
+    lhs_merged = merge(lhs_exprs, dim="boundary").assign_coords(boundary=boundary_index)
 
-        logger.info(
-            f"Added boundary constraint: -{capacity_mw:.0f} <= '{boundary}' <= {capacity_mw:.0f} MW"
-        )
+    bounds = xr.DataArray(
+        etys_capacities.values,
+        coords=[boundary_index],
+    )
+
+    n.model.add_constraints(lhs_merged <= bounds, name="etys_boundary_forward")
+    n.model.add_constraints(lhs_merged >= -bounds, name="etys_boundary_backward")
+
+    logger.info(
+        f"Added {len(boundary_index)} boundary constraints with explicit 'boundary' dimension"
+    )
 
 
 def update_storage_p_bounds(n: pypsa.Network) -> None:

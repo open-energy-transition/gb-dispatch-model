@@ -1512,8 +1512,6 @@ etys:
   future_capacities_sheet_name: ETYS 2022 Chart Data
   use_future_capacities: true
   manual_future_capacities: {}
-  boundaries_lines: {}
-  boundaries_links: {}
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#entsoe_unavailability
 entsoe_unavailability:

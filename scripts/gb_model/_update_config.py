@@ -223,15 +223,6 @@ class ETYSConfig(GBBaseConfig):
         default_factory=dict,
     )
 
-    boundaries_lines: dict[str, list[ETYSBoundaryLineConfig]] = Field(
-        default_factory=dict,
-        description="ETYS boundary lines configuration. Key is the name of the boundary ETYS boundary.",
-    )
-    boundaries_links: dict[str, list[ETYSBoundaryLineConfig]] = Field(
-        default_factory=dict,
-        description="ETYS boundary links configuration. Key is the name of the boundary ETYS boundary.",
-    )
-
 
 class EntsoeUnavailabilityConfig(GBBaseConfig):
     """ENTSO-E unavailability data configuration."""

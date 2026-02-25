@@ -120,6 +120,22 @@ rule calc_interconnector_bid_offer_profile:
         scripts("gb_model/redispatch/calc_interconnector_bid_offer_profile.py")
 
 
+rule identify_boundary_crossings:
+    message:
+        "Identify network boundary crossings"
+    input:
+        base_network=resources("networks/base.nc"),
+        clustered_network=resources("networks/base_s_clustered.nc"),
+        linemap=resources("linemap_base_s_clustered.csv"),
+        etys_boundaries="data/gb-model/downloaded/gb-etys-boundaries.zip",
+    output:
+        csv=resources("etys_boundary_crossings.csv"),
+    log:
+        logs("identify_boundary_crossings.log"),
+    script:
+        scripts("gb_model/redispatch/identify_boundary_crossings.py")
+
+
 rule prepare_constrained_network:
     message:
         "Prepare network for constrained optimization"
@@ -151,8 +167,6 @@ rule solve_constrained:
         ),
         custom_extra_functionality=Path(workflow.snakefile).parent
         / scripts("gb_model/redispatch/custom_constraints.py"),
-        etys_boundaries_to_lines=config_provider("etys", "boundaries_lines"),
-        etys_boundaries_to_links=config_provider("etys", "boundaries_links"),
         manual_future_etys_caps=(
             config_provider("etys", "manual_future_capacities")
             if config["etys"]["use_future_capacities"]
@@ -166,6 +180,7 @@ rule solve_constrained:
             if config["etys"]["use_future_capacities"]
             else []
         ),
+        boundary_crossings=resources("etys_boundary_crossings.csv"),
     output:
         network=RESULTS + "networks/{fes_scenario}/constrained_clustered/{year}.nc",
         config=RESULTS
