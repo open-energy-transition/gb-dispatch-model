@@ -16,7 +16,7 @@ from scripts._helpers import configure_logging, set_scenario_config
 
 logger = logging.getLogger(__name__)
 
-LARGE_NUMBER = 1e6
+LARGE_NUMBER = 1e8
 
 
 def _get_intra_gb(df: pd.DataFrame) -> pd.Series:
