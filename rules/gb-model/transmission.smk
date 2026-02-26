@@ -45,15 +45,18 @@ rule process_transmission_availability:
 
 
 rule create_interconnectors_table:
+    message:
+        "Create interconnector table for {wildcards.fes_scenario} scenario using configured commissioning plan."
     input:
         regions=resources("gb-model/merged_shapes.geojson"),
     output:
-        gsp_data=resources("gb-model/interconnectors_p_nom.csv"),
+        gsp_data=resources("gb-model/{fes_scenario}/interconnectors_p_nom.csv"),
     params:
-        interconnector_config=config["interconnectors"],
+        interconnector_options=config["interconnectors"]["options"],
+        interconnector_plan=config["interconnectors"]["plan"],
         year_range=config["redispatch"]["year_range_incl"],
         target_crs=config["target_crs"],
     log:
-        logs("create_interconnectors_table.log"),
+        logs("create_interconnectors_table_{fes_scenario}.log"),
     script:
         scripts("gb_model/transmission/create_interconnectors_table.py")

@@ -1152,15 +1152,45 @@ interconnectors:
     lat: 53.81322
     lon: -0.41847
   plan:
-    2021: [BritNed, East-West, IFA, IFA2, NS Link (NSL), Nemo] # existing
-    2022: [Moyle, Greenlink (Greenwire)]
-    2023: [Viking Link]
-    2025: [ElecLink, LionLink (EuroLink), Aminth]
-    2026: [NeuConnect]
-    2027: [MARES, Nautilus, Gallant, NorthConnect]
-    2030: [Cronos, Tarchon]
-    2033: [Kulizumboo, SENECA, FAB Link, Gridlink, LirIC]
-    2037: [Continental Link]
+    HT:
+      2021: [BritNed, East-West, IFA, IFA2, NS Link (NSL), Nemo] # existing
+      2022: [Moyle, Greenlink (Greenwire), ElecLink] # existing
+      2024: [Viking Link] # existing
+      2028: [Aminth] # Could also be Cronos, NeuConnect, Tarchon
+      2030: [MARES]
+      2031: [Kulizumboo, SENECA, NeuConnect, Nautilus] # NeuConnect could also be Aminth, Cronos, Tarchon
+      2032: [Cronos] # could also be Aminth, NeuConnect, Tarchon
+      2033: [FAB Link, Gridlink, LirIC]
+      2034: [Continental Link]
+      2036: [NorthConnect]
+    EE:
+      2021: [BritNed, East-West, IFA, IFA2, NS Link (NSL), Nemo] # existing
+      2022: [Moyle, Greenlink (Greenwire), ElecLink] # existing
+      2024: [Viking Link] # existing
+      2028: [Aminth] # Could also be Cronos, NeuConnect, Tarchon
+      2032: [FAB Link, Gridlink, NeuConnect] # extra +150MW than expected; NeuConnect could also be Aminth, Cronos, Tarchon
+      2033: [MARES]
+      2034: [Cronos] # Could also be Aminth, NeuConnect, Tarchon
+      2035: [LirIC]
+      2036: [SENECA]
+      2037: [Continental Link]
+    CF:
+      2021: [BritNed, East-West, IFA, IFA2, NS Link (NSL), Nemo] # existing
+      2022: [Moyle, Greenlink (Greenwire), ElecLink] # existing
+      2024: [Viking Link] # existing
+      2030: [Aminth] # Could also be Cronos, NeuConnect, Tarchon
+      2034: [FAB Link] # Could also be Gridlink, SENECA
+      2035: [NeuConnect] # could also be Aminth, Cronos, Tarchon
+      2036: [Cronos] # Could also be Aminth, NeuConnect, Tarchon
+    HE:
+      2021: [BritNed, East-West, IFA, IFA2, NS Link (NSL), Nemo] # existing
+      2022: [Moyle, Greenlink (Greenwire), ElecLink] # existing
+      2024: [Viking Link] # existing
+      2029: [Aminth] # Could also be Cronos, NeuConnect, Tarchon
+      2033: [NeuConnect, FAB Link] # NeuConnect could also be Aminth, Cronos, Tarchon; FAB could also be Gridlink, SENECA
+      2034: [Cronos] # Could also be Aminth, NeuConnect, Tarchon
+      2035: [MARES]
+
 
 redispatch:
   year_range_incl: [2025, 2044] # 20-year period over which we will run the simulation

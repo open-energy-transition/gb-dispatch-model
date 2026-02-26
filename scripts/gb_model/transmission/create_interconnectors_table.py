@@ -53,7 +53,8 @@ def synthesise_line_geometries(
 
 
 def projects_to_pypsa_links(
-    interconnector_config: dict,
+    interconnector_options: list[dict],
+    interconnector_plan: dict[int, list[str]],
     gdf_regions: gpd.GeoDataFrame,
     year_range: list[int],
     target_crs: str,
@@ -62,7 +63,8 @@ def projects_to_pypsa_links(
     Map interconnector projects to links in our PyPSA network
 
     Args:
-        interconnector_config (dict): Configuration dictionary defining interconnector projects
+        interconnector_options (list[dict]): List of dictionaries defining interconnector projects
+        interconnector_plan (dict[int, list[str]]): Dictionary mapping years to list of interconnector project names
         gdf_regions (gpd.GeoDataFrame): GeoDataFrame containing network bus geometries
 
     Returns:
@@ -75,7 +77,7 @@ def projects_to_pypsa_links(
                 pd.DataFrame(
                     {k: [v] for k, v in interconnector.items() if k in df_cols}
                 )
-                for interconnector in interconnector_config["options"]
+                for interconnector in interconnector_options
             ]
         )
         .set_index("name")
@@ -94,7 +96,7 @@ def projects_to_pypsa_links(
             .reset_index()
             .groupby(["project", "bus0", "bus1"])
             .capacity_mw.sum()
-            for year, projects in interconnector_config["plan"].items()
+            for year, projects in interconnector_plan.items()
         }
     ).T.rename_axis(index="year")
     all_years = list(range(df_capacity.index.min(), year_range[1] + 1))
@@ -158,11 +160,10 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(Path(__file__).stem)
     configure_logging(snakemake)
     set_scenario_config(snakemake)
-
-    interconnector_config = snakemake.params.interconnector_config
     gdf_regions = gpd.read_file(snakemake.input.regions)
     df_capacity = projects_to_pypsa_links(
-        interconnector_config,
+        snakemake.params.interconnector_options,
+        snakemake.params.interconnector_plan[snakemake.wildcards.fes_scenario],
         gdf_regions,
         snakemake.params.year_range,
         snakemake.params.target_crs,
