@@ -29,7 +29,7 @@ rule generator_monthly_availability_fraction:
         outages=resources("gb-model/{zone}_generator_unavailability.csv"),
         dukes_data=resources("gb-model/dukes-current-capacity.csv"),
     params:
-        entsoe_carrier_mapping=config["entsoe_unavailability"]["entsoe_carrier_mapping"],
+        entsoe_carrier_mapping=config["entsoe_unavailability"]["carrier_mapping"],
         start_date=config["entsoe_unavailability"]["start_date"],
         end_date=config["entsoe_unavailability"]["end_date"],
         max_unavailable_days=config["entsoe_unavailability"]["max_unavailable_days"],
@@ -67,7 +67,7 @@ rule assign_costs:
     message:
         "Prepares costs file from technology-data of PyPSA-Eur and FES and assigns to {wildcards.data_file}"
     params:
-        costs_config=config["costs"],
+        costs_config=config["fes_costs"],
     input:
         tech_costs=Path(COSTS_DATASET["folder"])
         / f"costs_{config['scenario']['planning_horizons'][0]}.csv",

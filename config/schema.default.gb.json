@@ -451,17 +451,49 @@
         }
       }
     },
+    "CHPConfig": {
+      "additionalProperties": false,
+      "description": "Simplified CHP configuration for GB model.",
+      "properties": {
+        "enable": {
+          "default": true,
+          "description": "Enable simplified CHP constraints",
+          "type": "boolean"
+        },
+        "heat_to_power_ratio": {
+          "default": 1,
+          "description": "Heat-to-power ratio (c_b coefficient)",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "min_operation_level": {
+          "default": 0,
+          "description": "Minimum operation level when running",
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "shutdown_threshold": {
+          "default": 0,
+          "description": "Heat demand threshold below which CHPs can shut down completely",
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        }
+      }
+    },
     "ClusteringConfig": {
       "description": "Configuration for `clustering` settings.",
       "properties": {
         "mode": {
           "default": "busmap",
-          "description": "'busmap': Default. 'custom_busmap': Enable the use of custom busmaps in rule `cluster_network`. If activated the rule looks for provided busmaps at ``data/busmaps/base_s_{clusters}_{base_network}.csv`` which should have the same format as ``resources/busmap_base_s_{clusters}.csv``, i.e. the index should contain the buses of ``networks/base_s.nc``. {base_network} is the name of the selected base_network in electricity, e.g. ``gridkit``, ``osm-prebuilt``, or ``osm-raw``. 'administrative': Clusters and indexes the network based on the administrative regions of the countries based on ``nuts3_shapes.geojson`` (level: 1, 2, 3, bz). To activate this, additionally set the ``clusters`` wildcard in ``scenario`` to 'adm'. 'custom_busshapes': Enable the use of custom shapes in rule `cluster_network`. If activated the rule looks for provided busshapes at ``data/busshapes/base_s_{clusters}_{base_network}.geojson``.",
+          "description": "'busmap': Default. 'custom_busmap': Enable the use of custom busmaps in rule `cluster_network`. If activated the rule looks for provided busmaps at ``data/busmaps/base_s_{clusters}_{base_network}.csv`` which should have the same format as ``resources/busmap_base_s_{clusters}.csv``, i.e. the index should contain the buses of ``networks/base_s.nc``. {base_network} is the name of the selected base_network in electricity, e.g. ``gridkit``, ``osm-prebuilt``, or ``osm-raw``. 'administrative': Clusters and indexes the network based on the administrative regions of the countries based on ``nuts3_shapes.geojson`` (level: 1, 2, 3, bz). To activate this, additionally set the ``clusters`` wildcard in ``scenario`` to 'adm'. 'custom_busshapes': Enable the use of custom shapes in rule `cluster_network`. If activated the rule looks for provided busshapes at ``data/busshapes/base_s_{clusters}_{base_network}.geojson``. (extra) gb_shapes: GB model region shapes.",
           "enum": [
             "busmap",
             "custom_busmap",
             "administrative",
-            "custom_busshapes"
+            "custom_busshapes",
+            "gb_shapes"
           ],
           "type": "string"
         },
@@ -814,6 +846,112 @@
               "type": "integer"
             }
           }
+        }
+      }
+    },
+    "CostsGBConfig": {
+      "additionalProperties": false,
+      "description": "GB-specific cost configuration.",
+      "properties": {
+        "sheet-config": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "description": "FES sheet configuration.",
+            "properties": {
+              "rename": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Column rename mappings",
+                "type": "object"
+              }
+            }
+          },
+          "description": "FES costing workbook sheet configurations. Any pandas read_excel kwargs can be included for each sheet.",
+          "type": "object"
+        },
+        "GBP_to_EUR": {
+          "default": 1,
+          "description": "GBP to EUR exchange rate",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "GBP_to_USD": {
+          "default": 1,
+          "description": "GBP to USD exchange rate",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "relevant_cost_columns": {
+          "description": "List of relevant cost columns",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "marginal_cost_columns": {
+          "description": "List of marginal cost columns",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "add_cols": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "description": "Additional cost columns configuration",
+          "type": "object"
+        },
+        "default_characteristics": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "type": "object"
+          },
+          "description": "Default characteristics for cost data",
+          "type": "object"
+        },
+        "carrier_gap_filling": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Carrier gap filling mappings",
+          "type": "object"
+        },
+        "fes_VOM_carrier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "FES variable O&M carrier mapping",
+          "type": "object"
+        },
+        "fes_fuel_carrier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "FES fuel carrier mapping",
+          "type": "object"
+        },
+        "voll": {
+          "default": 0,
+          "description": "Value of lost load in \u00a3/MWh",
+          "minimum": 0,
+          "type": "number"
         }
       }
     },
@@ -1985,6 +2123,210 @@
         }
       }
     },
+    "DukesConfig": {
+      "additionalProperties": false,
+      "description": "DUKES configuration.",
+      "properties": {
+        "sheet-config": {
+          "additionalProperties": false,
+          "description": "DUKES sheet configuration.",
+          "properties": {
+            "sheet_name": {
+              "default": "",
+              "description": "Name of the Excel sheet",
+              "type": "string"
+            },
+            "usecols": {
+              "default": "",
+              "description": "Columns to use",
+              "type": "string"
+            },
+            "skiprows": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "index_col": {
+              "description": "Index columns",
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "header": {
+              "default": 0,
+              "description": "Header row",
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        },
+        "carrier_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Carrier mapping configuration. Top level keys are column names, second level maps from column values to carrier names.",
+          "type": "object"
+        },
+        "set_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Set mapping configuration. Top level keys are column names, second level maps from column values to set names.",
+          "type": "object"
+        }
+      }
+    },
+    "DukesSheetConfig": {
+      "additionalProperties": false,
+      "description": "DUKES sheet configuration.",
+      "properties": {
+        "sheet_name": {
+          "default": "",
+          "description": "Name of the Excel sheet",
+          "type": "string"
+        },
+        "usecols": {
+          "default": "",
+          "description": "Columns to use",
+          "type": "string"
+        },
+        "skiprows": {
+          "default": 0,
+          "description": "Number of rows to skip",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "index_col": {
+          "description": "Index columns",
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "header": {
+          "default": 0,
+          "description": "Header row",
+          "minimum": 0,
+          "type": "integer"
+        }
+      }
+    },
+    "ETYSConfig": {
+      "additionalProperties": false,
+      "description": "Configuration for ETYS boundaries.",
+      "properties": {
+        "future_capacities_sheet_name": {
+          "default": "ETYS 2022 Chart Data",
+          "description": "Name of the sheet to use in the downloaded ETYS future capacities workbook",
+          "type": "string"
+        },
+        "use_future_capacities": {
+          "default": true,
+          "description": "Whether to use future boundary capacities (a.k.a. capabilities) from ETYS chart data, instead of today's capacities.",
+          "type": "boolean"
+        },
+        "manual_future_capacities": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "description": "Manual future boundary capacities, to fill gaps in the ETYS chart data, if necessary. Top-level key is the boundary name, then key-value pairs of year and capacity in MW.",
+          "type": "object"
+        }
+      }
+    },
+    "EVConfig": {
+      "additionalProperties": false,
+      "description": "Electric vehicle configuration.",
+      "properties": {
+        "plug_in_offset": {
+          "default": 0,
+          "description": "Hours after traffic peak when EVs are assumed to plug in",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "charging_duration": {
+          "default": 1,
+          "description": "Charging duration in hours",
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        "ev_demand_profile_transformation": {
+          "additionalProperties": false,
+          "description": "EV demand profile transformation parameters.",
+          "properties": {
+            "lower_optimization_bound": {
+              "default": 0,
+              "description": "Lower bound for gamma optimization",
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            "upper_optimization_bound": {
+              "default": null,
+              "description": "Upper bound for gamma optimization",
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            "relative_peak_tolerance": {
+              "default": 0.0,
+              "description": "Relative peak tolerance (fraction)",
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            "relative_energy_tolerance": {
+              "default": 0.0,
+              "description": "Relative energy tolerance (fraction)",
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "EVDemandProfileTransformation": {
+      "additionalProperties": false,
+      "description": "EV demand profile transformation parameters.",
+      "properties": {
+        "lower_optimization_bound": {
+          "default": 0,
+          "description": "Lower bound for gamma optimization",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "upper_optimization_bound": {
+          "default": null,
+          "description": "Upper bound for gamma optimization",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "relative_peak_tolerance": {
+          "default": 0.0,
+          "description": "Relative peak tolerance (fraction)",
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "relative_energy_tolerance": {
+          "default": 0.0,
+          "description": "Relative energy tolerance (fraction)",
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        }
+      }
+    },
     "ElectricityConfig": {
       "description": "Configuration for `electricity` settings.",
       "properties": {
@@ -2272,6 +2614,36 @@
         }
       }
     },
+    "ElexonConfig": {
+      "additionalProperties": false,
+      "description": "Elexon API configuration.",
+      "properties": {
+        "technology_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from Elexon BMU technology names to model carrier names",
+          "type": "object"
+        },
+        "years": {
+          "description": "Years to retrieve data for",
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "api_bmu_fuel_map": {
+          "default": false,
+          "description": "Boolean to decide source of Elexon BMU unit -> fuel mapping. If True, data is fetched using API; otherwise, it uses `data/gb-model/BMUFuelType.xlsx`.",
+          "type": "boolean"
+        },
+        "max_concurrent_requests": {
+          "default": 4,
+          "description": "Maximum number of concurrent requests to Elexon API. May require adjustment if API rate limits are hit.",
+          "type": "integer"
+        }
+      }
+    },
     "EnableConfig": {
       "description": "Configuration for `enable` settings.",
       "properties": {
@@ -2300,6 +2672,61 @@
           "default": "CO2",
           "description": "Specify which sectoral emissions are taken into account. Data derived from EEA. Currently only CO2 is implemented.",
           "type": "string"
+        }
+      }
+    },
+    "EntsoeUnavailabilityConfig": {
+      "additionalProperties": false,
+      "description": "ENTSO-E unavailability data configuration.",
+      "properties": {
+        "start_date": {
+          "default": "2020-01-01",
+          "description": "Start date for data retrieval",
+          "type": "string"
+        },
+        "end_date": {
+          "default": "2025-12-31",
+          "description": "End date for data retrieval",
+          "type": "string"
+        },
+        "bidding_zones": {
+          "description": "List of bidding zones to consider",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "business_types": {
+          "description": "Business types to retrieve",
+          "items": {
+            "enum": [
+              "planned",
+              "forced"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "max_request_days": {
+          "default": 365,
+          "description": "Maximum days per API request",
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        "max_unavailable_days": {
+          "default": 365,
+          "description": "Maximum days to consider an outage",
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        "carrier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Carrier mapping from ENTSO-E to model carriers",
+          "type": "object"
         }
       }
     },
@@ -2339,6 +2766,890 @@
         }
       }
     },
+    "FESConfig": {
+      "additionalProperties": false,
+      "description": "Future Energy Scenarios (FES) configuration.",
+      "properties": {
+        "fes_year": {
+          "default": 2024,
+          "description": "FES data year",
+          "type": "integer"
+        },
+        "scenario_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from FES scenario shorthand (key) to FES scenario long name (value). The shorthand will be used in the output data directories and may be referred to when shorthand is used in data files (e.g. ETYS chart data).",
+          "type": "object"
+        },
+        "default_set": {
+          "default": "PP",
+          "description": "Default PyPSA network set identifier",
+          "enum": [
+            "PP",
+            "CHP",
+            "Store"
+          ],
+          "type": "string"
+        },
+        "sheet-config": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "description": "FES sheet configuration.",
+            "properties": {
+              "rename": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Column rename mappings",
+                "type": "object"
+              }
+            }
+          },
+          "description": "FES workbook sheet configurations. Any pandas read_excel kwargs can be included for each sheet.",
+          "type": "object"
+        },
+        "gb": {
+          "additionalProperties": false,
+          "description": "FES GB-specific configuration.",
+          "properties": {
+            "carrier_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+              "type": "object"
+            },
+            "set_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "enum": [
+                    "CHP",
+                    "PP",
+                    "Store"
+                  ],
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+              "type": "object"
+            },
+            "demand": {
+              "additionalProperties": false,
+              "description": "FES demand configuration.",
+              "properties": {
+                "Technology Detail": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "description": "Grouping from FES workbook BB2 Technology Detail column to model carriers",
+                  "type": "object"
+                },
+                "heat": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "ASHP",
+                            "GSHP",
+                            "resistive"
+                          ],
+                          "type": "string"
+                        },
+                        {
+                          "items": {
+                            "enum": [
+                              "ASHP",
+                              "GSHP",
+                              "resistive"
+                            ],
+                            "type": "string"
+                          },
+                          "type": "array"
+                        }
+                      ]
+                    },
+                    "type": "object"
+                  },
+                  "description": "Mapping from FES workbook heating technologies to intermediate model carriers.",
+                  "type": "object"
+                },
+                "bus_suffix": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Bus suffixes to apply in the PyPSA network for different demand types",
+                  "type": "object"
+                }
+              }
+            },
+            "flexibility": {
+              "additionalProperties": false,
+              "description": "FES flexibility configuration.",
+              "properties": {
+                "carrier_mapping": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        }
+                      ]
+                    },
+                    "type": "object"
+                  },
+                  "description": "Carrier mapping for flexibility. Top level keys are GB model DSR carriers, second level maps from column names to column value(s).",
+                  "type": "object"
+                },
+                "dsr_hours": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "integer"
+                    },
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "type": "array"
+                  },
+                  "description": "Demand side response hours for each carrier",
+                  "type": "object"
+                },
+                "carrier_suffix": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Carrier suffix mappings",
+                  "type": "object"
+                },
+                "v2g_storage_to_capacity_ratio": {
+                  "default": 1,
+                  "description": "V2G storage to capacity ratio",
+                  "exclusiveMinimum": 0,
+                  "type": "number"
+                }
+              }
+            },
+            "regional_distribution_reference": {
+              "additionalProperties": {
+                "additionalProperties": false,
+                "description": "FES regional distribution reference.",
+                "properties": {
+                  "source": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ],
+                    "default": "",
+                    "description": "FES2024 BB2 'Technology Detail' value(s) to use as reference for regional distribution"
+                  },
+                  "name": {
+                    "default": "p_nom",
+                    "description": "PyPSA parameter name to use to define the result (e.g. `p_nom` or `p_set`)",
+                    "type": "string"
+                  }
+                }
+              },
+              "description": "Regional distribution reference configuration",
+              "type": "object"
+            }
+          }
+        },
+        "eur": {
+          "additionalProperties": false,
+          "description": "FES European configuration.",
+          "properties": {
+            "carrier_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+              "type": "object"
+            },
+            "set_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "enum": [
+                    "CHP",
+                    "PP",
+                    "Store"
+                  ],
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+              "type": "object"
+            },
+            "totals_to_demand_groups": {
+              "additionalProperties": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "description": "Keys are gb-model demand carriers, values are energy total column names.",
+              "type": "object"
+            },
+            "add_data_reference": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Reference data to use to synthesise datasets for which we have no European data.",
+              "type": "object"
+            },
+            "load_shedding_cost_above_marginal": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Marginal cost to apply to European load shedding above the marginal cost of the most expensive European generation technology. This is used to ensure that load shedding only occurs after all generation technologies have been fully utilised, but to stop the resulting marginal prices from being excessively high."
+            }
+          }
+        },
+        "hydrogen": {
+          "additionalProperties": false,
+          "description": "FES hydrogen configuration.",
+          "properties": {
+            "data_selection": {
+              "additionalProperties": false,
+              "description": "FES hydrogen data selection filter.",
+              "properties": {
+                "all_supply": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "description": "Filter to get all hydrogen supply data from the FES workbook. Keys are column names, values are column value(s) to select.",
+                  "type": "object"
+                },
+                "all_demand": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "description": "Filter to get all hydrogen demand data. Keys are column names, values are column value(s) to select.",
+                  "type": "object"
+                },
+                "non_networked_supply": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "description": "Filter to get all hydrogen non-networked supply data from the FES workbook. Keys are column names, values are column value(s) to select.",
+                  "type": "object"
+                },
+                "storage": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "description": "Filter to get all hydrogen storage data. Keys are column names, values are column value(s) to select.",
+                  "type": "object"
+                }
+              }
+            },
+            "electrolysis_efficiency": {
+              "default": 0.7,
+              "description": "Non-networked electrolysis efficiency (MWh[H2]/MWh[electricity])",
+              "exclusiveMinimum": 0,
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "FESDemandConfig": {
+      "additionalProperties": false,
+      "description": "FES demand configuration.",
+      "properties": {
+        "Technology Detail": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": "Grouping from FES workbook BB2 Technology Detail column to model carriers",
+          "type": "object"
+        },
+        "heat": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "ASHP",
+                    "GSHP",
+                    "resistive"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "enum": [
+                      "ASHP",
+                      "GSHP",
+                      "resistive"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
+            },
+            "type": "object"
+          },
+          "description": "Mapping from FES workbook heating technologies to intermediate model carriers.",
+          "type": "object"
+        },
+        "bus_suffix": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Bus suffixes to apply in the PyPSA network for different demand types",
+          "type": "object"
+        }
+      }
+    },
+    "FESEURConfig": {
+      "additionalProperties": false,
+      "description": "FES European configuration.",
+      "properties": {
+        "carrier_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+          "type": "object"
+        },
+        "set_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "enum": [
+                "CHP",
+                "PP",
+                "Store"
+              ],
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+          "type": "object"
+        },
+        "totals_to_demand_groups": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": "Keys are gb-model demand carriers, values are energy total column names.",
+          "type": "object"
+        },
+        "add_data_reference": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Reference data to use to synthesise datasets for which we have no European data.",
+          "type": "object"
+        },
+        "load_shedding_cost_above_marginal": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Marginal cost to apply to European load shedding above the marginal cost of the most expensive European generation technology. This is used to ensure that load shedding only occurs after all generation technologies have been fully utilised, but to stop the resulting marginal prices from being excessively high."
+        }
+      }
+    },
+    "FESFlexibilityConfig": {
+      "additionalProperties": false,
+      "description": "FES flexibility configuration.",
+      "properties": {
+        "carrier_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
+            },
+            "type": "object"
+          },
+          "description": "Carrier mapping for flexibility. Top level keys are GB model DSR carriers, second level maps from column names to column value(s).",
+          "type": "object"
+        },
+        "dsr_hours": {
+          "additionalProperties": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "type": "array"
+          },
+          "description": "Demand side response hours for each carrier",
+          "type": "object"
+        },
+        "carrier_suffix": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Carrier suffix mappings",
+          "type": "object"
+        },
+        "v2g_storage_to_capacity_ratio": {
+          "default": 1,
+          "description": "V2G storage to capacity ratio",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        }
+      }
+    },
+    "FESGBConfig": {
+      "additionalProperties": false,
+      "description": "FES GB-specific configuration.",
+      "properties": {
+        "carrier_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+          "type": "object"
+        },
+        "set_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "enum": [
+                "CHP",
+                "PP",
+                "Store"
+              ],
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+          "type": "object"
+        },
+        "demand": {
+          "additionalProperties": false,
+          "description": "FES demand configuration.",
+          "properties": {
+            "Technology Detail": {
+              "additionalProperties": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "description": "Grouping from FES workbook BB2 Technology Detail column to model carriers",
+              "type": "object"
+            },
+            "heat": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        "ASHP",
+                        "GSHP",
+                        "resistive"
+                      ],
+                      "type": "string"
+                    },
+                    {
+                      "items": {
+                        "enum": [
+                          "ASHP",
+                          "GSHP",
+                          "resistive"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              "description": "Mapping from FES workbook heating technologies to intermediate model carriers.",
+              "type": "object"
+            },
+            "bus_suffix": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Bus suffixes to apply in the PyPSA network for different demand types",
+              "type": "object"
+            }
+          }
+        },
+        "flexibility": {
+          "additionalProperties": false,
+          "description": "FES flexibility configuration.",
+          "properties": {
+            "carrier_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              "description": "Carrier mapping for flexibility. Top level keys are GB model DSR carriers, second level maps from column names to column value(s).",
+              "type": "object"
+            },
+            "dsr_hours": {
+              "additionalProperties": {
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 2,
+                "minItems": 2,
+                "type": "array"
+              },
+              "description": "Demand side response hours for each carrier",
+              "type": "object"
+            },
+            "carrier_suffix": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Carrier suffix mappings",
+              "type": "object"
+            },
+            "v2g_storage_to_capacity_ratio": {
+              "default": 1,
+              "description": "V2G storage to capacity ratio",
+              "exclusiveMinimum": 0,
+              "type": "number"
+            }
+          }
+        },
+        "regional_distribution_reference": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "description": "FES regional distribution reference.",
+            "properties": {
+              "source": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                ],
+                "default": "",
+                "description": "FES2024 BB2 'Technology Detail' value(s) to use as reference for regional distribution"
+              },
+              "name": {
+                "default": "p_nom",
+                "description": "PyPSA parameter name to use to define the result (e.g. `p_nom` or `p_set`)",
+                "type": "string"
+              }
+            }
+          },
+          "description": "Regional distribution reference configuration",
+          "type": "object"
+        }
+      }
+    },
+    "FESHydrogenConfig": {
+      "additionalProperties": false,
+      "description": "FES hydrogen configuration.",
+      "properties": {
+        "data_selection": {
+          "additionalProperties": false,
+          "description": "FES hydrogen data selection filter.",
+          "properties": {
+            "all_supply": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                ]
+              },
+              "description": "Filter to get all hydrogen supply data from the FES workbook. Keys are column names, values are column value(s) to select.",
+              "type": "object"
+            },
+            "all_demand": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                ]
+              },
+              "description": "Filter to get all hydrogen demand data. Keys are column names, values are column value(s) to select.",
+              "type": "object"
+            },
+            "non_networked_supply": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                ]
+              },
+              "description": "Filter to get all hydrogen non-networked supply data from the FES workbook. Keys are column names, values are column value(s) to select.",
+              "type": "object"
+            },
+            "storage": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                ]
+              },
+              "description": "Filter to get all hydrogen storage data. Keys are column names, values are column value(s) to select.",
+              "type": "object"
+            }
+          }
+        },
+        "electrolysis_efficiency": {
+          "default": 0.7,
+          "description": "Non-networked electrolysis efficiency (MWh[H2]/MWh[electricity])",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        }
+      }
+    },
+    "FESHydrogenDataSelection": {
+      "additionalProperties": false,
+      "description": "FES hydrogen data selection filter.",
+      "properties": {
+        "all_supply": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "description": "Filter to get all hydrogen supply data from the FES workbook. Keys are column names, values are column value(s) to select.",
+          "type": "object"
+        },
+        "all_demand": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "description": "Filter to get all hydrogen demand data. Keys are column names, values are column value(s) to select.",
+          "type": "object"
+        },
+        "non_networked_supply": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "description": "Filter to get all hydrogen non-networked supply data from the FES workbook. Keys are column names, values are column value(s) to select.",
+          "type": "object"
+        },
+        "storage": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "description": "Filter to get all hydrogen storage data. Keys are column names, values are column value(s) to select.",
+          "type": "object"
+        }
+      }
+    },
+    "FESRegionalDistributionReference": {
+      "additionalProperties": false,
+      "description": "FES regional distribution reference.",
+      "properties": {
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          ],
+          "default": "",
+          "description": "FES2024 BB2 'Technology Detail' value(s) to use as reference for regional distribution"
+        },
+        "name": {
+          "default": "p_nom",
+          "description": "PyPSA parameter name to use to define the result (e.g. `p_nom` or `p_set`)",
+          "type": "string"
+        }
+      }
+    },
+    "FESSheetConfig": {
+      "additionalProperties": true,
+      "description": "FES sheet configuration.",
+      "properties": {
+        "rename": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Column rename mappings",
+          "type": "object"
+        }
+      }
+    },
     "ForesightConfig": {
       "default": "overnight",
       "description": "Configuration for `foresight` settings.",
@@ -2348,6 +3659,29 @@
         "perfect"
       ],
       "type": "string"
+    },
+    "GridSupplyPointsConfig": {
+      "additionalProperties": false,
+      "description": "Grid supply points configuration.",
+      "properties": {
+        "manual_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Manual GSP name mappings, from FES workbook names to GSP GIS file names.",
+          "type": "object"
+        },
+        "fill-lat-lons": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "description": "Manual GSP coordinate assignments, to add latitudes and longitudes for GSPs missing from the GIS data. Keys are FES workbook GSP names.",
+          "type": "object"
+        }
+      }
     },
     "IndustryConfig": {
       "description": "Configuration for `industry` settings.",
@@ -2551,6 +3885,152 @@
           "default": 0.013,
           "description": "The emissions from oil fuel processing (e.g. oil in petrochemical refinieries). The default value of 0.013 tCO2/MWh is based on DE statistics for 2019; the EU value is very similar.",
           "type": "number"
+        }
+      }
+    },
+    "InterconnectorConfig": {
+      "additionalProperties": false,
+      "description": "Individual interconnector configuration.",
+      "properties": {
+        "name": {
+          "description": "Interconnector name",
+          "type": "string"
+        },
+        "neighbour": {
+          "description": "Neighbouring country to which the interconnector connects",
+          "type": "string"
+        },
+        "capacity_mw": {
+          "description": "Capacity in MW",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "tyndp": {
+          "additionalProperties": false,
+          "description": "TYNDP project information.",
+          "properties": {
+            "id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "TYNDP ID, if known"
+            },
+            "year": {
+              "description": "TYNDP years in which the option appears",
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "lat": {
+          "description": "Latitude of GB substation where the interconnector onshores",
+          "maximum": 90,
+          "minimum": -90,
+          "type": "number"
+        },
+        "lon": {
+          "description": "Longitude of GB substation where the interconnector onshores",
+          "maximum": 180,
+          "minimum": -180,
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "neighbour",
+        "capacity_mw",
+        "lat",
+        "lon"
+      ]
+    },
+    "InterconnectorsConfig": {
+      "additionalProperties": false,
+      "description": "Interconnectors configuration.",
+      "properties": {
+        "options": {
+          "description": "List of interconnector configurations",
+          "items": {
+            "additionalProperties": false,
+            "description": "Individual interconnector configuration.",
+            "properties": {
+              "name": {
+                "description": "Interconnector name",
+                "type": "string"
+              },
+              "neighbour": {
+                "description": "Neighbouring country to which the interconnector connects",
+                "type": "string"
+              },
+              "capacity_mw": {
+                "description": "Capacity in MW",
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "tyndp": {
+                "additionalProperties": false,
+                "description": "TYNDP project information.",
+                "properties": {
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "TYNDP ID, if known"
+                  },
+                  "year": {
+                    "description": "TYNDP years in which the option appears",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "lat": {
+                "description": "Latitude of GB substation where the interconnector onshores",
+                "maximum": 90,
+                "minimum": -90,
+                "type": "number"
+              },
+              "lon": {
+                "description": "Longitude of GB substation where the interconnector onshores",
+                "maximum": 180,
+                "minimum": -180,
+                "type": "number"
+              }
+            },
+            "required": [
+              "name",
+              "neighbour",
+              "capacity_mw",
+              "lat",
+              "lon"
+            ]
+          },
+          "type": "array"
+        },
+        "plan": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": "Interconnector deployment plan by year",
+          "type": "object"
         }
       }
     },
@@ -2788,6 +4268,19 @@
         }
       }
     },
+    "LowCarbonRegisterConfig": {
+      "additionalProperties": false,
+      "description": "Low carbon register configuration.",
+      "properties": {
+        "carrier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from low carbon register carriers to model carriers",
+          "type": "object"
+        }
+      }
+    },
     "OverpassApiConfig": {
       "description": "Configuration for `overpass_api` settings.",
       "properties": {
@@ -2868,6 +4361,253 @@
           "type": "array"
         }
       }
+    },
+    "RedispatchConfig": {
+      "additionalProperties": false,
+      "description": "Redispatch config.",
+      "properties": {
+        "year_range_incl": {
+          "description": "Inclusive year range [start, end]",
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        "constraint_cost_extra_years": {
+          "default": 20,
+          "description": "number of years to extend the constraint cost calculation beyond the final year (using the data from the final year)",
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        "unconstrain_lines_and_links": {
+          "default": true,
+          "description": "Whether to unconstrain lines and links in the redispatch model. This will Set s_nom (p_nom) to infinity for lines (links) between GB regions to ensure only boundary capabilities are bounding, not physical line limits.",
+          "type": "boolean"
+        },
+        "elexon": {
+          "additionalProperties": false,
+          "description": "Elexon API configuration.",
+          "properties": {
+            "technology_mapping": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Mapping from Elexon BMU technology names to model carrier names",
+              "type": "object"
+            },
+            "years": {
+              "description": "Years to retrieve data for",
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "api_bmu_fuel_map": {
+              "default": false,
+              "description": "Boolean to decide source of Elexon BMU unit -> fuel mapping. If True, data is fetched using API; otherwise, it uses `data/gb-model/BMUFuelType.xlsx`.",
+              "type": "boolean"
+            },
+            "max_concurrent_requests": {
+              "default": 4,
+              "description": "Maximum number of concurrent requests to Elexon API. May require adjustment if API rate limits are hit.",
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "RegionMergeGroupConfig": {
+      "additionalProperties": false,
+      "description": "Configuration for merging region groups.",
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Merged region ID"
+        },
+        "merge": {
+          "description": "List of regions to merge",
+          "items": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "TO": {
+          "description": "Transmission owner",
+          "enum": [
+            "NGET",
+            "SPTL",
+            "SHETL",
+            "N-IRL"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "merge",
+        "TO"
+      ]
+    },
+    "RegionOperationsConfig": {
+      "additionalProperties": false,
+      "description": "Manual region merging and splitting configuration.",
+      "properties": {
+        "area_loss_tolerance_percent": {
+          "default": 0.01,
+          "description": "Percentage of area loss tolerated when splitting",
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
+        },
+        "min_region_area": {
+          "default": 100000.0,
+          "description": "Minimum area of a region in square meters",
+          "minimum": 0,
+          "type": "number"
+        },
+        "filter_boundaries_using_capabilities": {
+          "default": false,
+          "description": "Filter boundaries using capabilities",
+          "type": "boolean"
+        },
+        "splits": {
+          "description": "Region split configurations",
+          "items": {
+            "additionalProperties": false,
+            "description": "Configuration for splitting regions.",
+            "properties": {
+              "region": {
+                "description": "Region ID to split",
+                "type": "integer"
+              },
+              "type": {
+                "description": "Type of split",
+                "enum": [
+                  "vertical",
+                  "horizontal"
+                ],
+                "type": "string"
+              },
+              "coordinate": {
+                "description": "Coordinate for the split",
+                "type": "number"
+              }
+            },
+            "required": [
+              "region",
+              "type",
+              "coordinate"
+            ]
+          },
+          "type": "array"
+        },
+        "merge_groups": {
+          "description": "Region merge group configurations",
+          "items": {
+            "additionalProperties": false,
+            "description": "Configuration for merging region groups.",
+            "properties": {
+              "id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "Merged region ID"
+              },
+              "merge": {
+                "description": "List of regions to merge",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ]
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "TO": {
+                "description": "Transmission owner",
+                "enum": [
+                  "NGET",
+                  "SPTL",
+                  "SHETL",
+                  "N-IRL"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "merge",
+              "TO"
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "add_group_to_neighbour": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": "Map regions to neighbouring countries",
+          "type": "object"
+        }
+      }
+    },
+    "RegionSplitConfig": {
+      "additionalProperties": false,
+      "description": "Configuration for splitting regions.",
+      "properties": {
+        "region": {
+          "description": "Region ID to split",
+          "type": "integer"
+        },
+        "type": {
+          "description": "Type of split",
+          "enum": [
+            "vertical",
+            "horizontal"
+          ],
+          "type": "string"
+        },
+        "coordinate": {
+          "description": "Coordinate for the split",
+          "type": "number"
+        }
+      },
+      "required": [
+        "region",
+        "type",
+        "coordinate"
+      ]
     },
     "RemoteConfig": {
       "description": "Configuration for top level `remote` settings.",
@@ -3993,7 +5733,7 @@
       "description": "Configuration for top level `scenario` settings.",
       "properties": {
         "clusters": {
-          "description": "List of ``{clusters}`` wildcards to run. Use 'adm' for administrative clustering mode, 'all' for all nodes.",
+          "description": "List of ``{clusters}`` wildcards to run. Use 'adm' for administrative clustering mode, 'all' for all nodes. (extra) clustered: User-defined clusters scenario.",
           "items": {
             "anyOf": [
               {
@@ -4004,6 +5744,10 @@
                   "adm",
                   "all"
                 ],
+                "type": "string"
+              },
+              {
+                "const": "clustered",
                 "type": "string"
               }
             ]
@@ -5454,6 +7198,54 @@
         }
       }
     },
+    "TYNDPInfo": {
+      "additionalProperties": false,
+      "description": "TYNDP project information.",
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "TYNDP ID, if known"
+        },
+        "year": {
+          "description": "TYNDP years in which the option appears",
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        }
+      }
+    },
+    "TimeAggregationConfig": {
+      "additionalProperties": false,
+      "description": "Time aggregation configuration.",
+      "properties": {
+        "method": {
+          "description": "Time aggregation method to use, of those available in PyPSA.",
+          "enum": [
+            "segment",
+            "downsample",
+            "resample"
+          ],
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "description": "Parameters for given PyPSA time aggregation method.",
+          "type": "object"
+        }
+      },
+      "required": [
+        "method"
+      ]
+    },
     "TransformersConfig": {
       "description": "Configuration for `transformers` settings.",
       "properties": {
@@ -5471,6 +7263,84 @@
           "default": "",
           "description": "Specifies transformer types to assume for the transformers of the ENTSO-E grid extraction.",
           "type": "string"
+        }
+      }
+    },
+    "TransmissionAvailabilityConfig": {
+      "additionalProperties": false,
+      "description": "Transmission availability configuration.",
+      "properties": {
+        "years": {
+          "description": "Years to process",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "intra_gb": {
+          "additionalProperties": false,
+          "description": "Transmission availability zone configuration.",
+          "properties": {
+            "zones": {
+              "description": "List of zones",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "sample_hourly": {
+              "default": true,
+              "description": "Whether to construct an hourly availability profile using random sampling",
+              "type": "boolean"
+            }
+          }
+        },
+        "inter_gb": {
+          "additionalProperties": false,
+          "description": "Transmission availability zone configuration.",
+          "properties": {
+            "zones": {
+              "description": "List of zones",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "sample_hourly": {
+              "default": true,
+              "description": "Whether to construct an hourly availability profile using random sampling",
+              "type": "boolean"
+            }
+          }
+        },
+        "random_seeds": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "description": "Random seeds for each zone",
+          "type": "object"
+        }
+      }
+    },
+    "TransmissionAvailabilityZoneConfig": {
+      "additionalProperties": false,
+      "description": "Transmission availability zone configuration.",
+      "properties": {
+        "zones": {
+          "description": "List of zones",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "sample_hourly": {
+          "default": true,
+          "description": "Whether to construct an hourly availability profile using random sampling",
+          "type": "boolean"
         }
       }
     },
@@ -5536,6 +7406,123 @@
             "zero",
             "keep"
           ],
+          "type": "string"
+        }
+      }
+    },
+    "URLsConfig": {
+      "additionalProperties": false,
+      "description": "URLs for GB data sources.",
+      "properties": {
+        "gb-etys-boundaries": {
+          "default": "",
+          "description": "URL for ETYS boundary GIS data",
+          "type": "string"
+        },
+        "transmission-availability-2020": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "transmission-availability-2021": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "transmission-availability-2022": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "transmission-availability-2023": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "transmission-availability-2024": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "transmission-availability-2025": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fes-workbook": {
+          "default": "",
+          "description": "URL for FES workbook for the given FES year",
+          "type": "string"
+        },
+        "fes-costing-workbook": {
+          "default": "",
+          "description": "URL for FES costing workbook",
+          "type": "string"
+        },
+        "dukes-5.11": {
+          "default": "",
+          "description": "URL for DUKES 5.11 data",
+          "type": "string"
+        },
+        "gsp-coordinates": {
+          "default": "",
+          "description": "URL for GSP coordinates",
+          "type": "string"
+        },
+        "etys": {
+          "default": "",
+          "description": "URL for ETYS report",
+          "type": "string"
+        },
+        "etys-chart-data": {
+          "default": "",
+          "description": "URL for future boundary capabilities (from ETYS chart data). Only used if 'etys.use_future_capacities' is True",
+          "type": "string"
+        },
+        "low-carbon-contracts": {
+          "default": "",
+          "description": "URL for low carbon contracts actual CfD Generation data",
+          "type": "string"
+        },
+        "eur_H2_demand_today": {
+          "default": "",
+          "description": "URL for European hydrogen demand data from the Clean Hydrogen Observatory",
           "type": "string"
         }
       }
@@ -7929,7 +9916,8 @@
     }
   },
   "additionalProperties": true,
-  "description": "Combined configuration schema for PyPSA-EUR.",
+  "description": "Combined configuration schema for PyPSA-EUR.\n\n\nIncludes additional GB-specific configuration sections:\n- `fes_costs`: GB-specific cost configuration.\n- `low_carbon_register`: Low carbon register configuration.\n- `chp`: Simplified CHP configuration for GB model.\n- `urls`: URLs for GB data sources.\n- `target_crs`: Target coordinate reference system (e.g., EPSG:27700)\n- `region_operations`: Manual region merging and splitting configuration.\n- `etys`: Configuration for ETYS boundaries.\n- `entsoe_unavailability`: ENTSO-E unavailability data configuration.\n- `transmission_availability`: Transmission availability configuration.\n- `dukes_5_11`: DUKES 5.11 data configuration\n- `grid_supply_points`: Grid supply points configuration.\n- `fes`: Future Energy Scenarios (FES) configuration.\n- `ev`: Electric vehicle configuration.\n- `interconnectors`: Interconnectors configuration.\n- `redispatch`: Redispatch config.\n- `time_aggregation`: List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See `PyPSA documentation <https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal>`_ for details on the available time aggregation methods and their parameters.",
+  "markdownDescription": "Combined configuration schema for PyPSA-EUR.\n\n\nIncludes additional GB-specific configuration sections:\n- `fes_costs`: GB-specific cost configuration.\n- `low_carbon_register`: Low carbon register configuration.\n- `chp`: Simplified CHP configuration for GB model.\n- `urls`: URLs for GB data sources.\n- `target_crs`: Target coordinate reference system (e.g., EPSG:27700)\n- `region_operations`: Manual region merging and splitting configuration.\n- `etys`: Configuration for ETYS boundaries.\n- `entsoe_unavailability`: ENTSO-E unavailability data configuration.\n- `transmission_availability`: Transmission availability configuration.\n- `dukes_5_11`: DUKES 5.11 data configuration\n- `grid_supply_points`: Grid supply points configuration.\n- `fes`: Future Energy Scenarios (FES) configuration.\n- `ev`: Electric vehicle configuration.\n- `interconnectors`: Interconnectors configuration.\n- `redispatch`: Redispatch config.\n- `time_aggregation`: List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See [PyPSA documentation ](https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal) for details on the available time aggregation methods and their parameters.",
   "properties": {
     "version": {
       "default": "v2025.07.0",
@@ -8080,7 +10068,7 @@
       "description": "Configuration for top level `scenario` settings.",
       "properties": {
         "clusters": {
-          "description": "List of ``{clusters}`` wildcards to run. Use 'adm' for administrative clustering mode, 'all' for all nodes.",
+          "description": "List of ``{clusters}`` wildcards to run. Use 'adm' for administrative clustering mode, 'all' for all nodes. (extra) clustered: User-defined clusters scenario.",
           "items": {
             "anyOf": [
               {
@@ -8091,6 +10079,10 @@
                   "adm",
                   "all"
                 ],
+                "type": "string"
+              },
+              {
+                "const": "clustered",
                 "type": "string"
               }
             ]
@@ -11649,12 +13641,13 @@
       "properties": {
         "mode": {
           "default": "busmap",
-          "description": "'busmap': Default. 'custom_busmap': Enable the use of custom busmaps in rule `cluster_network`. If activated the rule looks for provided busmaps at ``data/busmaps/base_s_{clusters}_{base_network}.csv`` which should have the same format as ``resources/busmap_base_s_{clusters}.csv``, i.e. the index should contain the buses of ``networks/base_s.nc``. {base_network} is the name of the selected base_network in electricity, e.g. ``gridkit``, ``osm-prebuilt``, or ``osm-raw``. 'administrative': Clusters and indexes the network based on the administrative regions of the countries based on ``nuts3_shapes.geojson`` (level: 1, 2, 3, bz). To activate this, additionally set the ``clusters`` wildcard in ``scenario`` to 'adm'. 'custom_busshapes': Enable the use of custom shapes in rule `cluster_network`. If activated the rule looks for provided busshapes at ``data/busshapes/base_s_{clusters}_{base_network}.geojson``.",
+          "description": "'busmap': Default. 'custom_busmap': Enable the use of custom busmaps in rule `cluster_network`. If activated the rule looks for provided busmaps at ``data/busmaps/base_s_{clusters}_{base_network}.csv`` which should have the same format as ``resources/busmap_base_s_{clusters}.csv``, i.e. the index should contain the buses of ``networks/base_s.nc``. {base_network} is the name of the selected base_network in electricity, e.g. ``gridkit``, ``osm-prebuilt``, or ``osm-raw``. 'administrative': Clusters and indexes the network based on the administrative regions of the countries based on ``nuts3_shapes.geojson`` (level: 1, 2, 3, bz). To activate this, additionally set the ``clusters`` wildcard in ``scenario`` to 'adm'. 'custom_busshapes': Enable the use of custom shapes in rule `cluster_network`. If activated the rule looks for provided busshapes at ``data/busshapes/base_s_{clusters}_{base_network}.geojson``. (extra) gb_shapes: GB model region shapes.",
           "enum": [
             "busmap",
             "custom_busmap",
             "administrative",
-            "custom_busshapes"
+            "custom_busshapes",
+            "gb_shapes"
           ],
           "type": "string"
         },
@@ -13488,6 +15481,1192 @@
           }
         }
       }
+    },
+    "fes_costs": {
+      "additionalProperties": false,
+      "description": "GB-specific cost configuration.",
+      "properties": {
+        "sheet-config": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "description": "FES sheet configuration.",
+            "properties": {
+              "rename": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Column rename mappings",
+                "type": "object"
+              }
+            }
+          },
+          "description": "FES costing workbook sheet configurations. Any pandas read_excel kwargs can be included for each sheet.",
+          "type": "object"
+        },
+        "GBP_to_EUR": {
+          "default": 1,
+          "description": "GBP to EUR exchange rate",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "GBP_to_USD": {
+          "default": 1,
+          "description": "GBP to USD exchange rate",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "relevant_cost_columns": {
+          "description": "List of relevant cost columns",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "marginal_cost_columns": {
+          "description": "List of marginal cost columns",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "add_cols": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "description": "Additional cost columns configuration",
+          "type": "object"
+        },
+        "default_characteristics": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "type": "object"
+          },
+          "description": "Default characteristics for cost data",
+          "type": "object"
+        },
+        "carrier_gap_filling": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Carrier gap filling mappings",
+          "type": "object"
+        },
+        "fes_VOM_carrier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "FES variable O&M carrier mapping",
+          "type": "object"
+        },
+        "fes_fuel_carrier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "FES fuel carrier mapping",
+          "type": "object"
+        },
+        "voll": {
+          "default": 0,
+          "description": "Value of lost load in \u00a3/MWh",
+          "minimum": 0,
+          "type": "number"
+        }
+      }
+    },
+    "low_carbon_register": {
+      "additionalProperties": false,
+      "description": "Low carbon register configuration.",
+      "properties": {
+        "carrier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from low carbon register carriers to model carriers",
+          "type": "object"
+        }
+      }
+    },
+    "chp": {
+      "additionalProperties": false,
+      "description": "Simplified CHP configuration for GB model.",
+      "properties": {
+        "enable": {
+          "default": true,
+          "description": "Enable simplified CHP constraints",
+          "type": "boolean"
+        },
+        "heat_to_power_ratio": {
+          "default": 1,
+          "description": "Heat-to-power ratio (c_b coefficient)",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "min_operation_level": {
+          "default": 0,
+          "description": "Minimum operation level when running",
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "shutdown_threshold": {
+          "default": 0,
+          "description": "Heat demand threshold below which CHPs can shut down completely",
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        }
+      }
+    },
+    "urls": {
+      "additionalProperties": false,
+      "description": "URLs for GB data sources.",
+      "properties": {
+        "gb-etys-boundaries": {
+          "default": "",
+          "description": "URL for ETYS boundary GIS data",
+          "type": "string"
+        },
+        "transmission-availability-2020": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "transmission-availability-2021": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "transmission-availability-2022": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "transmission-availability-2023": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "transmission-availability-2024": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "transmission-availability-2025": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fes-workbook": {
+          "default": "",
+          "description": "URL for FES workbook for the given FES year",
+          "type": "string"
+        },
+        "fes-costing-workbook": {
+          "default": "",
+          "description": "URL for FES costing workbook",
+          "type": "string"
+        },
+        "dukes-5.11": {
+          "default": "",
+          "description": "URL for DUKES 5.11 data",
+          "type": "string"
+        },
+        "gsp-coordinates": {
+          "default": "",
+          "description": "URL for GSP coordinates",
+          "type": "string"
+        },
+        "etys": {
+          "default": "",
+          "description": "URL for ETYS report",
+          "type": "string"
+        },
+        "etys-chart-data": {
+          "default": "",
+          "description": "URL for future boundary capabilities (from ETYS chart data). Only used if 'etys.use_future_capacities' is True",
+          "type": "string"
+        },
+        "low-carbon-contracts": {
+          "default": "",
+          "description": "URL for low carbon contracts actual CfD Generation data",
+          "type": "string"
+        },
+        "eur_H2_demand_today": {
+          "default": "",
+          "description": "URL for European hydrogen demand data from the Clean Hydrogen Observatory",
+          "type": "string"
+        }
+      }
+    },
+    "target_crs": {
+      "default": "EPSG:27700",
+      "description": "Target coordinate reference system (e.g., EPSG:27700)",
+      "type": "string"
+    },
+    "region_operations": {
+      "additionalProperties": false,
+      "description": "Manual region merging and splitting configuration.",
+      "properties": {
+        "area_loss_tolerance_percent": {
+          "default": 0.01,
+          "description": "Percentage of area loss tolerated when splitting",
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
+        },
+        "min_region_area": {
+          "default": 100000.0,
+          "description": "Minimum area of a region in square meters",
+          "minimum": 0,
+          "type": "number"
+        },
+        "filter_boundaries_using_capabilities": {
+          "default": false,
+          "description": "Filter boundaries using capabilities",
+          "type": "boolean"
+        },
+        "splits": {
+          "description": "Region split configurations",
+          "items": {
+            "additionalProperties": false,
+            "description": "Configuration for splitting regions.",
+            "properties": {
+              "region": {
+                "description": "Region ID to split",
+                "type": "integer"
+              },
+              "type": {
+                "description": "Type of split",
+                "enum": [
+                  "vertical",
+                  "horizontal"
+                ],
+                "type": "string"
+              },
+              "coordinate": {
+                "description": "Coordinate for the split",
+                "type": "number"
+              }
+            },
+            "required": [
+              "region",
+              "type",
+              "coordinate"
+            ]
+          },
+          "type": "array"
+        },
+        "merge_groups": {
+          "description": "Region merge group configurations",
+          "items": {
+            "additionalProperties": false,
+            "description": "Configuration for merging region groups.",
+            "properties": {
+              "id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "Merged region ID"
+              },
+              "merge": {
+                "description": "List of regions to merge",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ]
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "TO": {
+                "description": "Transmission owner",
+                "enum": [
+                  "NGET",
+                  "SPTL",
+                  "SHETL",
+                  "N-IRL"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "merge",
+              "TO"
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "add_group_to_neighbour": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": "Map regions to neighbouring countries",
+          "type": "object"
+        }
+      }
+    },
+    "etys": {
+      "additionalProperties": false,
+      "description": "Configuration for ETYS boundaries.",
+      "properties": {
+        "future_capacities_sheet_name": {
+          "default": "ETYS 2022 Chart Data",
+          "description": "Name of the sheet to use in the downloaded ETYS future capacities workbook",
+          "type": "string"
+        },
+        "use_future_capacities": {
+          "default": true,
+          "description": "Whether to use future boundary capacities (a.k.a. capabilities) from ETYS chart data, instead of today's capacities.",
+          "type": "boolean"
+        },
+        "manual_future_capacities": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "description": "Manual future boundary capacities, to fill gaps in the ETYS chart data, if necessary. Top-level key is the boundary name, then key-value pairs of year and capacity in MW.",
+          "type": "object"
+        }
+      }
+    },
+    "entsoe_unavailability": {
+      "additionalProperties": false,
+      "description": "ENTSO-E unavailability data configuration.",
+      "properties": {
+        "start_date": {
+          "default": "2020-01-01",
+          "description": "Start date for data retrieval",
+          "type": "string"
+        },
+        "end_date": {
+          "default": "2025-12-31",
+          "description": "End date for data retrieval",
+          "type": "string"
+        },
+        "bidding_zones": {
+          "description": "List of bidding zones to consider",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "business_types": {
+          "description": "Business types to retrieve",
+          "items": {
+            "enum": [
+              "planned",
+              "forced"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "max_request_days": {
+          "default": 365,
+          "description": "Maximum days per API request",
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        "max_unavailable_days": {
+          "default": 365,
+          "description": "Maximum days to consider an outage",
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        "carrier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Carrier mapping from ENTSO-E to model carriers",
+          "type": "object"
+        }
+      }
+    },
+    "transmission_availability": {
+      "additionalProperties": false,
+      "description": "Transmission availability configuration.",
+      "properties": {
+        "years": {
+          "description": "Years to process",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "intra_gb": {
+          "additionalProperties": false,
+          "description": "Transmission availability zone configuration.",
+          "properties": {
+            "zones": {
+              "description": "List of zones",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "sample_hourly": {
+              "default": true,
+              "description": "Whether to construct an hourly availability profile using random sampling",
+              "type": "boolean"
+            }
+          }
+        },
+        "inter_gb": {
+          "additionalProperties": false,
+          "description": "Transmission availability zone configuration.",
+          "properties": {
+            "zones": {
+              "description": "List of zones",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "sample_hourly": {
+              "default": true,
+              "description": "Whether to construct an hourly availability profile using random sampling",
+              "type": "boolean"
+            }
+          }
+        },
+        "random_seeds": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "description": "Random seeds for each zone",
+          "type": "object"
+        }
+      }
+    },
+    "dukes-5.11": {
+      "additionalProperties": false,
+      "description": "DUKES configuration.",
+      "properties": {
+        "sheet-config": {
+          "additionalProperties": false,
+          "description": "DUKES sheet configuration.",
+          "properties": {
+            "sheet_name": {
+              "default": "",
+              "description": "Name of the Excel sheet",
+              "type": "string"
+            },
+            "usecols": {
+              "default": "",
+              "description": "Columns to use",
+              "type": "string"
+            },
+            "skiprows": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "index_col": {
+              "description": "Index columns",
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "header": {
+              "default": 0,
+              "description": "Header row",
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        },
+        "carrier_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Carrier mapping configuration. Top level keys are column names, second level maps from column values to carrier names.",
+          "type": "object"
+        },
+        "set_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Set mapping configuration. Top level keys are column names, second level maps from column values to set names.",
+          "type": "object"
+        }
+      }
+    },
+    "grid_supply_points": {
+      "additionalProperties": false,
+      "description": "Grid supply points configuration.",
+      "properties": {
+        "manual_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Manual GSP name mappings, from FES workbook names to GSP GIS file names.",
+          "type": "object"
+        },
+        "fill-lat-lons": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "description": "Manual GSP coordinate assignments, to add latitudes and longitudes for GSPs missing from the GIS data. Keys are FES workbook GSP names.",
+          "type": "object"
+        }
+      }
+    },
+    "fes": {
+      "additionalProperties": false,
+      "description": "Future Energy Scenarios (FES) configuration.",
+      "properties": {
+        "fes_year": {
+          "default": 2024,
+          "description": "FES data year",
+          "type": "integer"
+        },
+        "scenario_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from FES scenario shorthand (key) to FES scenario long name (value). The shorthand will be used in the output data directories and may be referred to when shorthand is used in data files (e.g. ETYS chart data).",
+          "type": "object"
+        },
+        "default_set": {
+          "default": "PP",
+          "description": "Default PyPSA network set identifier",
+          "enum": [
+            "PP",
+            "CHP",
+            "Store"
+          ],
+          "type": "string"
+        },
+        "sheet-config": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "description": "FES sheet configuration.",
+            "properties": {
+              "rename": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Column rename mappings",
+                "type": "object"
+              }
+            }
+          },
+          "description": "FES workbook sheet configurations. Any pandas read_excel kwargs can be included for each sheet.",
+          "type": "object"
+        },
+        "gb": {
+          "additionalProperties": false,
+          "description": "FES GB-specific configuration.",
+          "properties": {
+            "carrier_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+              "type": "object"
+            },
+            "set_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "enum": [
+                    "CHP",
+                    "PP",
+                    "Store"
+                  ],
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+              "type": "object"
+            },
+            "demand": {
+              "additionalProperties": false,
+              "description": "FES demand configuration.",
+              "properties": {
+                "Technology Detail": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "description": "Grouping from FES workbook BB2 Technology Detail column to model carriers",
+                  "type": "object"
+                },
+                "heat": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "ASHP",
+                            "GSHP",
+                            "resistive"
+                          ],
+                          "type": "string"
+                        },
+                        {
+                          "items": {
+                            "enum": [
+                              "ASHP",
+                              "GSHP",
+                              "resistive"
+                            ],
+                            "type": "string"
+                          },
+                          "type": "array"
+                        }
+                      ]
+                    },
+                    "type": "object"
+                  },
+                  "description": "Mapping from FES workbook heating technologies to intermediate model carriers.",
+                  "type": "object"
+                },
+                "bus_suffix": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Bus suffixes to apply in the PyPSA network for different demand types",
+                  "type": "object"
+                }
+              }
+            },
+            "flexibility": {
+              "additionalProperties": false,
+              "description": "FES flexibility configuration.",
+              "properties": {
+                "carrier_mapping": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        }
+                      ]
+                    },
+                    "type": "object"
+                  },
+                  "description": "Carrier mapping for flexibility. Top level keys are GB model DSR carriers, second level maps from column names to column value(s).",
+                  "type": "object"
+                },
+                "dsr_hours": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "integer"
+                    },
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "type": "array"
+                  },
+                  "description": "Demand side response hours for each carrier",
+                  "type": "object"
+                },
+                "carrier_suffix": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Carrier suffix mappings",
+                  "type": "object"
+                },
+                "v2g_storage_to_capacity_ratio": {
+                  "default": 1,
+                  "description": "V2G storage to capacity ratio",
+                  "exclusiveMinimum": 0,
+                  "type": "number"
+                }
+              }
+            },
+            "regional_distribution_reference": {
+              "additionalProperties": {
+                "additionalProperties": false,
+                "description": "FES regional distribution reference.",
+                "properties": {
+                  "source": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ],
+                    "default": "",
+                    "description": "FES2024 BB2 'Technology Detail' value(s) to use as reference for regional distribution"
+                  },
+                  "name": {
+                    "default": "p_nom",
+                    "description": "PyPSA parameter name to use to define the result (e.g. `p_nom` or `p_set`)",
+                    "type": "string"
+                  }
+                }
+              },
+              "description": "Regional distribution reference configuration",
+              "type": "object"
+            }
+          }
+        },
+        "eur": {
+          "additionalProperties": false,
+          "description": "FES European configuration.",
+          "properties": {
+            "carrier_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+              "type": "object"
+            },
+            "set_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "enum": [
+                    "CHP",
+                    "PP",
+                    "Store"
+                  ],
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+              "type": "object"
+            },
+            "totals_to_demand_groups": {
+              "additionalProperties": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "description": "Keys are gb-model demand carriers, values are energy total column names.",
+              "type": "object"
+            },
+            "add_data_reference": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Reference data to use to synthesise datasets for which we have no European data.",
+              "type": "object"
+            },
+            "load_shedding_cost_above_marginal": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Marginal cost to apply to European load shedding above the marginal cost of the most expensive European generation technology. This is used to ensure that load shedding only occurs after all generation technologies have been fully utilised, but to stop the resulting marginal prices from being excessively high."
+            }
+          }
+        },
+        "hydrogen": {
+          "additionalProperties": false,
+          "description": "FES hydrogen configuration.",
+          "properties": {
+            "data_selection": {
+              "additionalProperties": false,
+              "description": "FES hydrogen data selection filter.",
+              "properties": {
+                "all_supply": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "description": "Filter to get all hydrogen supply data from the FES workbook. Keys are column names, values are column value(s) to select.",
+                  "type": "object"
+                },
+                "all_demand": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "description": "Filter to get all hydrogen demand data. Keys are column names, values are column value(s) to select.",
+                  "type": "object"
+                },
+                "non_networked_supply": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "description": "Filter to get all hydrogen non-networked supply data from the FES workbook. Keys are column names, values are column value(s) to select.",
+                  "type": "object"
+                },
+                "storage": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "description": "Filter to get all hydrogen storage data. Keys are column names, values are column value(s) to select.",
+                  "type": "object"
+                }
+              }
+            },
+            "electrolysis_efficiency": {
+              "default": 0.7,
+              "description": "Non-networked electrolysis efficiency (MWh[H2]/MWh[electricity])",
+              "exclusiveMinimum": 0,
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "ev": {
+      "additionalProperties": false,
+      "description": "Electric vehicle configuration.",
+      "properties": {
+        "plug_in_offset": {
+          "default": 0,
+          "description": "Hours after traffic peak when EVs are assumed to plug in",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "charging_duration": {
+          "default": 1,
+          "description": "Charging duration in hours",
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        "ev_demand_profile_transformation": {
+          "additionalProperties": false,
+          "description": "EV demand profile transformation parameters.",
+          "properties": {
+            "lower_optimization_bound": {
+              "default": 0,
+              "description": "Lower bound for gamma optimization",
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            "upper_optimization_bound": {
+              "default": null,
+              "description": "Upper bound for gamma optimization",
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            "relative_peak_tolerance": {
+              "default": 0.0,
+              "description": "Relative peak tolerance (fraction)",
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            "relative_energy_tolerance": {
+              "default": 0.0,
+              "description": "Relative energy tolerance (fraction)",
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "interconnectors": {
+      "additionalProperties": false,
+      "description": "Interconnectors configuration.",
+      "properties": {
+        "options": {
+          "description": "List of interconnector configurations",
+          "items": {
+            "additionalProperties": false,
+            "description": "Individual interconnector configuration.",
+            "properties": {
+              "name": {
+                "description": "Interconnector name",
+                "type": "string"
+              },
+              "neighbour": {
+                "description": "Neighbouring country to which the interconnector connects",
+                "type": "string"
+              },
+              "capacity_mw": {
+                "description": "Capacity in MW",
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "tyndp": {
+                "additionalProperties": false,
+                "description": "TYNDP project information.",
+                "properties": {
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "TYNDP ID, if known"
+                  },
+                  "year": {
+                    "description": "TYNDP years in which the option appears",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "lat": {
+                "description": "Latitude of GB substation where the interconnector onshores",
+                "maximum": 90,
+                "minimum": -90,
+                "type": "number"
+              },
+              "lon": {
+                "description": "Longitude of GB substation where the interconnector onshores",
+                "maximum": 180,
+                "minimum": -180,
+                "type": "number"
+              }
+            },
+            "required": [
+              "name",
+              "neighbour",
+              "capacity_mw",
+              "lat",
+              "lon"
+            ]
+          },
+          "type": "array"
+        },
+        "plan": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": "Interconnector deployment plan by year",
+          "type": "object"
+        }
+      }
+    },
+    "redispatch": {
+      "additionalProperties": false,
+      "description": "Redispatch config.",
+      "properties": {
+        "year_range_incl": {
+          "description": "Inclusive year range [start, end]",
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        "constraint_cost_extra_years": {
+          "default": 20,
+          "description": "number of years to extend the constraint cost calculation beyond the final year (using the data from the final year)",
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        "unconstrain_lines_and_links": {
+          "default": true,
+          "description": "Whether to unconstrain lines and links in the redispatch model. This will Set s_nom (p_nom) to infinity for lines (links) between GB regions to ensure only boundary capabilities are bounding, not physical line limits.",
+          "type": "boolean"
+        },
+        "elexon": {
+          "additionalProperties": false,
+          "description": "Elexon API configuration.",
+          "properties": {
+            "technology_mapping": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Mapping from Elexon BMU technology names to model carrier names",
+              "type": "object"
+            },
+            "years": {
+              "description": "Years to retrieve data for",
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "api_bmu_fuel_map": {
+              "default": false,
+              "description": "Boolean to decide source of Elexon BMU unit -> fuel mapping. If True, data is fetched using API; otherwise, it uses `data/gb-model/BMUFuelType.xlsx`.",
+              "type": "boolean"
+            },
+            "max_concurrent_requests": {
+              "default": 4,
+              "description": "Maximum number of concurrent requests to Elexon API. May require adjustment if API rate limits are hit.",
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "time_aggregation": {
+      "description": "List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See `PyPSA documentation <https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal>`_ for details on the available time aggregation methods and their parameters.",
+      "markdownDescription": "List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See [PyPSA documentation ](https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal) for details on the available time aggregation methods and their parameters.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Time aggregation configuration.",
+        "properties": {
+          "method": {
+            "description": "Time aggregation method to use, of those available in PyPSA.",
+            "enum": [
+              "segment",
+              "downsample",
+              "resample"
+            ],
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "description": "Parameters for given PyPSA time aggregation method.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "method"
+        ]
+      },
+      "type": "array"
     }
   },
   "title": "PyPSA-Eur Configuration",

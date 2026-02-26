@@ -26,6 +26,7 @@ rule compose_network:
         electricity=config["electricity"],
         clustering=config["clustering"],
         renewable=config["renewable"],
+        voll=config["fes_costs"]["voll"],
         enable_chp=config["chp"]["enable"],
         dsr_hours_dict=config["fes"]["gb"]["flexibility"]["dsr_hours"],
         load_bus_suffixes=config["fes"]["gb"]["demand"]["bus_suffix"],
