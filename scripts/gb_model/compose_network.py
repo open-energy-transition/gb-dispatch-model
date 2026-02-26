@@ -1196,6 +1196,35 @@ def add_load_shedding(n: pypsa.Network, voll: float) -> None:
         logger.info("VOLL is zero or False; load shedding not added to the network")
 
 
+def aggregate_time(n: pypsa.Network, time_aggregation: list[dict]) -> pypsa.Network:
+    """
+    Aggregate time steps in the network using the specified time aggregation method.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        The PyPSA network to aggregate.
+    time_aggregation : list of dict
+        List of dictionaries specifying the time aggregation method and parameters.
+
+    Returns
+    -------
+    pypsa.Network
+        The aggregated PyPSA network.
+    """
+    if not time_aggregation:
+        logger.info("No time aggregation specified; returning original network")
+        return n
+    m = n.copy()
+    for agg in time_aggregation:
+        logger.info(f"Aggregating time steps using method: {agg['method']}")
+        m = getattr(m.cluster.temporal, agg["method"])(**agg["parameters"])
+    logger.info(
+        f"Time aggregation complete. Original snapshots: {len(n.snapshots)}, Aggregated snapshots: {len(m.snapshots)}"
+    )
+    return m
+
+
 def compose_network(
     network_path: str,
     output_path: str,
@@ -1210,6 +1239,7 @@ def compose_network(
     renewable_profiles: dict[str, str],
     countries: list[str],
     costs_config: dict[str, Any],
+    voll: float,
     electricity_config: dict[str, Any],
     renewable_config: dict[str, Any],
     demands: dict[str, str],
@@ -1220,6 +1250,7 @@ def compose_network(
     dsr_hours_dict: dict[str, list],
     load_bus_suffixes: dict[str, str],
     flex_carrier_suffixes: dict[str, str],
+    time_aggregation: list[dict],
     year: int,
 ) -> None:
     """
@@ -1249,6 +1280,8 @@ def compose_network(
         List of country codes to include
     costs_config : dict
         Costs configuration dictionary
+    voll : float
+        Value of lost load in £/MWh
     electricity_config : dict
         Electricity configuration dictionary
     clustering_config : dict
@@ -1350,11 +1383,12 @@ def compose_network(
 
     add_battery_storage(network, ppl, battery_e_nom_path, year)
     _add_generator_availability(network, generator_availability_path)
-    add_load_shedding(network, costs_config["voll"])
+    add_load_shedding(network, voll)
 
     finalise_composed_network(network, context)
 
-    network.export_to_netcdf(output_path)
+    network_agg = aggregate_time(network, time_aggregation)
+    network_agg.export_to_netcdf(output_path)
 
 
 if __name__ == "__main__":
@@ -1387,6 +1421,7 @@ if __name__ == "__main__":
         battery_e_nom_path=snakemake.input.battery_e_nom,
         countries=snakemake.params.countries,
         costs_config=snakemake.params.costs_config,
+        voll=snakemake.params.voll,
         electricity_config=snakemake.params.electricity,
         renewable_config=snakemake.params.renewable,
         demands=_input_list_to_dict(snakemake.input.demands, parent=True),
@@ -1397,5 +1432,6 @@ if __name__ == "__main__":
         dsr_hours_dict=snakemake.params.dsr_hours_dict,
         load_bus_suffixes=snakemake.params.load_bus_suffixes,
         flex_carrier_suffixes=snakemake.params.flex_carrier_suffixes,
+        time_aggregation=snakemake.params.time_aggregation,
         year=int(snakemake.wildcards.year),
     )

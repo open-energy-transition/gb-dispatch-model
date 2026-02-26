@@ -70,6 +70,7 @@ extensions = [
 ]
 
 autodoc_mock_imports = [
+    "annotated_types",
     "atlite",
     "snakemake",
     "rioxarray",

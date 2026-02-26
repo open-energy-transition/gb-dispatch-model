@@ -15,6 +15,9 @@ import pypsa
 
 from scripts._helpers import configure_logging, set_scenario_config
 from scripts.gb_model._helpers import filter_interconnectors
+from scripts.gb_model.dispatch.prepare_unconstrained_network import (
+    copperplate_gb,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -328,6 +331,10 @@ if __name__ == "__main__":
     drop_existing_eur_buses(network)
 
     add_single_eur_bus(network, unconstrained_result)
+
+    if snakemake.params["unconstrain_lines_and_links"]:
+        # Set line capacities to infinity, so only boundary capabilities bound the optimization instead of line capacities.
+        copperplate_gb(network)
 
     network.export_to_netcdf(snakemake.output.network)
     logger.info(f"Exported network to {snakemake.output.network}")

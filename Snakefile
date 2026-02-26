@@ -24,9 +24,9 @@ from scripts._helpers import (
 from scripts.lib.validation.config import validate_config
 
 
-configfile: "config/config.default.yaml"
+configfile: "config/config.default.gb.yaml"
 configfile: "config/plotting.default.yaml"
-configfile: "config/config.gb.default.yaml"
+configfile: "config/config.gb.2024.yaml"
 
 
 if Path("config/config.yaml").exists():
