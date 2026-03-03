@@ -4024,12 +4024,15 @@
         },
         "plan": {
           "additionalProperties": {
-            "items": {
-              "type": "string"
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
             },
-            "type": "array"
+            "type": "object"
           },
-          "description": "Interconnector deployment plan by year",
+          "description": "Interconnector deployment plan by FES scenario/pathway and year",
           "type": "object"
         }
       }
@@ -16574,12 +16577,15 @@
         },
         "plan": {
           "additionalProperties": {
-            "items": {
-              "type": "string"
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
             },
-            "type": "array"
+            "type": "object"
           },
-          "description": "Interconnector deployment plan by year",
+          "description": "Interconnector deployment plan by FES scenario/pathway and year",
           "type": "object"
         }
       }
