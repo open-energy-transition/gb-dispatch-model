@@ -140,7 +140,10 @@ rule prepare_constrained_network:
     message:
         "Prepare network for constrained optimization"
     params:
-        unconstrain_lines_and_links=config["redispatch"]["unconstrain_lines_and_links"],
+        unconstrain_lines_and_links=config_provider(
+            "redispatch", "unconstrain_lines_and_links"
+        ),
+        no_redispatch_carriers=config_provider("redispatch", "no_redispatch_carriers"),
     input:
         network=resources("networks/{fes_scenario}/composed_clustered/{year}.nc"),
         unconstrained_result=RESULTS

@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Disallow nuclear from being redispatched (#201).
 * Add missing carrier for non-networked electrolysis demand (#242).
 * Capitalise all EV carriers (#243).
 * Fix interconnector capacity plan to align with FES2024 results (with high degree of subjectivity on project choice) (#232).

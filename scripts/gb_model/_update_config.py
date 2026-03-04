@@ -644,6 +644,10 @@ class RedispatchConfig(GBBaseConfig):
     elexon: ElexonConfig = Field(
         description="Elexon API configuration", default_factory=ElexonConfig
     )
+    no_redispatch_carriers: list[str] = Field(
+        default_factory=list,
+        description="List of carriers to exclude from being redispatched.",
+    )
 
     @field_validator("year_range_incl")
     @classmethod

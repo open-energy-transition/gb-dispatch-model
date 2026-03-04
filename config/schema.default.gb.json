@@ -4418,6 +4418,13 @@
               "type": "integer"
             }
           }
+        },
+        "no_redispatch_carriers": {
+          "description": "List of carriers to exclude from being redispatched.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         }
       }
     },
@@ -16643,6 +16650,13 @@
               "type": "integer"
             }
           }
+        },
+        "no_redispatch_carriers": {
+          "description": "List of carriers to exclude from being redispatched.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         }
       }
     },

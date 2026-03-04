@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
+# yaml-language-server: $schema=./schema.default.gb.json
+
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#run
 run:
   name: "GB"
@@ -1196,6 +1198,8 @@ redispatch:
   year_range_incl: [2025, 2044] # 20-year period over which we will run the simulation
   constraint_cost_extra_years: 20
   unconstrain_lines_and_links: true
+  no_redispatch_carriers:
+  - nuclear
   elexon: # Elexon API data
     technology_mapping: # ignoring renewables in mapping as they come from CfD data
       coal: coal

@@ -1608,6 +1608,7 @@ redispatch:
     years: []
     api_bmu_fuel_map: false
     max_concurrent_requests: 4
+  no_redispatch_carriers: []
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#time_aggregation
 time_aggregation: []

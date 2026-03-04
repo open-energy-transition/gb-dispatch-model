@@ -124,6 +124,7 @@ def create_up_down_plants(
     renewable_strike_prices: pd.Series,
     interconnector_bid_offer_profile: pd.DataFrame,
     gb_buses: pd.Index,
+    no_redispatch_carriers: list[str],
 ):
     """
     Add generators and storage units components that mimic increase / decrease in dispatch
@@ -142,6 +143,8 @@ def create_up_down_plants(
         Interconnectors bid/offer profile for each interconnector
     gb_buses: pd.Index
         Index of GB buses
+    no_redispatch_carriers: list[str]
+        List of carriers to exclude from being redispatched.
     """
     for comp in constrained_network.components:
         if comp.name not in ["Generator", "StorageUnit", "Link"]:
@@ -155,16 +158,11 @@ def create_up_down_plants(
         g_down = comp.static.loc[~comp.static.index.str.contains(LOAD_SHEDDING_REGEX)]
 
         if comp.name != "Link":
-            # Filter GB plants
-            g_up = g_up.query("bus in @gb_buses and p_nom != 0")
-            g_down = g_down.query("bus in @gb_buses and p_nom != 0")
+            query = "bus in @gb_buses and p_nom != 0 and carrier not in @no_redispatch_carriers"
         else:
-            g_up = g_up.query(
-                "bus0 in @gb_buses and bus1 not in @gb_buses and p_nom != 0"
-            )
-            g_down = g_down.query(
-                "bus0 in @gb_buses and bus1 not in @gb_buses and p_nom != 0"
-            )
+            query = "bus0 in @gb_buses and bus1 not in @gb_buses and p_nom != 0 and carrier not in @no_redispatch_carriers"
+        g_up = g_up.query(query)
+        g_down = g_down.query(query)
 
         # Compute dispatch limits for the up and down generators
         result_component = unconstrained_result.components[comp.name]
@@ -326,6 +324,7 @@ if __name__ == "__main__":
         renewable_strike_prices,
         interconnector_bid_offer_profile,
         gb_buses,
+        snakemake.params.no_redispatch_carriers,
     )
 
     drop_existing_eur_buses(network)
