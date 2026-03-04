@@ -472,6 +472,9 @@ etys:
       2040: 2440
       2041: 2460
       2042: 2490
+      2043: 2490
+      2044: 2490
+      2045: 2490
 
 # Note: Set ENTSO_E_API_KEY in your .env file or environment variables
 # Register at https://transparency.entsoe.eu/ to get API key
