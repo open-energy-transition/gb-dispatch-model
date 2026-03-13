@@ -12,6 +12,7 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 import pypsa
+from shapely import Point
 
 from scripts._helpers import configure_logging, set_scenario_config
 
@@ -37,25 +38,57 @@ def create_busmap(
         pd.Series: Series mapping each bus to its associated region.
     """
 
-    gb_lines = gpd.sjoin(lines, regions.to_crs(lines.crs))
-    gb_buses = gpd.sjoin(buses, gb_lines[["geometry", "region", "line_id"]])
-    offshore_buses = gpd.overlay(gb_buses, regions, how="difference").drop_duplicates(
-        "bus_id"
+    # Identify offshore buses that are connected to onshore buses
+    offshore_buses = _get_offshore_buses(lines, buses, regions, regions[["geometry"]])
+
+    # Next, identify offshore buses that are themselves only connected to other offshore buses
+    all_offshore_buses = _get_offshore_buses(
+        lines, buses, regions, offshore_buses[["geometry", "bus_id"]]
     )
-    onshore_buses = offshore_buses.apply(
-        _get_onshore_bus, args=(buses, network), axis=1
+
+    onshore_buses = all_offshore_buses.apply(
+        _get_onshore_bus, args=(buses, network, all_offshore_buses), axis=1
     )
-    onshore_buses.index = offshore_buses.bus_id
-    onshore_points = gpd.GeoSeries(onshore_buses, crs=offshore_buses.crs)
+    onshore_buses.index = all_offshore_buses.bus_id
+    onshore_points = gpd.GeoSeries(onshore_buses, crs=all_offshore_buses.crs)
     busmap = gpd.sjoin(
         onshore_points.reset_index(), regions.to_crs(onshore_points.crs), how="left"
     ).set_index("bus_id")["region"]
     return busmap
 
 
-def _get_onshore_bus(
-    bus_series: gpd.GeoSeries, buses: gpd.GeoDataFrame, network: pypsa.Network
+def _get_offshore_buses(
+    lines: gpd.GeoDataFrame,
+    buses: gpd.GeoDataFrame,
+    regions: gpd.GeoDataFrame,
+    lines_in: gpd.GeoDataFrame,
 ) -> gpd.GeoDataFrame:
+    """
+    Identify offshore buses based on line and region geometries.
+
+    Args:
+        lines (gpd.GeoDataFrame): GeoDataFrame containing line geometries.
+        buses (gpd.GeoDataFrame): GeoDataFrame containing bus geometries.
+        regions (gpd.GeoDataFrame): GeoDataFrame containing region geometries.
+        lines_in (gpd.GeoDataFrame): GeoDataFrame with geometries for which we want lines to overlap for us to consider them.
+
+    Returns:
+        gpd.GeoDataFrame: GeoDataFrame containing offshore buses.
+    """
+    relevant_lines = gpd.sjoin(lines, lines_in.to_crs(lines.crs))
+    relevant_buses = gpd.sjoin(buses, relevant_lines[["geometry", "line_id"]])
+    offshore_buses = gpd.overlay(
+        relevant_buses, regions.to_crs(buses.crs), how="difference"
+    )
+    return offshore_buses.drop_duplicates("bus_id")
+
+
+def _get_onshore_bus(
+    bus_series: gpd.GeoSeries,
+    buses: gpd.GeoDataFrame,
+    network: pypsa.Network,
+    all_offshore_buses: gpd.GeoDataFrame,
+) -> Point:
     """
     Resolve duplicate bus mappings by prioritising the closest region among the duplicates.
 
@@ -72,7 +105,18 @@ def _get_onshore_bus(
         .difference([bus_series.bus_id])
         .pop()
     )
-    onshore_bus_point = buses.set_index("bus_id").loc[other_bus, "geometry"]
+    if other_bus in all_offshore_buses.bus_id.values:
+        logger.info(
+            "Identifying busmap for offshore bus %s connected to another offshore bus %s",
+            bus_series.bus_id,
+            other_bus,
+        )
+        other_bus_series = all_offshore_buses[
+            all_offshore_buses.bus_id == other_bus
+        ].iloc[0]
+        return _get_onshore_bus(other_bus_series, buses, network, all_offshore_buses)
+    else:
+        onshore_bus_point = buses.set_index("bus_id").loc[other_bus, "geometry"]
     return onshore_bus_point
 
 
