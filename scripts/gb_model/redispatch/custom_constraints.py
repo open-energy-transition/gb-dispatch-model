@@ -145,7 +145,7 @@ def update_storage_balance(n: pypsa.Network) -> None:
     ].index
     ramp_p = n.model["Generator-p"].sel(name=ramp_names)
     idx = ramp_p.coords["name"].str.replace(r" ramp (up|down)", "")
-    ramp_p_grouped = ramp_p.groupby(idx).sum()
+    ramp_p_grouped = ramp_p.groupby(idx).sum() * n.snapshot_weightings["stores"]
 
     # ramping up and ramping down `p` already have the correct signs (positive and negative, respectively),
     # so no need to invert one of them when applying to the LHS.

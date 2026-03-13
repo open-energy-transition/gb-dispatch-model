@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Account for snapshot weighting and in redispatch version of the storage unit energy balance constraint.
 * Add data cleaning section into the docs, to describe some of our data processing steps in more detail.
 * Automate custom busmaps for correctly connecting offshore wind farm buses with their appropriate onshore regions.
 * Correctly align line/link flow directions when applying the boundary constraints (#259).
