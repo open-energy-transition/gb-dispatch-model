@@ -42,9 +42,23 @@ def create_busmap(
     offshore_buses = _get_offshore_buses(lines, buses, regions, regions[["geometry"]])
 
     # Next, identify offshore buses that are themselves only connected to other offshore buses
-    all_offshore_buses = _get_offshore_buses(
-        lines, buses, regions, offshore_buses[["geometry", "bus_id"]]
-    )
+    num_buses = len(offshore_buses)
+    lines_in = offshore_buses
+    while True:
+        all_offshore_buses = _get_offshore_buses(
+            lines, buses, regions, lines_in[["geometry", "bus_id"]]
+        )
+        # stop when we add no new offshore buses
+        if len(all_offshore_buses) == num_buses:
+            break
+        elif len(all_offshore_buses) > num_buses:
+            num_buses = len(all_offshore_buses)
+            lines_in = all_offshore_buses
+        elif len(all_offshore_buses) < num_buses:
+            raise ValueError(
+                "Unexpected reduction in number of offshore buses. "
+                "This should not happen, please investigate."
+            )
 
     onshore_buses = all_offshore_buses.apply(
         _get_onshore_bus, args=(buses, network, all_offshore_buses), axis=1
