@@ -60,3 +60,17 @@ rule create_interconnectors_table:
         logs("create_interconnectors_table_{fes_scenario}.log"),
     script:
         scripts("gb_model/transmission/create_interconnectors_table.py")
+
+
+rule identify_regions_for_offshore_buses:
+    message:
+        "Identify the regions that offshore stub buses should be linked to"
+    input:
+        regions=resources("gb-model/merged_shapes.geojson"),
+        base_network=resources("networks/base.nc"),
+    output:
+        csv=resources("gb-model/custom_busmap.csv"),
+    log:
+        logs("identify_regions_for_offshore_buses"),
+    script:
+        scripts("gb_model/transmission/identify_regions_for_offshore_buses.py")
