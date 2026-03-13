@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-Aggregate monthly transmission unavailability across reports and spread to hourly.
+Create a busmap of offshore stub buses (from offshore wind farms) to the onshore bus that they are connected to.
 """
 
 import logging
