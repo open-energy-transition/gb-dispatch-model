@@ -658,6 +658,12 @@ class RedispatchConfig(GBBaseConfig):
         default_factory=list,
         description="List of carriers to exclude from being redispatched.",
     )
+    boundary_flow_mainland_buffer_m: float = Field(
+        default=1000,
+        ge=0,
+        description="Buffer distance in meters to apply to mainland GB when identifying flow directions for boundary crossings. "
+        "This ensures we correctly identify flows on island boundaries (e.g. Anglesey).",
+    )
 
     @field_validator("year_range_incl")
     @classmethod

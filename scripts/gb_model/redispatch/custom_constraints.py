@@ -89,10 +89,15 @@ def set_boundary_constraints(
             f"Boundary {boundary}: {len(boundary_lines_mask)} lines, {len(boundary_links_mask)} DC links, "
             f"capacity={capacity_mw} MW"
         )
-        boundary_lines = boundary_lines_mask["name"].tolist()
-        boundary_links = boundary_links_mask["name"].tolist()
-        line_s_boundary = line_s.sel(snapshot=snapshots, name=boundary_lines)
-        link_p_boundary = link_p.sel(snapshot=snapshots, name=boundary_links)
+        boundary_lines = boundary_lines_mask.set_index("name").flow_direction
+        line_s_boundary = (
+            line_s.sel(snapshot=snapshots, name=boundary_lines.index) * boundary_lines
+        )
+
+        boundary_links = boundary_links_mask.set_index("name").flow_direction
+        link_p_boundary = (
+            link_p.sel(snapshot=snapshots, name=boundary_links.index) * boundary_links
+        )
 
         # Sum across lines and DC links to get total flow at the boundary
         lhs = line_s_boundary.sum("name") + link_p_boundary.sum("name")

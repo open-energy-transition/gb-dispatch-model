@@ -4513,6 +4513,12 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "boundary_flow_mainland_buffer_m": {
+          "default": 1000,
+          "description": "Buffer distance in meters to apply to mainland GB when identifying flow directions for boundary crossings. This ensures we correctly identify flows on island boundaries (e.g. Anglesey).",
+          "minimum": 0,
+          "type": "number"
         }
       }
     },
@@ -16868,6 +16874,12 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "boundary_flow_mainland_buffer_m": {
+          "default": 1000,
+          "description": "Buffer distance in meters to apply to mainland GB when identifying flow directions for boundary crossings. This ensures we correctly identify flows on island boundaries (e.g. Anglesey).",
+          "minimum": 0,
+          "type": "number"
         }
       }
     },

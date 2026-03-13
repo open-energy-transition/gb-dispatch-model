@@ -14,8 +14,9 @@ Unreleased
 
 * Add data cleaning section into the docs, to describe some of our data processing steps in more detail.
 * Automate custom busmaps for correctly connecting offshore wind farm buses with their appropriate onshore regions.
+* Correctly align line/link flow directions when applying the boundary constraints (#259).
 * Use historical gas prices to compute bid/offer multipliers (#257).
-* Fix unexpected connection between two GB regions caused by a new offshore virtual bus that was not accounted for in `data/gb-model/custom_busmap/*.csv`.
+* Fix unexpected connection between two GB regions caused by a new offshore virtual bus that was not accounted for in `data/gb-model/custom_busmap/*.csv` (#258).
 
 v0.2.1 (2026-03-05)
 ===================
