@@ -4,6 +4,8 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
+.. _gb_data_sources:
+
 #############
 Data Sources
 #############
@@ -157,7 +159,7 @@ This information is required to calculate bid / offer multiplier carrier-wise fo
 -----------
 GSP shapes
 -----------
-The `GSP shapes < https://www.neso.energy/data-portal/gis-boundaries-gb-grid-supply-points>` provide a shapefile of the GSP regions. 
+The `GSP shapes < https://www.neso.energy/data-portal/gis-boundaries-gb-grid-supply-points>` provide a shapefile of the GSP regions.
 The FES workbook on one hand contains GSP names and the shapefile itself contains GSP ID. The GSP coordinates data is used as a bridge to map the GSP shape data to FES workbook data.
 The shape data will be useful to disaggregate renewable capacity factors by GSP regions rather than by GB regions.
 

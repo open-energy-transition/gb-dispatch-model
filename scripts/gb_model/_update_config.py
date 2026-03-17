@@ -498,6 +498,9 @@ class FESConfig(GBBaseConfig):
     """Future Energy Scenarios (FES) configuration."""
 
     fes_year: int = Field(description="FES data year", default=2024)
+    scenarios: list[str] = Field(
+        description="FES scenarios to process", default_factory=list
+    )
     scenario_mapping: dict[str, str] = Field(
         description="Mapping from FES scenario shorthand (key) to FES scenario long name (value). The shorthand will be used in the output data directories and may be referred to when shorthand is used in data files (e.g. ETYS chart data).",
         default_factory=dict,
@@ -521,6 +524,17 @@ class FESConfig(GBBaseConfig):
     hydrogen: FESHydrogenConfig = Field(
         description="Hydrogen configuration", default_factory=FESHydrogenConfig
     )
+
+    @model_validator(mode="after")
+    def validate_scenarios(self) -> Self:
+        """Validate that all defined scenarios have entries in scenario_mapping."""
+        mapping_keys = set(self.scenario_mapping.keys())
+        scenario_set = set(self.scenarios)
+        if not scenario_set.issubset(mapping_keys):
+            raise ValueError(
+                f"All scenarios must have entries in scenario_mapping. Missing: {scenario_set - mapping_keys}"
+            )
+        return self
 
 
 class EVDemandProfileTransformation(GBBaseConfig):

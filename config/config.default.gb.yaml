@@ -1562,6 +1562,7 @@ grid_supply_points:
 # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#fes
 fes:
   fes_year: 2024
+  scenarios: []
   scenario_mapping: {}
   default_set: PP
   "sheet-config": {}

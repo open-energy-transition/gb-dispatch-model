@@ -634,6 +634,11 @@ grid_supply_points:
     GRMO: ["G_EXTRA_4", "G_EXTRA_5"]
 fes:
   fes_year: 2024
+  scenarios:
+  - HT
+  - CF
+  - EE
+  - HE
   scenario_mapping:
     HT: Holistic Transition
     CF: Counterfactual

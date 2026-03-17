@@ -68,7 +68,7 @@ The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windo
 
    installation
    configuration
-
+   faq
 
 .. toctree::
    :hidden:
