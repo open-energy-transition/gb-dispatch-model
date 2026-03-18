@@ -268,7 +268,7 @@ solving:
     clip_p_max_pu: 1.e-2
     load_shedding: false
     curtailment_mode: false
-    noisy_costs: true
+    noisy_costs: false
     skip_iterations: true
     rolling_horizon: false
     transmission_losses: 0
