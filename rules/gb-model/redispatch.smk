@@ -130,7 +130,7 @@ rule identify_boundary_crossings:
             "redispatch", "boundary_flow_mainland_buffer_m"
         ),
     input:
-        base_network=resources("networks/base.nc"),
+        base_network=resources("networks/base_extended.nc"),
         clustered_network=resources("networks/base_s_clustered.nc"),
         linemap=resources("linemap_base_s_clustered.csv"),
         etys_boundaries="data/gb-model/downloaded/gb-etys-boundaries.zip",
