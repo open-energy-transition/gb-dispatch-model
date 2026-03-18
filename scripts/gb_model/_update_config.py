@@ -650,6 +650,11 @@ class RedispatchConfig(GBBaseConfig):
         description="Whether to unconstrain lines and links in the redispatch model. "
         "This will Set s_nom (p_nom) to infinity for lines (links) between GB regions to ensure only boundary capabilities are bounding, not physical line limits.",
     )
+    monthly_boundary_capability_scaling: dict[int, float] = Field(
+        description="Monthly scaling factors for boundary capabilities, by month number (1-12). "
+        "This allows us to capture the impact of thermal constraints on boundary capabilities.",
+        default_factory=lambda x: {month: 1.0 for month in range(1, 13)},
+    )
 
     elexon: ElexonConfig = Field(
         description="Elexon API configuration", default_factory=ElexonConfig
@@ -671,6 +676,17 @@ class RedispatchConfig(GBBaseConfig):
         """Validate that year range is ordered correctly."""
         if len(v) == 2 and v[0] > v[1]:
             raise ValueError("Start year must be less than or equal to end year")
+        return v
+
+    @field_validator("monthly_boundary_capability_scaling")
+    def validate_monthly_scaling(cls, v: dict[int, float]) -> dict[int, float]:
+        """Validate that monthly scaling factors are provided for all 12 months."""
+        if missing_months := set(range(1, 13)) - v.keys():
+            raise ValueError(
+                f"Monthly scaling factors must be provided for all 12 months. Missing: {missing_months}"
+            )
+        if any(factor < 0 or factor > 1 for factor in v.values()):
+            raise ValueError("Monthly scaling factors must be between 0 and 1")
         return v
 
 

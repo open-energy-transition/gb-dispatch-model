@@ -183,6 +183,9 @@ rule solve_constrained:
             if config["etys"]["use_future_capacities"]
             else {}
         ),
+        monthly_boundary_capability_scaling=config_provider(
+            "redispatch", "monthly_boundary_capability_scaling"
+        ),
     input:
         network=resources("networks/{fes_scenario}/constrained_clustered/{year}.nc"),
         current_etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),

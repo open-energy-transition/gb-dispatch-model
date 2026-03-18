@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Add option to scale boundary capabilities to reflect seasonal variations (#267).
 * Account for snapshot weighting and in redispatch version of the storage unit energy balance constraint.
 * Add data cleaning section into the docs, to describe some of our data processing steps in more detail.
 * Automate custom busmaps for correctly connecting offshore wind farm buses with their appropriate onshore regions.

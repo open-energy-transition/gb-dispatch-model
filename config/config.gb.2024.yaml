@@ -1231,6 +1231,21 @@ redispatch:
   unconstrain_lines_and_links: true
   no_redispatch_carriers:
   - nuclear
+  # Scaling based on thermal limits defined in table 2.3 of the networks options assessment methodology
+  # https://www.neso.energy/document/285321/download
+  monthly_boundary_capability_scaling:
+    1: 1.0
+    2: 1.0
+    3: 0.85
+    4: 0.85
+    5: 0.85
+    6: 0.8
+    7: 0.8
+    8: 0.8
+    9: 0.85
+    10: 0.85
+    11: 0.85
+    12: 1.0
   elexon: # Elexon API data
     technology_mapping: # ignoring renewables in mapping as they come from CfD data
       coal: coal
