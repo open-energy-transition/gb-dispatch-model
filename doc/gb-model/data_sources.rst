@@ -163,8 +163,8 @@ The `GSP shapes < https://www.neso.energy/data-portal/gis-boundaries-gb-grid-sup
 The FES workbook on one hand contains GSP names and the shapefile itself contains GSP ID. The GSP coordinates data is used as a bridge to map the GSP shape data to FES workbook data.
 The shape data will be useful to disaggregate renewable capacity factors by GSP regions rather than by GB regions.
 
-----------------
+-----------------
 DUKES fuel prices
-----------------
+-----------------
 The `DUKES fuel prices <https://www.gov.uk/government/statistical-data-sets/prices-of-fuels-purchased-by-major-power-producers>` provide a dataset for tracking historical fuel prices in the UK.
 This is required to account for historical variations in quarterly fossil fuel prices when calculating bid/offer multipliers for redispatch.

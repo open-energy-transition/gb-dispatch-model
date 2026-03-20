@@ -3,7 +3,7 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _dispatch-redispatch:
+.. _dispatch_redispatch:
 
 ##########################################
 Dispatch and Redispatch Modelling
