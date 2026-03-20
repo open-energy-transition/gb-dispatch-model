@@ -14,6 +14,7 @@ Unreleased
 
 * Add option to subset FES scenarios to run.
 * Add FAQs to the docs (#221).
+* Switch off optimisation "noisy costs" to avoid large negative contributions to the objective function value from bidirectional links.
 * Account for snapshot weighting and in redispatch version of the storage unit energy balance constraint.
 * Add data cleaning section into the docs, to describe some of our data processing steps in more detail.
 * Automate custom busmaps for correctly connecting offshore wind farm buses with their appropriate onshore regions.
