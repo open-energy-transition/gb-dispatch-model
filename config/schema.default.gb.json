@@ -2848,6 +2848,13 @@
           "description": "FES data year",
           "type": "integer"
         },
+        "scenarios": {
+          "description": "FES scenarios to process",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "scenario_mapping": {
           "additionalProperties": {
             "type": "string"
@@ -16337,6 +16344,13 @@
           "default": 2024,
           "description": "FES data year",
           "type": "integer"
+        },
+        "scenarios": {
+          "description": "FES scenarios to process",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "scenario_mapping": {
           "additionalProperties": {

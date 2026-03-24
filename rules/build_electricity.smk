@@ -402,7 +402,7 @@ rule build_co2_prices:
     resources:
         mem_mb=5000,
     script:
-        "../scripts/build_co2_prices.py"
+        scripts("build_co2_prices.py")
 
 
 rule build_fossil_fuel_prices:
@@ -929,7 +929,7 @@ rule clean_osm_data:
     resources:
         mem_mb=4000,
     script:
-        "../scripts/clean_osm_data.py"
+        scripts("clean_osm_data.py")
 
 
 rule build_osm_network:
@@ -971,7 +971,7 @@ rule build_osm_network:
     resources:
         mem_mb=4000,
     script:
-        "../scripts/build_osm_network.py"
+        scripts("build_osm_network.py")
 
 
 rule build_tyndp_network:
@@ -1004,4 +1004,4 @@ rule build_tyndp_network:
     resources:
         mem_mb=4000,
     script:
-        "../scripts/build_tyndp_network.py"
+        scripts("build_tyndp_network.py")

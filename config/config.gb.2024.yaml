@@ -268,7 +268,7 @@ solving:
     clip_p_max_pu: 1.e-2
     load_shedding: false
     curtailment_mode: false
-    noisy_costs: true
+    noisy_costs: false
     skip_iterations: true
     rolling_horizon: false
     transmission_losses: 0
@@ -634,6 +634,11 @@ grid_supply_points:
     GRMO: ["G_EXTRA_4", "G_EXTRA_5"]
 fes:
   fes_year: 2024
+  scenarios:
+  - HT
+  - CF
+  - EE
+  - HE
   scenario_mapping:
     HT: Holistic Transition
     CF: Counterfactual
