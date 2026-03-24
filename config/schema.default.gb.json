@@ -2848,6 +2848,13 @@
           "description": "FES data year",
           "type": "integer"
         },
+        "scenarios": {
+          "description": "FES scenarios to process",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "scenario_mapping": {
           "additionalProperties": {
             "type": "string"
@@ -4476,6 +4483,13 @@
           "default": true,
           "description": "Whether to unconstrain lines and links in the redispatch model. This will Set s_nom (p_nom) to infinity for lines (links) between GB regions to ensure only boundary capabilities are bounding, not physical line limits.",
           "type": "boolean"
+        },
+        "monthly_boundary_capability_scaling": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Monthly scaling factors for boundary capabilities, by month number (1-12). This allows us to capture the impact of thermal constraints on boundary capabilities.",
+          "type": "object"
         },
         "elexon": {
           "additionalProperties": false,
@@ -16331,6 +16345,13 @@
           "description": "FES data year",
           "type": "integer"
         },
+        "scenarios": {
+          "description": "FES scenarios to process",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "scenario_mapping": {
           "additionalProperties": {
             "type": "string"
@@ -16837,6 +16858,13 @@
           "default": true,
           "description": "Whether to unconstrain lines and links in the redispatch model. This will Set s_nom (p_nom) to infinity for lines (links) between GB regions to ensure only boundary capabilities are bounding, not physical line limits.",
           "type": "boolean"
+        },
+        "monthly_boundary_capability_scaling": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Monthly scaling factors for boundary capabilities, by month number (1-12). This allows us to capture the impact of thermal constraints on boundary capabilities.",
+          "type": "object"
         },
         "elexon": {
           "additionalProperties": false,

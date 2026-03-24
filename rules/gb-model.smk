@@ -100,7 +100,7 @@ rule gb_all:
     input:
         expand(
             RESULTS + "constraint_costs/{fes_scenario}.csv",
-            fes_scenario=config["fes"]["scenario_mapping"].keys(),
+            fes_scenario=config["fes"]["scenarios"],
         ),
 
 
@@ -108,7 +108,7 @@ rule gb_compose_all:
     input:
         expand(
             resources("networks/{fes_scenario}/composed_clustered/{year}.nc"),
-            fes_scenario=config["fes"]["scenario_mapping"].keys(),
+            fes_scenario=config["fes"]["scenarios"],
             year=range(
                 config["redispatch"]["year_range_incl"][0],
                 config["redispatch"]["year_range_incl"][1] + 1,

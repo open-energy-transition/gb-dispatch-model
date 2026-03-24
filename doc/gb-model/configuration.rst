@@ -188,7 +188,7 @@ To use your custom configuration file, you need to pass it to the ``snakemake`` 
 ``dukes-5.11``
 ===============================
 
-.. jsonschema:: ../../config/schema.default.gb.json#/properties/dukes_5_11
+.. jsonschema:: ../../config/schema.default.gb.json#/properties/dukes-5.11
    :lift_description:
    :hide_key: /**/additionalProperties
 
@@ -196,7 +196,7 @@ To use your custom configuration file, you need to pass it to the ``snakemake`` 
 
 .. literalinclude:: ../../config/config.default.gb.yaml
    :language: yaml
-   :start-after: # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#dukes-5-11
+   :start-after: # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#dukes_5.11
    :end-before: # docs
 
 .. _grid_supply_points_cf:

@@ -12,7 +12,6 @@ import logging
 
 import pandas as pd
 import pypsa
-import xarray as xr
 from linopy import merge
 from snakemake.script import Snakemake
 
@@ -65,9 +64,8 @@ def set_boundary_constraints(
     link_p = n.model["Link-p"]
 
     lhs_exprs = []
-
-    boundary_index = pd.Index(etys_capacities.index, name="boundary")
-    for boundary in boundary_index:
+    etys_capacities.index.name = "boundary"  # Ensure index has a name for later merging
+    for boundary in etys_capacities.index:
         # Get boundary capability
         capacity_mw = etys_capacities.loc[boundary]
 
@@ -103,18 +101,21 @@ def set_boundary_constraints(
         lhs = line_s_boundary.sum("name") + link_p_boundary.sum("name")
         lhs_exprs.append(lhs)
 
-    lhs_merged = merge(lhs_exprs, dim="boundary").assign_coords(boundary=boundary_index)
-
-    bounds = xr.DataArray(
-        etys_capacities.values,
-        coords=[boundary_index],
+    lhs_merged = merge(lhs_exprs, dim="boundary").assign_coords(
+        boundary=etys_capacities.index
     )
+
+    boundary_scaling = snakemake.params.monthly_boundary_capability_scaling
+    boundary_scaling_sns = pd.Series(boundary_scaling).reindex(n.snapshots.month)
+    boundary_scaling_sns.index = n.snapshots
+    assert boundary_scaling_sns.notnull().all(), "Missing monthly scaling factors"
+    bounds = etys_capacities.to_xarray() * boundary_scaling_sns.to_xarray()
 
     n.model.add_constraints(lhs_merged <= bounds, name="etys_boundary_forward")
     n.model.add_constraints(lhs_merged >= -bounds, name="etys_boundary_backward")
 
     logger.info(
-        f"Added {len(boundary_index)} boundary constraints with explicit 'boundary' dimension"
+        f"Added {len(etys_capacities.index)} boundary constraints with explicit 'boundary' dimension"
     )
 
 
