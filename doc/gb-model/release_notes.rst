@@ -9,8 +9,12 @@
 Release Notes
 ##########################################
 
-Unreleased
-==========
+v0.2.2 (2026-03-24)
+===================
+
+This is a minor release that mostly includes workflow fixes and improved configuration validation.
+
+This version was synchronised with the upstream PyPSA-Eur repository on 2026-03-19.
 
 * Add option to subset FES scenarios to run.
 * Add FAQs to the docs (#221).

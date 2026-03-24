@@ -8,7 +8,7 @@ authors = ["Contributors to PyPSA-Eur", "gb-dispatch-model contributors"]
 channels = ["conda-forge", "bioconda", "gurobi"]
 name = "gb-dispatch-model"
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
-version = "0.2.1"
+version = "0.2.2"
 
 [tasks]
 
