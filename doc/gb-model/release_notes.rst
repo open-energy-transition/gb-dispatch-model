@@ -18,6 +18,7 @@ This version was synchronised with the upstream PyPSA-Eur repository on 2026-03-
 
 * Add option to subset FES scenarios to run.
 * Add FAQs to the docs (#221).
+* Update all dependencies defined in `pixi.lock` without changing version pinning in `pixi.toml`.
 * Switch off optimisation "noisy costs" to avoid large negative contributions to the objective function value from bidirectional links.
 * Account for snapshot weighting and in redispatch version of the storage unit energy balance constraint.
 * Add data cleaning section into the docs, to describe some of our data processing steps in more detail.
