@@ -9,6 +9,11 @@
 Release Notes
 ##########################################
 
+Unreleased
+==========
+
+* Add HiGHS HiPO solver to `pixi` dependencies and to the solver config options.
+
 v0.2.2 (2026-03-24)
 ===================
 
