@@ -279,6 +279,13 @@ solving:
   solver_options:
     gurobi-default:
       threads: 4 # limit threads for stable local runs
+    highs-hipo:
+      solver: 'hipo'
+      parallel: 'on'
+      primal_feasibility_tolerance: 1.0e-05
+      dual_feasibility_tolerance: 1.0e-05
+      random_seed: 123
+      run_crossover: 'off'
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 electricity:
