@@ -287,3 +287,5 @@ Hydrogen load is the only non-electrical load defined in the system.
 Within the hydrogen subsystem is a static load, required for non-power system uses (e.g. hydrogen boilers, hydrogen in industry), a hydrogen storage device, and converters from and to electricity.
 To create hydrogen from electricity, an electrolyser is used.
 To create electricity from hydrogen, a fuel cell or hydrogen gas turbine can be used.
+
+For detailed information about the hydrogen system components, data sources, and implementation, see :doc:`hydrogen`.
