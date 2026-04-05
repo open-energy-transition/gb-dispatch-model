@@ -122,7 +122,7 @@ The demand is calculated as:
 
 .. math::
 
-   \text{Net H}_2 \text{ Demand} = \sum \text{All Demand} - \sum \text{All Supply}
+   \text{Net H}_2 \text{ Demand} = \sum \text{All Demand} - \sum \text{All Unmodelled Supply}
 
 where supply sources might include hydrogen from steam methane reforming, biomass gasification, or imports, but exclude grid electrolysis which is optimized by the model.
 
