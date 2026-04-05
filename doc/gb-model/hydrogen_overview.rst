@@ -148,11 +148,7 @@ For European countries, demand is assigned at the country level based on TYNDP a
 Hydrogen Electrolysis
 ---------------------
 
-Electrolysis converts electricity to hydrogen using water:
-
-.. math::
-
-   2H_2O + \text{electricity} \rightarrow 2H_2 + O_2
+Electrolysis converts electricity to hydrogen using water.
 
 Grid-connected Electrolysis
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -169,7 +165,7 @@ Where regional assignments are missing, capacities are distributed proportionall
 
 **Efficiency**:
 
-Electrolyser efficiency is derived from `PyPSA technology-data <https://github.com/PyPSA/technology-data>`_ (2035 cost year, around 63.74%), representing the energy conversion from electricity to hydrogen (lower heating value basis).
+Electrolyser efficiency is derived from `PyPSA technology-data <https://github.com/PyPSA/technology-data>`_ (2035 cost year), representing the energy conversion from electricity to hydrogen (lower heating value basis).
 
 **Operation**:
 
@@ -190,7 +186,7 @@ The hydrogen produced does not appear in the model's hydrogen system but is acco
 
 **Calculation**:
 
-Non-networked electrolysis electricity demand is calculated by dividing the hydrogen production capacity by an assumed electrolysis efficiency (configurable, default 70%):
+Non-networked electrolysis electricity demand is calculated by dividing the hydrogen production capacity by an assumed electrolysis efficiency (configurable using config option ``fes.hydrogen.electrolysis_efficiency``, default 0.7):
 
 .. math::
 
@@ -234,18 +230,7 @@ Fuel Cells
 
 **PyPSA Component**: ``Link`` from hydrogen bus to AC bus
 
-Fuel cells convert hydrogen to electricity through an electrochemical reaction without combustion:
-
-.. math::
-
-   2H_2 + O_2 \rightarrow 2H_2O + \text{electricity}
-
-**Characteristics**:
-
-- High electrical efficiency (derived from `PyPSA technology-data <https://github.com/PyPSA/technology-data>`_ 2035 cost year, typically 40-60%)
-- Can provide fast ramping and flexible operation
-- No direct CO₂ emissions
-- Can be distributed (small scale) or centralized
+Fuel cells convert hydrogen to electricity through an electrochemical reaction without combustion.
 
 **Capacity**:
 
@@ -261,19 +246,8 @@ Hydrogen Turbines
 
 **PyPSA Component**: ``Link`` from hydrogen bus to AC bus
 
-Hydrogen gas turbines are modified natural gas turbines that can burn pure hydrogen or hydrogen blends.
-They combust hydrogen to drive a turbine and generate electricity:
-
-.. math::
-
-   2H_2 + O_2 \rightarrow 2H_2O + \text{heat} \rightarrow \text{electricity}
-
-**Characteristics**:
-
-- Lower electrical efficiency than fuel cells (derived from `PyPSA technology-data <https://github.com/PyPSA/technology-data>`_ 2035 cost year, assumed 50% in this workflow)
-- Can provide larger-scale, centralized generation
-- Fast start-up times for grid balancing
-- No direct CO₂ emissions
+Hydrogen turbines are modified natural gas turbines that can burn pure hydrogen or hydrogen blends.
+They combust hydrogen to drive a turbine and generate electricity.
 
 **Capacity**:
 
