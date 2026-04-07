@@ -288,4 +288,4 @@ Within the hydrogen subsystem is a static load, required for non-power system us
 To create hydrogen from electricity, an electrolyser is used.
 To create electricity from hydrogen, a fuel cell or hydrogen gas turbine can be used.
 
-For detailed information about the hydrogen system components, data sources, and implementation, see :doc:`hydrogen`.
+For detailed information about the hydrogen system components, data sources, and implementation, see :doc:`hydrogen_overview`.

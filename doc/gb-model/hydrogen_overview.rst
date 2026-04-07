@@ -72,7 +72,7 @@ All GB hydrogen system data is derived from the Future Energy Scenarios (FES) wo
 
 The FES 2024 provides annual data for multiple scenarios (Electric Engagement, Hydrogen Evolution, Holistic Transition, Counterfactual, Five Year Forecast) covering:
 
-- **Hydrogen production**: Grid-connected and non-networked electrolysis capacities by region and year (in TWh/year and MW)
+- **Hydrogen production**: Grid-connected and islanded electrolysis capacities by region and year (in TWh/year and MW)
 - **Hydrogen consumption**: Demand across different sectors (transport, heating, industry, power generation) in TWh/year
 - **Hydrogen supply**: Non-electrolysis hydrogen sources (e.g., steam methane reforming with CCUS, biomass gasification, imports) in TWh/year
 - **Storage capacity**: Required hydrogen storage infrastructure by year (in TWh)
@@ -89,7 +89,6 @@ For European countries outside GB, we synthesise hydrogen data by scaling GB pat
 
    - Data provided in tonnes per year (T/Y)
    - Converted to MWh using lower heating value: 1 tonne H₂ ≙  33.33 MWh
-   - Formula: ``MWh = tonnes × 33.33 × 1000`` (the 1000 factor converts from tonnes to kg, with LHV ≈ 33.33 kWh/kg)
 
 This synthesis approach maintains relative patterns from GB FES data (ratios between demand, storage, and electrolysis) while matching European-specific total demand projections.
 
