@@ -77,7 +77,7 @@ The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windo
 
    system
    dispatch_redispatch
-   hydrogen
+   hydrogen_overview
    implementation
    data_cleaning
 
