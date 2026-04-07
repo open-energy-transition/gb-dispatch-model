@@ -300,7 +300,7 @@ The hydrogen system is built through a multi-stage data processing pipeline impl
 
 - **Temporal Profile**: Hydrogen demand is assumed constant across the year due to lack of hourly data
 - **Regionalization**: National hydrogen data is distributed spatially using hydrogen electrolysis capacity as a reference pattern
-- **European Scaling**: European hydrogen infrastructure is synthesized by applying GB demand-to-infrastructure ratios
+- **European Scaling**: European hydrogen infrastructure is synthesised by applying GB demand-to-infrastructure ratios
 - **Off-grid Electrolysis**: Converted to electricity demand using configurable efficiency (``fes.hydrogen.electrolysis_efficiency``, default 0.7)
 - **Technology Data**: Derived from PyPSA technology-data (2035 cost year) for all hydrogen components
 
