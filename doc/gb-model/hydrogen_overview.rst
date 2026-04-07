@@ -88,7 +88,7 @@ For European countries outside GB, we synthesise hydrogen data by scaling GB pat
 2. **Hydrogen Europe annual report**: Current European hydrogen consumption by country
 
    - Data provided in tonnes per year (T/Y)
-   - Converted to MWh using lower heating value: 1 tonne H₂ = 33.33 MWh
+   - Converted to MWh using lower heating value: 1 tonne H₂ ≙  33.33 MWh
    - Formula: ``MWh = tonnes × 33.33 × 1000`` (the 1000 factor converts from tonnes to kg, with LHV ≈ 33.33 kWh/kg)
 
 This synthesis approach maintains relative patterns from GB FES data (ratios between demand, storage, and electrolysis) while matching European-specific total demand projections.
