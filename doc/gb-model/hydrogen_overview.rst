@@ -25,7 +25,7 @@ The hydrogen system comprises four main components:
 - **Hydrogen storage**: Underground or surface storage for temporal balancing of hydrogen supply and demand
 - **Hydrogen-to-electricity conversion**: Fuel cells and hydrogen turbines that can generate electricity from stored hydrogen
 
-Additionally, the model accounts for **non-networked electrolysis**—off-grid hydrogen production that appears only as additional electricity demand and does not interact with the modeled hydrogen system.
+Additionally, the model accounts for *islanded electrolysis*—off-grid hydrogen production that appears only as additional electricity demand and does not interact with the modelled hydrogen system.
 
 This modelling approach allows hydrogen to act as both a flexible load on the electricity system (through electrolysis) and a potential backup generation source (through fuel cells and turbines).
 
