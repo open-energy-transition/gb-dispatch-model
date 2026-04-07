@@ -128,18 +128,15 @@ where supply sources might include hydrogen from steam methane reforming, biomas
 
 **Data Processing**:
 
-The :ref:`create_hydrogen_data_tables` rule extracts demand and supply data from FES WS1 sheet, filters by fuel type ("hydrogen"), scenario, and year range, then aggregates to create annual net demand in MWh.
+The data processing pipeline extracts demand and supply data from FES WS1 sheet, filters by fuel type ("hydrogen"), scenario, and year range, then aggregates to create annual net demand in MWh.
 
 **Temporal Profile**:
 
 Hydrogen demand is assumed to be flat across the year.
-While in reality, hydrogen demand would vary (e.g., heating demand in winter), the FES does not provide sufficient granularity to estimate this profile.
-This assumption means that any temporal mismatch between hydrogen production and consumption must be managed by hydrogen storage.
 
 **Regional Distribution**:
 
-For GB, national hydrogen demand data is disaggregated to regions using the :ref:`regional distribution process <regional_hydrogen_distribution>`.
-Regional distribution is based on the spatial pattern of hydrogen electrolysis capacity from the FES BB1 sheet.
+For GB, national hydrogen demand data is disaggregated to regions based on the spatial pattern of hydrogen electrolysis capacity from the FES BB1 sheet.
 For European countries, demand is assigned at the country level based on TYNDP and historical consumption data.
 
 
@@ -192,7 +189,7 @@ Non-networked electrolysis electricity demand is calculated by dividing the hydr
 
    \text{Electricity Demand} = \frac{\text{H}_2 \text{ Production}}{\text{Efficiency}}
 
-For GB, this national electricity demand is :ref:`disaggregated to regions <regional_hydrogen_distribution>` based on the spatial pattern of hydrogen electrolysis capacity, then added to the baseline electricity load in each region.
+For GB, this national electricity demand is disaggregated to regions based on the spatial pattern of hydrogen electrolysis capacity, then added to the baseline electricity load in each region.
 
 
 .. _hydrogen-storage:
@@ -208,7 +205,7 @@ Storage can be in underground caverns (salt caverns, depleted gas fields), surfa
 **Capacity**:
 
 Storage capacity (energy capacity in MWh) is derived from FES data and increases over time as the hydrogen economy develops.
-For GB, national storage capacity is :ref:`disaggregated to regions <regional_hydrogen_distribution>` based on the spatial pattern of hydrogen electrolysis capacity.
+For GB, national storage capacity is disaggregated to regions based on the spatial pattern of hydrogen electrolysis capacity.
 The model assumes that storage can be charged and discharged without capacity constraints beyond the bus energy balance (i.e., available hydrogen must be produced or drawn from storage).
 
 **Dispatch Constraints**:
@@ -252,3 +249,73 @@ They combust hydrogen to drive a turbine and generate electricity.
 **Capacity**:
 
 Like fuel cells, hydrogen turbine capacity is based on FES projections.
+
+
+.. _hydrogen-configuration:
+
+Configuration
+=============
+
+The hydrogen subsystem is configured through the ``fes.hydrogen`` section of the configuration file.
+
+**Data Selection**:
+
+The data selection filters define which rows from the FES WS1 sheet are included in each category.
+Filters are dictionaries matching FES column names to values (case-insensitive).
+
+From ``config/config.gb.2024.yaml``:
+
+.. literalinclude:: ../../config/config.gb.2024.yaml
+   :language: yaml
+   :lines: 906-938
+
+
+.. _hydrogen-implementation-notes:
+
+Implementation Notes
+====================
+
+**Data Processing Workflow**:
+
+The hydrogen system is built through a multi-stage data processing pipeline implemented in ``rules/gb-model/hydrogen.smk``:
+
+.. image:: img/hydrogen_workflow.svg
+   :align: center
+
+.. note::
+   The graph above was generated using::
+
+      snakemake --rulegraph -F \
+        resources/GB/gb-model/HT/regional_H2_demand_annual_inc_eur.csv \
+        resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv \
+        resources/GB/gb-model/HT/regional_grid_electrolysis_capacities_inc_eur_inc_tech_data.csv \
+        resources/GB/gb-model/HT/regional_non_networked_electrolysis_demand_annual_inc_eur.csv \
+        | python utils/filter_hydrogen_dag.py \
+        | dot -Tsvg -o doc/gb-model/img/hydrogen_workflow.svg
+
+   ``utils/filter_hydrogen_dag.py`` trims the full DAG to hydrogen-related rules only.
+   Requires `Graphviz <https://graphviz.org>`_ (``dot``) on your ``PATH``.
+
+**Key Assumptions**:
+
+- **Temporal Profile**: Hydrogen demand is assumed constant across the year due to lack of hourly data
+- **Regionalization**: National hydrogen data is distributed spatially using hydrogen electrolysis capacity as a reference pattern
+- **European Scaling**: European hydrogen infrastructure is synthesized by applying GB demand-to-infrastructure ratios
+- **Off-grid Electrolysis**: Converted to electricity demand using configurable efficiency (``fes.hydrogen.electrolysis_efficiency``, default 0.7)
+- **Technology Data**: Derived from PyPSA technology-data (2035 cost year) for all hydrogen components
+
+
+.. seealso::
+
+   **Related Documentation**:
+   
+   - :ref:`system-hydrogen` - Hydrogen in the broader system representation
+   - :ref:`gb_data_sources` - FES and other data sources
+   - :doc:`configuration` - Full configuration reference
+   - :doc:`dispatch_redispatch` - Hydrogen in dispatch optimization
+   
+   **External Resources**:
+   
+   - `FES 2024 Data Workbook <https://www.neso.energy/publications/future-energy-scenarios-fes>`_ - Primary data source
+   - `TYNDP 2024 <https://tyndp.entsoe.eu/>`_ - European hydrogen demand projections
+   - `PyPSA technology-data <https://github.com/PyPSA/technology-data>`_ - Technology costs and parameters

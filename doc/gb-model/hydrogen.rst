@@ -16,4 +16,3 @@ The hydrogen subsystem represents the interaction between electricity and hydrog
    :maxdepth: 1
    
    hydrogen_overview
-   hydrogen_implementation
