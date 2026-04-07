@@ -62,7 +62,7 @@ This modelling approach allows hydrogen to act as both a flexible load on the el
 Data Sources
 ============
 
-**Great Britain Data**
+Great Britain Data
 ----------------------
 
 All GB hydrogen system data is derived from the Future Energy Scenarios (FES) workbook, primarily from:
