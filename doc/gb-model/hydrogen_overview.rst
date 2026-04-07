@@ -7,10 +7,10 @@
 .. _hydrogen-overview:
 
 ##########################################
-Overview & Components
+Hydrogen System
 ##########################################
 
-This page introduces the hydrogen subsystem, its data sources, and the components that model hydrogen in the electricity network.
+This page describes the hydrogen subsystem, its data sources, components, configuration, and implementation.
 
 Overview
 ========
