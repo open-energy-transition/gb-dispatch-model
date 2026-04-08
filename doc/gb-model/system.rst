@@ -278,6 +278,8 @@ The magnitude of DSR capacity varies in time depending on the number of vehicles
 In addition to the standard load components, it is also possible for EVs to feed back to the grid using a vehicle-to-grid (V2G) component.
 This allows energy to be stored by EVs for later return to the grid.
 
+For detailed information about the EV system components, data sources, and implementation, see :doc:`ev`.
+
 .. _system-hydrogen:
 
 Hydrogen
