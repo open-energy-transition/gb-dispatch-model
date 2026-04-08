@@ -206,6 +206,23 @@ Implementation Notes
 
 The EV system is built through a pipeline implemented across ``rules/gb-model/ev.smk`` and ``rules/gb-model/demand_and_dsr.smk``:
 
+.. image:: img/ev_workflow.svg
+   :align: center
+
+.. note::
+   The graph above was generated using::
+
+      snakemake --rulegraph -F \
+        resources/GB/gb-model/HT/ev_peak_demand.csv \
+        resources/GB/gb-model/HT/regional_ev_v2g_storage.csv \
+        resources/GB/gb-model/HT/regional_ev_v2g_storage_inc_eur.csv \
+        resources/GB/gb-model/HT/ev_demand/2035.csv \
+        | python utils/filter_ev_dag.py \
+        | .pixi/envs/default/Library/bin/dot -Tsvg -o doc/gb-model/img/ev_workflow.svg
+
+   ``utils/filter_ev_dag.py`` trims the full DAG to EV-related rules only.
+   Requires `Graphviz <https://graphviz.org>`_ (``dot``) on your ``PATH``.
+
 1. **Demand shape** (``process_ev_demand_shape``): Builds normalised hourly EV charging profile from KFZ traffic data
 2. **Peak demand table** (``create_ev_peak_charging_table``): Extracts annual EV unmanaged peak demand from FES ED5
 3. **DSR and V2G capacity** (``create_flexibility_table``): Extracts EV smart charging DSR and V2G capacities from FES FLX1
