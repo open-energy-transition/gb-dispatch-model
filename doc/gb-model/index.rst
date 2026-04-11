@@ -79,6 +79,7 @@ The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windo
    dispatch_redispatch
    implementation
    data_cleaning
+   heat_system
 
 .. toctree::
    :hidden:

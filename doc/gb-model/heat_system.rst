@@ -21,6 +21,8 @@ The electrified heating system in the GB dispatch model is represented with thre
 Various heating technologies such as district heating, hybrid systems (ASHP with hydrogen boiler, biofuel boiler or resistive heater), and storage heating are consolidated and mapped to one of these three primary technologies for model representation. This approach allows the model to capture the essential electrification pathways.
 The technology splits are sourced from the **Future Energy Scenario (FES)** workbook. The configuration maps FES heating technology categories to model representations:
 
+.. _electrified_heating_technologies:
+
 .. code-block:: yaml
 
    electrified_heating_technologies:
@@ -40,16 +42,47 @@ Architecture
 Heat System Structure
 ---------------------
 
-The heat system is organized by two main demand sectors and follow the structure as in the PyPSA-Eur model:
+The heat system is organized by two main demand sectors as follows:
 
 1. **Residential heat** - Space heating and domestic hot water for households
-2. **Industrial & Commercial (I&C) heat** - Space heating and process heat for commercial and industrial buildings
+2. **Industrial & Commercial (I&C) heat** - Space heating and process heat for commercial and industrial buildings (referred to by the services sector in PyPSA-Eur)
 
 Each sector is further subdivided by geographic location type:
 
-- **Urban central** - Cities with potential for district heating networks
-- **Urban decentral** - Suburban areas with individual heating systems
-- **Rural** - Sparsely populated areas with decentralized heating
+- **Urban central** - Urban areas with potential for district heating networks
+- **Urban decentral** - Urban areas with individual heating systems
+- **Rural** - rural areas with decentralized heating
+
+Model representation
+--------------------
+
+The heat system is represented in the model with the following components:
+
+.. graphviz::
+
+
+  digraph Flow {
+      rankdir=LR;   // Left to Right
+
+      node [shape=circle,width=1.5, height=1.5, fontsize=12];
+
+      A [label="AC bus"]
+      B [label="Sector Heat"]
+      C [label="Sector Heat DSR"]
+      X [style=invis, width=0, height=0, label=""];
+
+      A -> B [label="Sector Heat \n unmanaged load", fontsize=12];
+      B -> C [label="Sector Heat DSR shift", fontsize=12];
+      C -> B [label="Sector Heat DSR reverse",labelangle=-90, fontsize=12];
+
+      // downward arrow from B
+      B -> X [style=invis];
+      B:s -> X:n [constraint=false, xlabel="Sector Heat demand", fontsize=12];
+  }
+
+
+The Sector refers to either `Residential heat` or `I&C heat` depending on the demand sector being modeled. The AC bus represents the electrical grid connection for the heat system, while the Sector Heat and Sector Heat DSR represent the heat demand and demand-side response capabilities respectively.
+
 
 
 Heat Pump Sources and COP Profiling
@@ -65,23 +98,6 @@ Heat pump source availability is configured per geographic location type:
      rural: [air, ground]
 
 
-Heat Demand Modeling
-====================
-
-Heat Demand Representation
---------------------------
-
-Heat demand in the model is driven by:
-
-1. **Daily heat demand** - Based on heating degree days and building thermal properties
-2. **Intraday profiles** - Time-of-use patterns from BDEW (German heating profiles adapted for GB context)
-3. **Technology-specific demand** - Split between resistive, ASHP, and GSHP based on technology shares
-
-The total heat demand is divided among:
-
-- **Residential sector**: Space heating and domestic hot water for households
-- **I&C sector**: Space heating and hot water for commercial and industrial facilities
-
 Data Processing Pipeline
 =========================
 
@@ -94,9 +110,14 @@ Coefficient of Performance (COP) Processing
 
 Processes baseline COP profiles from PyPSA-Eur workflow:
 
-- Input: Base COP profiles for the target year, clustered population layout, district heating share
-- Output: Hourly COP profiles by location type and heat source
-- Method: Incorporates district heating temperature lift adjustments and clustering
+- Input: 
+      1. COP profiles for the target year, 
+      2. clustered population layout,
+      3. district heating share
+- Output: Hourly COP profiles for each node in the network and heat sources (ASHP, GSHP)
+- Method: Calculate COP profiles for ASHP and GSHP weighted on population distribution.
+
+Note: Resistive heating is assumed to have a constant COP of 1 and does not require processing.
 
 Future Energy Scenario Processing
 ----------------------------------
@@ -105,7 +126,9 @@ Future Energy Scenario Processing
 
 Extracts technology penetration rates from FES workbook:
 
-- Input: FES ED3 data with technology shares by sector
+- Input: 
+    1. FES ED3 data with technology shares by sector
+    2. :ref:`electrified_heating_technologies` 
 - Output: Year-by-year technology consumption curves for:
   - Residential sector heat technologies
   - Industrial & Commercial sector heat technologies
@@ -119,11 +142,12 @@ Resistive Heater Demand Profiling
 Creates technology-specific demand profiles:
 
 - Input: 
-  - Energy totals by region
-  - Hourly heat demand shapes
-  - FES technology consumption splits (residential and I&C)
-- Output: Hourly resistive heater demand profiles by region and year
-- Method: Applies technology shares to total heat demand to isolate resistive heating demand
+    1. Energy totals weighted by population for each node in the network (from PyPSA-Eur workflow)
+    2. Hourly heat demand shapes (from PyPSA-Eur workflow)
+    3. FES technology consumption splits (residential and I&C)
+- Output: Hourly resistive heater demand profiles by node and year
+- Method: Removes future resistive heating demand from historical electrified heat demand to get the net electrified heat demand.
+
 
 Heat Demand Shape Processing
 -----------------------------
@@ -133,53 +157,11 @@ Heat Demand Shape Processing
 Generates demand profiles for different heat sources and sectors:
 
 - Input:
-  - Total hourly heat demand
-  - COP profiles
-  - Technology heating mix (technology-specific consumption)
-  - Energy totals
-- Output: Hourly heat demand profiles by technology and sector
+    1. Total hourly heat demand (from PyPSA-Eur workflow)
+    2. COP profiles generated (from `process_cop_profiles`)
+    3. Technology heating mix by sector (from `process_fes_heat_technologies`)
+    4. Population-weighted energy totals (from PyPSA-Eur workflow)
+- Output: Hourly heat demand profiles by technology and sector for each node in the network
 - Method: 
   - Associates demand with appropriate heat source (resistive, ASHP, GSHP)
   - Incorporates COP variations for heat pump systems
-  - Splits demand by geographic location type
-
-Configuration Parameters
-=========================
-
-Key Heat System Parameters
----------------------------
-
-The following parameters control heat system behavior in configuration files:
-
-**Heat Pump Sources** (``config.default.yaml``):
-
-.. code-block:: yaml
-
-   sector:
-     heat_pump_sources:
-       urban central: [air]
-       urban decentral: [air]
-       rural: [air, ground]
-
-**Heat Pump Sink Temperatures** (PyPSA-Eur derived):
-
-- Target heating temperatures for individual systems
-- Affects COP calculations via temperature lift requirements
-- Typically 35-55°C for individual heating, 60-80°C for district heating
-
-**Residential Heat DSM Parameters**:
-
-- Enables/disables thermal storage flexibility
-- Controls checkpoint hours for consumption enforcement
-- Specifies flexibility availability over time (2020-2050)
-
-**Technology Mapping** (``config.gb.2024.yaml``):
-
-Maps FES technology names to model representation, allowing:
-
-- Year-by-year scenario evolution
-- Multiple scenario narratives (e.g., Leading the Way, System Transformation, Consumer Transformation)
-- Consistent technology classification across GB and EU regions
-
-
-
