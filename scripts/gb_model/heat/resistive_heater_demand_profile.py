@@ -17,35 +17,27 @@ from scripts._helpers import configure_logging, set_scenario_config
 logger = logging.getLogger(__name__)
 
 
-def get_net_electrified_heat_demand_profile(
-    heat_demand: xr.Dataset,
-    energy_totals: pd.DataFrame,
-    resistive_heater_demand: pd.DataFrame,
+def get_electrified_heat_demand_profile(
+    heat_demand_shape: xr.Dataset,
+    heat_demand_annual: pd.DataFrame,
 ) -> pd.DataFrame:
     """
-    Get the net electrified heat demand profile by removing future resistive heater demand from historical electrified heat demand.
-
-    If the result is negative, there is more resistive heater demand in future compared to historical.
-    When this is subsequently subtracted from the baseline electricity demand, it would then _increase_ the contribution of resistive heating compared to its historical contribution.
+    Scale the heat demand shape to create an electrified heat demand profile.
 
     Args:
-        heat_demand (xr.Dataset): Profile of hourly heat demand based on heating degree days.
-        energy_totals (pd.DataFrame): Historical annual energy demand totals.
-        resistive_heater_demand (pd.DataFrame): Future resistive heat demand.
+        heat_demand_shape (xr.Dataset): Profile of hourly heat demand based on heating degree days.
+        annual_heat_demand (pd.DataFrame): annual heat demand totals.
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: Heat demand shape scaled to match the annual demand totals.
     """
     heat_demand_shape = heat_demand / heat_demand.sum("snapshots")
 
-    heat_demand_annual = (
-        energy_totals.rename(columns=lambda x: x.removeprefix("electricity").strip())
-        .subtract(resistive_heater_demand)
-        .to_xarray()
-    )
-
     heat_demand_profile = (
-        (heat_demand_shape * heat_demand_annual).to_array().sum("variable").to_pandas()
+        (heat_demand_shape * heat_demand_annual.to_xarray())
+        .to_array()
+        .sum("variable")
+        .to_pandas()
     )
 
     return heat_demand_profile
@@ -77,7 +69,7 @@ if __name__ == "__main__":
         )
         df = (
             pd.read_csv(
-                snakemake.input[f"{sector}_heat_techs_consumption"],
+                snakemake.input[f"{sector}_heat_demand_annual"],
                 index_col=["bus", "year", "technology"],
             )
             .xs(
@@ -89,8 +81,16 @@ if __name__ == "__main__":
         resistive_heater_demand[f"{sector} water"] = df * water_to_space_ratio
         resistive_heater_demand[f"{sector} space"] = df * (1 - water_to_space_ratio)
 
-    net_heat_demand = get_net_electrified_heat_demand_profile(
-        heat_demand, energy_totals, pd.DataFrame(resistive_heater_demand)
+    historical_heat_demand_annual = energy_totals.filter(
+        regex="electricity (residential|services)"
+    ).rename(columns=lambda x: x.removeprefix("electricity").strip())
+    historical_heat_demand = get_electrified_heat_demand_profile(
+        heat_demand, historical_heat_demand_annual
     )
 
-    net_heat_demand.rename_axis(index="time").to_csv(snakemake.output.csv)
+    historical_heat_demand.rename_axis(index="time").to_csv(snakemake.output.historical)
+
+    future_heat_demand = get_electrified_heat_demand_profile(
+        heat_demand, pd.DataFrame(resistive_heater_demand)
+    )
+    future_heat_demand.rename_axis(index="time").to_csv(snakemake.output.future)

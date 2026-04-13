@@ -13,6 +13,8 @@ Unreleased
 ==========
 
 * Add HiGHS HiPO solver to `pixi` dependencies and to the solver config options.
+* Fix demand profile scaling to correctly match annual FES demands.
+* Move resistive heating demand to the heat demand bus, rather than having it rolled in with baseline electricity demand.
 
 v0.2.2 (2026-03-24)
 ===================

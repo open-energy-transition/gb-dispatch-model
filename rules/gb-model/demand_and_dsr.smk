@@ -53,8 +53,8 @@ rule process_baseline_demand_shape:
         historical_profile=resources(
             "gb-model/historical_baseline_electricity_demand_profile.csv"
         ),
-        resistive_heater_demand=resources(
-            "gb-model/{fes_scenario}/resistive_heater_demand/{year}.csv"
+        historical_resistive_heater_demand=resources(
+            "gb-model/{fes_scenario}/historical_resistive_heater_demand/{year}.csv"
         ),
     output:
         demand_shape=resources(
@@ -157,20 +157,21 @@ rule synthesise_eur_data:
 
 rule scaled_demand_profile:
     message:
-        "Generate {wildcards.demand_type} demand profile for model year {wildcards.year}"
+        "Generate baseline_electricity demand profile for model year {wildcards.year}"
     input:
         gb_demand_annual=resources(
-            "gb-model/{fes_scenario}/regional_{demand_type}_demand_annual.csv"
+            "gb-model/{fes_scenario}/regional_baseline_electricity_demand_annual.csv"
+        ),
+        resistive_heater_demand=resources(
+            "gb-model/{fes_scenario}/future_resistive_heater_demand/{year}.csv"
         ),
         eur_demand_annual=resources("gb-model/{fes_scenario}/eur_demand_annual.csv"),
         demand_shape=resources(
-            "gb-model/{fes_scenario}/{demand_type}_demand_shape/{year}.csv"
+            "gb-model/{fes_scenario}/baseline_electricity_demand_shape/{year}.csv"
         ),
     output:
-        csv=resources("gb-model/{fes_scenario}/{demand_type}_demand/{year}.csv"),
+        csv=resources("gb-model/{fes_scenario}/baseline_electricity_demand/{year}.csv"),
     log:
-        logs("scaled_demand_profile_{fes_scenario}_{demand_type}_{year}.log"),
-    wildcard_constraints:
-        demand_type="baseline_electricity|residential_heat|iandc_heat",
+        logs("scaled_demand_profile_{fes_scenario}_baseline_electricity_{year}.log"),
     script:
         scripts("gb_model/demand_and_dsr/scaled_demand_profile.py")

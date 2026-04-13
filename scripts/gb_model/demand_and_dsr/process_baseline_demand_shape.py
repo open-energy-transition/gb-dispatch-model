@@ -20,7 +20,7 @@ HEAT_DEMAND_MAPPING = {"historical": "electricity", "future_resistive": "total"}
 
 def prepare_demand_shape(
     electricity_demand: pd.DataFrame,
-    resistive_heater_demand_change: pd.DataFrame,
+    historical_resistive_heater_demand: pd.DataFrame,
 ) -> pd.DataFrame:
     """
     Parse and prepare different demand profiles.
@@ -30,10 +30,10 @@ def prepare_demand_shape(
     Args:
         electricity_demand (pd.DataFrame):
             historical electricity demand profile.
-        resistive_heater_demand_change (pd.DataFrame):
-            Estimated historical resistive heater demand minus future resistive heater demand.
-            This is subtracted from historical electricity demand.
-            If negative, then it implies more resistive heater demand in future than in the historical year.
+        historical_resistive_heater_demand (pd.DataFrame):
+            Estimated historical resistive heater demand profile,
+            to be subtracted from historical electricity demand when generating a future demand profile shape.
+            This helps avoid double-counting of resistive demand.
 
     Returns:
         pd.DataFrame:
@@ -47,7 +47,7 @@ def prepare_demand_shape(
         3. Return demand shape profiles for use in demand modeling
     """
     net_electricity_demand = electricity_demand.subtract(
-        resistive_heater_demand_change, fill_value=0
+        historical_resistive_heater_demand, fill_value=0
     )
     perc_negative = (
         (net_electricity_demand < 0).sum().sum() / net_electricity_demand.size * 100
@@ -76,12 +76,14 @@ if __name__ == "__main__":
     historical_demand = pd.read_csv(
         snakemake.input.historical_profile, index_col="time", parse_dates=True
     )
-    resistive_heater_demand_change = pd.read_csv(
-        snakemake.input.resistive_heater_demand, index_col="time", parse_dates=True
+    historical_resistive_heater_demand = pd.read_csv(
+        snakemake.input.historical_resistive_heater_demand,
+        index_col="time",
+        parse_dates=True,
     )
 
     demand_shape = prepare_demand_shape(
-        historical_demand, resistive_heater_demand_change
+        historical_demand, historical_resistive_heater_demand
     )
 
     demand_shape.to_csv(snakemake.output.demand_shape)

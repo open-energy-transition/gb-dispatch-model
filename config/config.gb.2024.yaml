@@ -755,15 +755,15 @@ fes:
       Technology Detail:
         baseline_electricity: ["baseline demand"]
         ev: ["ev demand 1", "ev demand 2"]
-        residential_heat: ["residential hp demand"]
-        iandc_heat: ["i&c hp demand"]
+        residential_hp_heat: ["residential hp demand"]
+        iandc_hp_heat: ["i&c hp demand"]
       heat:
         electrified_heating_technologies:
           Electric resistive: resistive
           Electric storage: resistive
-          Hybrid (ASHP + Electric resistive): [ASHP, resistive]
+          Hybrid (ASHP + Electric resistive): ASHP
           ASHP: ASHP
-          DH: [ASHP, GSHP]
+          DH: resistive
           Hybrid (ASHP + Hydrogen boiler): ASHP
           Hybrid (ASHP + Biofuel boiler): ASHP
           GSHP: GSHP
@@ -828,7 +828,7 @@ fes:
       residential_heat_dsr:
         source: "residential hp demand"
         name: p_nom
-      residential_heat_techs_consumption:
+      residential_heat_demand_annual:
         source: "residential hp demand"
         name: p_set
       iandc_dsr:
@@ -837,7 +837,7 @@ fes:
       iandc_heat_dsr:
         source: "i&c hp demand"
         name: p_nom
-      iandc_heat_techs_consumption:
+      iandc_heat_demand_annual:
         source: "i&c hp demand"
         name: p_set
       non_networked_electrolysis_demand_annual:
@@ -885,8 +885,8 @@ fes:
     totals_to_demand_groups:
       ev: [total road]
       baseline_electricity: [electricity residential, electricity services, electricity rail]
-      residential_heat: [total residential space, total residential water]
-      iandc_heat: [total services space, total services water]
+      residential_hp_heat: [total residential space, total residential water]
+      iandc_hp_heat: [total services space, total services water]
 
     add_data_reference:
       # flexibility
@@ -894,11 +894,11 @@ fes:
       ev_v2g: ev
       ev_v2g_storage: ev
       residential_dsr: baseline_electricity
-      residential_heat_dsr: residential_heat
-      residential_heat_techs_consumption: residential_heat
+      residential_heat_dsr: residential_hp_heat
+      residential_heat_demand_annual: residential_hp_heat
       iandc_dsr: baseline_electricity
-      iandc_heat_dsr: iandc_heat
-      iandc_heat_techs_consumption: iandc_heat
+      iandc_heat_dsr: iandc_hp_heat
+      iandc_heat_demand_annual: iandc_hp_heat
     # If not NaN, then the unconstrained load shedding generator will be set to have a marginal cost equal to that of the most expensive generator plus this value.
     # This gives us slightly more realistic European marginal prices when we have load shedding.
     load_shedding_cost_above_marginal: 1
@@ -943,7 +943,7 @@ ev:
     lower_optimization_bound: 0.001 # lower bound for gamma optimization
     upper_optimization_bound: 100 # upper bound for gamma optimization
     relative_peak_tolerance: 0.05 # 5% tolerance for peaks
-    relative_energy_tolerance: 0.05 # 5% tolerance for total energy
+    relative_energy_tolerance: 0.001 # 0.1% tolerance for total energy
 
 interconnectors:
   # lat/lon values are approximate.
