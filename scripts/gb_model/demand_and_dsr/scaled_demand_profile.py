@@ -37,13 +37,14 @@ def scale_shape_with_annual_data(
         Year used in the modelling
     """
 
+    normalized_demand_shape = _normalize(demand_shape)
     # Group demand data by year and bus and filter the data for required year
     demand_this_year = demand_annual.xs(year, level="year")
 
     # Filtering those buses that are present in both the dataframes
     if diff_bus := set(
         demand_this_year.index.get_level_values("bus")
-    ).symmetric_difference(set(demand_shape.columns)):
+    ).symmetric_difference(set(normalized_demand_shape.columns)):
         logger.warning(
             "The following buses are missing %s demand profile or annual demand data and will be ignored: %s",
             demand_type,
@@ -51,9 +52,15 @@ def scale_shape_with_annual_data(
         )
 
     # Scale the profile by the annual demand from FES
-    load = demand_shape.drop(columns=diff_bus).mul(demand_this_year["p_set"])
+    load = normalized_demand_shape.drop(columns=diff_bus).mul(demand_this_year["p_set"])
     assert not load.isnull().values.any(), (
         f"NaN values found in processed {demand_type} load data"
+    )
+    assert np.isclose(
+        out_sum := load.sum().sum(), in_sum := demand_this_year["p_set"].sum()
+    ), (
+        f"Total energy mismatch after scaling {demand_type} load data - "
+        f"Expected: {in_sum:.2f} MWh, Obtained: {out_sum:.2f} MWh"
     )
     return load
 
