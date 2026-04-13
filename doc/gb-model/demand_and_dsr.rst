@@ -58,7 +58,7 @@ DSR is implemented using PyPSA's Store and Link components to model energy stora
 Model Representation
 --------------------
 
-The DSR implementation for each sector follows this structure:
+The DSR implementation for each demand type (residential, I&C, EV and heat) follows this structure:
 
 .. graphviz::
 
@@ -159,9 +159,12 @@ Demand Table Creation
 
 **Rule**: `create_demand_table`
 
-Input: Annual demand data from FES workbook indexed by scenario, GSP and year
-Output: Annual demand data for a particular scenario indexed by GB bus and year
-Method: Converts demand from GWh to MWh and outputs regional demand by bus and year.
+Input: 
+   Annual demand data from FES workbook indexed by scenario, GSP and year
+Output: 
+   Annual demand data for a particular scenario indexed by GB bus and year
+Method: 
+   Converts demand from GWh to MWh and outputs regional demand by bus and year.
 
 Baseline Demand Profile Processing
 ----------------------------------
@@ -171,25 +174,32 @@ Baseline Demand Profile Processing
 Input:
 - Baseline electricity demand profiles from PyPSA-Eur workflow
 - gb-model bus cluatering
-Output: Baseline electricity demand profiles for each bus in the gb-model network
-Method: Clusters PyPSA-Eur baseline electricity demand to the gb-model bus layout, producing a historic baseline electricity demand profile for each bus in GB and rest of Europe.
+Output: 
+   Baseline electricity demand profiles for each bus in the gb-model network
+Method: 
+   Clusters PyPSA-Eur baseline electricity demand to the gb-model bus layout, producing a historic baseline electricity demand profile for each bus in GB and rest of Europe.
 
 **Rule**: `process_baseline_demand_shape`
 
 Input:
    - Historical baseline electricity demand profiles for each bus in the gb-model network (from `cluster_baseline_electricity_demand_timeseries`)
    - Resistive heater demand profiles for each bus in the gb-model network (from `resistive_heater_demand_profile`)
-Output: Normalized demand profile shapes for each network bus for a given year
-Method: Removes future resistive heating demand from historical baseline electricity demand to get the net electrified heat demand and then normalizes the resulting demand profiles for each bus.
+Output: 
+   Normalized demand profile shapes for each network bus for a given year
+Method: 
+   Removes future resistive heating demand from historical baseline electricity demand to get the net electrified heat demand and then normalizes the resulting demand profiles for each bus.
 
 DSR Flexibility Processing
 --------------------------
 
 **Rule**: `create_flexibility_table`
 
-Input: FES flexibility data for each scenario, year and flexibility type (residential, I&C, residential heat, I&C heat, EV)
-Output: DSR capacity for each demand sector by region and year
-Method: Extracts DSR capacity from FES data, converts to MW and outputs flexibility tables for each flexibility type.
+Input: 
+   FES flexibility data for each scenario, year and flexibility type (residential, I&C, residential heat, I&C heat, EV)
+Output: 
+   DSR capacity for each demand sector by region and year
+Method: 
+   Extracts DSR capacity from FES data, converts to MW and outputs flexibility tables for each flexibility type.
 
 
 Regional Demand Synthesis
@@ -200,8 +210,10 @@ Regional Demand Synthesis
 Input: 
  - Annual demand data from FES workbook indexed by scenario, GSP and year
  - DSR capacity for each demand sector by region and year
-Output: Annual demand and DSR capacity data for a particular scenario indexed by network bus and year
-Method: Clusters demand and DSR capacity from GSP to network bus level
+Output: 
+   Annual demand and DSR capacity data for a particular scenario indexed by network bus and year
+Method: 
+   Clusters demand and DSR capacity from GSP to network bus level
 
 **Rule**: `distribute_eur_demands`
 
@@ -209,8 +221,10 @@ Input:
 - Annual demand data from FES workbook indexed by EU scenario, country and year
 - Energy totals weighted by population for each GB node in the network (from PyPSA-Eur workflow)
 - Annual demand data for GB (from `create_demand_table`) 
-Output: Annual demand data for European neighbours indexed by demand type, network bus and year
-Method: Allocates European neighbour annual demand totals across the model. Uses energy totals and regional FES demand data to create consistent demand inputs.
+Output: 
+   Annual demand data for European neighbours indexed by demand type, network bus and year
+Method: 
+   Allocates European neighbour annual demand totals across the model. Uses energy totals and regional FES demand data to create consistent demand inputs.
 
 **Rule**: `synthesise_eur_data`
 
@@ -218,8 +232,10 @@ Input:
  - Annual demand data for each demand type
  - Annual EUR demand data
  - GB DSR capacity data
-Output: Annual demand and DSR capacity data for a particular scenario indexed by network bus and year
-Method: Synthesizes demand and DSR data for European neighbours using GB data as a reference, scaling based on relative annual demand totals and applying time zone shifts for DSR operation windows.
+Output: 
+   Annual demand and DSR capacity data for a particular scenario indexed by network bus and year
+Method: 
+   Synthesizes demand and DSR data for European neighbours using GB data as a reference, scaling based on relative annual demand totals and applying time zone shifts for DSR operation windows.
 
 Demand Profile Scaling
 ----------------------
@@ -230,5 +246,7 @@ Input:
  - Annual GB demand (from `create_demand_table`)
  - Annual EUR demand (from `distribute_eur_demands`)
  - Normalized demand profile shapes for each network bus for a given year (from `process_baseline_demand_shape`)
-Output: Hourly demand profiles for each demand type, network bus and year
-Method: Scales normalized demand profile shapes to match annual regional demand totals, producing hourly demand profiles at each network bus for each demand type.
+Output: 
+   Hourly demand profiles for each demand type, network bus and year
+Method: 
+   Scales normalized demand profile shapes to match annual regional demand totals, producing hourly demand profiles at each network bus for each demand type.
