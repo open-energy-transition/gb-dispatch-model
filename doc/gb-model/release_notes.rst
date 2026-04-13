@@ -13,6 +13,7 @@ Unreleased
 ==========
 
 * Add HiGHS HiPO solver to `pixi` dependencies and to the solver config options.
+* Fix technology efficiencies being erroneously set to 100% in network composition.
 
 v0.2.2 (2026-03-24)
 ===================
