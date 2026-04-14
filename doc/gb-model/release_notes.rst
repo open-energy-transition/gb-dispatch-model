@@ -14,10 +14,14 @@ Unreleased
 
 * Add HiGHS HiPO solver to `pixi` dependencies and to the solver config options.
 * Fix demand profile scaling to correctly match annual FES demands.
+  This increases heat, EV, and baseline electricity demand in all model regions (GB & EUR) compared to the previous version.
 * Move resistive heating demand to the heat demand bus, rather than having it rolled in with baseline electricity demand.
 * Fix total electricity demand in GB to match the total demand given in the FES by filling the difference with a constant baseload demand and a variable T&D loss profile (matching the profile shape of all other demands combined).
+  This increases total GB demand compared to the previous version.
 * Get electrolysis efficiency directly from comparison of flows in and out of networked electrolysis defined in the FES workbook.
+  This increases electrolysis efficiency compared to the previous version.
 * Update source of hydrogen demand to use networked electrolysis hydrogen demand directly, rather than the leftover hydrogen demand after considering all other sources of hydrogen supply (e.g. blue H2).
+  This increases GB hydrogen demand compared to the previous version.
 
 v0.2.2 (2026-03-24)
 ===================
