@@ -175,3 +175,35 @@ rule scaled_demand_profile:
         logs("scaled_demand_profile_{fes_scenario}_baseline_electricity_{year}.log"),
     script:
         scripts("gb_model/demand_and_dsr/scaled_demand_profile.py")
+
+
+rule add_extra_demands:
+    message:
+        "Add leftover {wildcards.year} {wildcards.fes_scenario} electricity demand not already accounted for in other profiles (direct transmission demand; T&D losses)"
+    input:
+        fes_total_electricity_demands=resources("gb-model/fes/ED1.csv"),
+        electricity_demands=expand(
+            resources("gb-model/{{fes_scenario}}/{demand_type}_demand/{{year}}.csv"),
+            demand_type=[
+                "baseline_electricity",
+                "iandc_heat",
+                "ev",
+                "residential_heat",
+            ],
+        ),
+        h2_demand=resources("gb-model/{fes_scenario}/regional_H2_demand_annual.csv"),
+        non_networked_h2_demand=resources(
+            "gb-model/{fes_scenario}/regional_non_networked_electrolysis_demand_annual.csv"
+        ),
+        electrolysis_efficiency=resources(
+            "gb-model/{fes_scenario}/electrolysis_efficiency.csv"
+        ),
+    params:
+        total=config_provider("fes", "gb", "demand", "expected_total_data_item"),
+        losses=config_provider("fes", "gb", "demand", "losses_data_item"),
+    output:
+        csv=resources("gb-model/{fes_scenario}/additional_demand/{year}.csv"),
+    log:
+        logs("add_extra_demands_{fes_scenario}_{year}.log"),
+    script:
+        scripts("gb_model/demand_and_dsr/add_extra_demands.py")

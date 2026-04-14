@@ -1573,6 +1573,8 @@ fes:
       Technology Detail: {}
       heat: {}
       bus_suffix: {}
+      expected_total_data_item: []
+      losses_data_item: []
     flexibility:
       carrier_mapping: {}
       dsr_hours: {}
@@ -1587,11 +1589,10 @@ fes:
     load_shedding_cost_above_marginal:
   hydrogen:
     data_selection:
-      all_supply: {}
-      all_demand: {}
-      non_networked_supply: {}
+      networked_h2_supply: {}
+      networked_electricity_demand: {}
+      non_networked_electricity_demand: {}
       storage: {}
-    electrolysis_efficiency: 0.7
 
 # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#ev
 ev:

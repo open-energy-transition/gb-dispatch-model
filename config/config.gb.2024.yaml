@@ -679,6 +679,15 @@ fes:
       rename:
         columns: year
 
+    # Annual electricity demand 2020-2050
+    ED1:
+      usecols: "D:AM"
+      skiprows: 4
+      index_col: [0, 1, 2, 3, 4]
+      header: 0
+      rename:
+        columns: year
+
     # Annual unmanaged EV charging demand peak 2020-2050
     ED5:
       usecols: "D:AM"
@@ -774,7 +783,12 @@ fes:
         ev: " EV"
         residential_heat: " Residential Heat"
         iandc_heat: " I&C Heat"
-
+        additional: " Transmission-level + T&D losses"
+      expected_total_data_item:
+      - "GBFES System Demand: Total"
+      losses_data_item:
+      - "GBFES System Losses: Distribution"
+      - "GBFES System Losses: Transmission"
     flexibility:
       carrier_mapping:
         battery:
@@ -905,36 +919,20 @@ fes:
 
   hydrogen:
     data_selection:
-      all_supply:
+      networked_h2_supply:
         Category: supply
         Sector:
-        - Methane Reformation with CCUS
-        - Non-networked Electrolysis
-        - Biomass gasification
-        - Nuclear Electrolysis
-        - Imports
-        - Exports
-      all_demand:
+        - Networked Electrolysis
+      networked_electricity_demand:
         Category: demand
-        Sector:
-        - Road Transport
-        - Residential
-        - Commercial
-        - Industrial
-        - Power Generation
-        - Rail
-        - Shipping
-        - Blending
-        - Aviation
-        - Direct Air Carbon Capture and Storage
-        - Transmission Losses
-      non_networked_supply:
-        Sector:
-        - Non-networked Electrolysis
+        Fuel:
+        - Networked Electricity
+      non_networked_electricity_demand:
+        Category: demand
+        Fuel:
+        - Non Networked Electricity
       storage:
-        Category: Storage
-
-    electrolysis_efficiency: 0.7 # estimate for non-networked electrolysis
+        Category: storage
 
 ev:
   plug_in_offset: 2 # hours after the traffic/activity peak when most EVs are expected to plug in for charging

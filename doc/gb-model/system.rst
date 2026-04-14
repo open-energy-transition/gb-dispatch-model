@@ -251,6 +251,19 @@ For countries which have been reliant on electrical for many years already (e.g.
 To ensure we do not double-count this seasonal effect in both load profiles, we remove a simulated historical heat pump load from the historical baseline electricity load profile.
 This means that only this "building heat" load has that profile shape, whereas the baseline electricity profile should not reflect building heat seasonality at all.
 
+.. _system-load-additional:
+
+Additional demand
+^^^^^^^^^^^^^^^^^
+
+Our GB demands are based on those defined at each grid supply point (GSP).
+There are several other demands that are not geographically distributed in the published FES workbook but that need to be accounted for in the model.
+We capture these as the additional demand above that which is defined at the GSPs and apply it as a static, baseload demand.
+We distribute it according to the relative magnitude of GSP-based demand in each model region.
+
+Furthermore, there are transmission and distribution (T&D) losses in the FES  workbook that add to the effective system electricity demand.
+We distribute these losses to GB regions and to each hour of the year in proportion to the relative demand in that region and hour.
+
 .. _system-load-dsr:
 
 Demand-side response

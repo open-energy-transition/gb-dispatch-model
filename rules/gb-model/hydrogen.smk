@@ -13,7 +13,6 @@ rule create_hydrogen_data_tables:
     params:
         year_range=config["redispatch"]["year_range_incl"],
         data_selection=config["fes"]["hydrogen"]["data_selection"],
-        electrolysis_efficiency=config["fes"]["hydrogen"]["electrolysis_efficiency"],
     input:
         whole_system_data=resources("gb-model/fes/WS1.csv"),
     output:
@@ -22,6 +21,9 @@ rule create_hydrogen_data_tables:
             "gb-model/{fes_scenario}/non_networked_electrolysis_demand_annual.csv"
         ),
         storage=resources("gb-model/{fes_scenario}/H2_storage_capacity.csv"),
+        electrolysis_efficiency=resources(
+            "gb-model/{fes_scenario}/electrolysis_efficiency.csv"
+        ),
     log:
         logs("create_hydrogen_data_tables_{fes_scenario}.log"),
     script:
