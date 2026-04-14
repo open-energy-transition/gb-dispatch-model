@@ -17,6 +17,7 @@ Unreleased
 * Move resistive heating demand to the heat demand bus, rather than having it rolled in with baseline electricity demand.
 * Fix total electricity demand in GB to match the total demand given in the FES by filling the difference with a constant baseload demand and a variable T&D loss profile (matching the profile shape of all other demands combined).
 * Get electrolysis efficiency directly from comparison of flows in and out of networked electrolysis defined in the FES workbook.
+* Update source of hydrogen demand to use networked electrolysis hydrogen demand directly, rather than the leftover hydrogen demand after considering all other sources of hydrogen supply (e.g. blue H2).
 
 v0.2.2 (2026-03-24)
 ===================
