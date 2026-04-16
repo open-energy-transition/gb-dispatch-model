@@ -51,8 +51,11 @@ _EDGE_RE = re.compile(r"(\d+)\s*->\s*(\d+)")
 # Colour palette for node categories
 # ---------------------------------------------------------------------------
 _COLOUR_HIGHLIGHT = "forestgreen"
+_COLOUR_HIGHLIGHT_FILL = "#e6f4eac0"
 _COLOUR_GB_MODEL = "black"
+_COLOUR_GB_MODEL_FILL = "#f0f0f0c0"
 _COLOUR_UPSTREAM = "steelblue"
+_COLOUR_UPSTREAM_FILL = "#ddeeffc0"
 _COLOUR_FILE_FILL = "lightyellow"
 _COLOUR_FILE_BORDER = "darkorange"
 
@@ -331,11 +334,11 @@ def _legend_lines(has_highlight: bool) -> list[str]:
     items = []
     if has_highlight:
         items.append(
-            f'        _l0[label="gb-model subsystem rule", style=rounded, shape=box, color={_COLOUR_HIGHLIGHT}];'
+            f'        _l0[label="gb-model subsystem rule", style="rounded,filled", shape=box, color={_COLOUR_HIGHLIGHT}, fillcolor="{_COLOUR_HIGHLIGHT_FILL}"];'
         )
     items += [
-        f'        _l1[label="gb-model general rule", style=rounded, shape=box, color={_COLOUR_GB_MODEL}];',
-        f'        _l2[label="PyPSA-Eur rule", style=rounded, shape=box, color={_COLOUR_UPSTREAM}];',
+        f'        _l1[label="gb-model general rule", style="rounded,filled", shape=box, color={_COLOUR_GB_MODEL}, fillcolor="{_COLOUR_GB_MODEL_FILL}"];',
+        f'        _l2[label="PyPSA-Eur rule", style="rounded,filled", shape=box, color={_COLOUR_UPSTREAM}, fillcolor="{_COLOUR_UPSTREAM_FILL}"];',
         f'        _l3[label="output file", shape=note, style=filled, fillcolor={_COLOUR_FILE_FILL}, color={_COLOUR_FILE_BORDER}, fontsize=9];',
     ]
     node_ids = (["_l0"] if has_highlight else []) + ["_l1", "_l2", "_l3"]
@@ -373,13 +376,13 @@ def emit_dot(
     ]
     for nid in sorted(keep_nodes, key=int):
         if nid in highlight_nodes:
-            color = _COLOUR_HIGHLIGHT
+            color, fillcolor = _COLOUR_HIGHLIGHT, _COLOUR_HIGHLIGHT_FILL
         elif nid in gb_model_nodes:
-            color = _COLOUR_GB_MODEL
+            color, fillcolor = _COLOUR_GB_MODEL, _COLOUR_GB_MODEL_FILL
         else:
-            color = _COLOUR_UPSTREAM
+            color, fillcolor = _COLOUR_UPSTREAM, _COLOUR_UPSTREAM_FILL
         lines.append(
-            f'    {nid}[label = "{all_nodes[nid]}", style="rounded", shape=box, peripheries=1, color={color}];'
+            f'    {nid}[label = "{all_nodes[nid]}", style="rounded,filled", shape=box, peripheries=1, color={color}, fillcolor="{fillcolor}"];'
         )
     for src, dst in edges:
         lines.append(f"    {src} -> {dst};")
