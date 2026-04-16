@@ -193,7 +193,7 @@ fes_costs:
       engine PP: central gas CHP # `direct firing gas` is a better fit but the data is spurious
       engine CHP: central gas CHP
       geothermal PP: geothermal
-      hydrogen turbine PP: central hydrogen CHP
+      hydrogen turbine PP: CCGT
       hydrogen turbine CHP: central hydrogen CHP
       hydrogen fuel cell PP: fuel cell
       nuclear PP: nuclear

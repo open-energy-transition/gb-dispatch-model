@@ -182,8 +182,8 @@ def _load_powerplants(
     """
     ppl = pd.read_csv(powerplants_path, index_col="name", dtype={"bus": "str"})
     ppl = ppl[ppl.build_year == year]
-    ppl["max_hours"] = 0  # Initialize max_hours column
-    ppl["efficiency"] = 1.0  # Initialize efficiency column
+    ppl["max_hours"] = ppl.get("max_hours", 0)  # Initialize max_hours column
+    ppl["efficiency"] = ppl.get("efficiency", 1.0)  # Initialize efficiency column
 
     return ppl
 
