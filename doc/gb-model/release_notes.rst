@@ -22,6 +22,7 @@ Unreleased
   This increases electrolysis efficiency compared to the previous version.
 * Update source of hydrogen demand to use networked electrolysis hydrogen demand directly, rather than the leftover hydrogen demand after considering all other sources of hydrogen supply (e.g. blue H2).
   This increases GB hydrogen demand compared to the previous version.
+* Fix technology efficiencies being erroneously set to 100% in network composition.
 
 v0.2.2 (2026-03-24)
 ===================
