@@ -212,13 +212,14 @@ The EV system is built through a pipeline implemented across ``rules/gb-model/ev
 .. note::
    The graph above was generated using::
 
-      snakemake --rulegraph -F \
-        resources/GB/gb-model/HT/ev_peak_demand.csv \
-        resources/GB/gb-model/HT/regional_ev_v2g_storage.csv \
-        resources/GB/gb-model/HT/regional_ev_v2g_storage_inc_eur.csv \
-        resources/GB/gb-model/HT/ev_demand/2035.csv \
-        | python utils/filter_ev_dag.py \
-        | .pixi/envs/default/Library/bin/dot -Tsvg -o doc/gb-model/img/ev_workflow.svg
+      pixi run filtered_rulegraph \
+      "resources/GB/gb-model/HT/regional_ev_v2g_storage_inc_eur.csv
+      resources/GB/gb-model/HT/ev_demand/2035.csv
+      resources/GB/gb-model/HT/regional_ev_dsr_inc_eur.csv" \
+      "doc/gb-model/img/ev_workflow.svg" \
+      "-w fes_scenario -w year" \
+      "-s 8,8"
+      "-f rules/gb-model/ev.smk"
 
    ``utils/filter_ev_dag.py`` trims the full DAG to EV-related rules only.
    Requires `Graphviz <https://graphviz.org>`_ (``dot``) on your ``PATH``.

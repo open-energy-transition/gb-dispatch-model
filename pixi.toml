@@ -190,6 +190,17 @@ args = [
     ]
 cmd = "snakemake gb_compose_all {{ snakemake_options }}"
 
+[feature.gb-model.tasks.filtered_rulegraph]
+description = "Generate a filtered gb-model rulegraph SVG. Args (positional): targets output wildcards rule_files"
+args = [
+    "targets",
+    {"arg" = "output", "default" = "rulegraph.svg"},
+    {"arg" = "wildcards", "default" = "-w fes_scenario -w year"},
+    {"arg" = "rule_files", "default" = ""},
+    {"arg" = "size", "default" = "-s 10,8"},
+]
+cmd = "python utils/filter_gb_model_rulegraph.py {{ wildcards }} {{ rule_files }} {{ size }} {{ targets }} | dot -Tsvg -o {{ output }}"
+
 [feature.gb-model.dependencies]
 curl = ">=8.17.0"
 python-dotenv = ">=1.2.1"
