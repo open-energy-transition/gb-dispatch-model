@@ -37,7 +37,7 @@ This modelling approach allows hydrogen to act as both a flexible load on the el
       // Main components
       AC_bus [label="AC Bus", fillcolor="#B3D9FF", shape=ellipse, width=2, height=1.5, fixedsize=true];
       H2_bus [label="H2 Bus", fillcolor="#CCFFFF", shape=ellipse, width=2, height=1.5, fixedsize=true];
-
+      
       // Hydrogen system components
       electrolyser [label="Grid\nElectrolysis", fillcolor="#90EE90"];
       fuel_cell [label="Fuel Cell", fillcolor="#FFB6C1"];
@@ -45,7 +45,7 @@ This modelling approach allows hydrogen to act as both a flexible load on the el
       h2_store [label="H2 Storage", fillcolor="#FFFACD"];
       h2_demand [label="H2 Demand", fillcolor="#FFDAB9"];
       non_grid_elec [label="Non-networked\nElectrolysis", fillcolor="#DDA0DD"];
-
+      
       // Connections
       AC_bus -> electrolyser -> H2_bus [label="Grid-connected"];
       H2_bus -> fuel_cell -> AC_bus;
@@ -283,14 +283,15 @@ The hydrogen system is built through a multi-stage data processing pipeline impl
 .. note::
    The graph above was generated using::
 
-      pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/regional_H2_demand_annual_inc_eur.csv
-      resources/GB/gb-model/HT/regional_non_networked_electrolysis_demand_annual_inc_eur.csv
-      resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv
-      resources/GB/gb-model/HT/regional_grid_electrolysis_capacities_inc_eur_inc_tech_data.csv" \
-      "doc/gb-model/img/hydrogen_workflow.svg" \
-      "-w fes_scenario -w year" \
-      "-f rules/gb-model/hydrogen.smk"
+      snakemake --rulegraph -F \
+        resources/GB/gb-model/HT/regional_H2_demand_annual_inc_eur.csv \
+        resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv \
+        resources/GB/gb-model/HT/regional_grid_electrolysis_capacities_inc_eur_inc_tech_data.csv \
+        resources/GB/gb-model/HT/regional_non_networked_electrolysis_demand_annual_inc_eur.csv \
+        | python utils/filter_hydrogen_dag.py \
+        | dot -Tsvg -o doc/gb-model/img/hydrogen_workflow.svg
+
+   ``utils/filter_gb_model_rulegraph.py`` trims the full DAG to hydrogen-related rules only.
 
 **Key Assumptions**:
 
@@ -304,14 +305,14 @@ The hydrogen system is built through a multi-stage data processing pipeline impl
 .. seealso::
 
    **Related Documentation**:
-
+   
    - :ref:`system-hydrogen` - Hydrogen in the broader system representation
    - :ref:`gb_data_sources` - FES and other data sources
    - :doc:`configuration` - Full configuration reference
    - :doc:`dispatch_redispatch` - Hydrogen in dispatch optimization
-
+   
    **External Resources**:
-
+   
    - `FES 2024 Data Workbook <https://www.neso.energy/publications/future-energy-scenarios-fes>`_ - Primary data source
    - `TYNDP 2024 <https://tyndp.entsoe.eu/>`_ - European hydrogen demand projections
    - `PyPSA technology-data <https://github.com/PyPSA/technology-data>`_ - Technology costs and parameters

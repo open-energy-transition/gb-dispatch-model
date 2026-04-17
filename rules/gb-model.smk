@@ -35,8 +35,14 @@ rule compose_network:
     input:
         unpack(input_profile_tech),
         demands=expand(
-            resources("gb-model/{{fes_scenario}}/{demand_type}_demand/{{year}}.csv"),
-            demand_type=config["fes"]["gb"]["demand"]["Technology Detail"].keys(),
+            resources("gb-model/{{fes_scenario}}/{sector}_demand/{{year}}.csv"),
+            sector=[
+                "baseline_electricity",
+                "iandc_heat",
+                "ev",
+                "residential_heat",
+                "additional",
+            ],
         ),
         dsr=expand(
             resources("gb-model/{{fes_scenario}}/regional_{sector}_dsr_inc_eur.csv"),
@@ -78,6 +84,7 @@ rule compose_network:
             resources(
                 "gb-model/{fes_scenario}/regional_grid_electrolysis_capacities_inc_eur_inc_tech_data.csv"
             ),
+            resources("gb-model/{fes_scenario}/electrolysis_efficiency.csv"),
         ],
         intermediate_data=[
             # TODO: calculate intra_gb availability per line/boundary before this point (currently only per TO)

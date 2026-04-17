@@ -182,8 +182,8 @@ def _load_powerplants(
     """
     ppl = pd.read_csv(powerplants_path, index_col="name", dtype={"bus": "str"})
     ppl = ppl[ppl.build_year == year]
-    ppl["max_hours"] = 0  # Initialize max_hours column
-    ppl["efficiency"] = 1.0  # Initialize efficiency column
+    ppl["max_hours"] = ppl.get("max_hours", 0)  # Initialize max_hours column
+    ppl["efficiency"] = ppl.get("efficiency", 1.0)  # Initialize efficiency column
 
     return ppl
 
@@ -1004,6 +1004,7 @@ def add_H2(
     regional_non_networked_electrolysis_demand_annual_inc_eur: str,
     regional_H2_storage_capacity_inc_eur_inc_tech_data: str,
     regional_grid_electrolysis_capacities_inc_eur_inc_tech_data: str,
+    electrolysis_efficiency: str,
 ) -> None:
     demand = _load_regional_data(regional_H2_demand_annual_inc_eur, year)
     demand_fixed = _load_regional_data(
@@ -1014,6 +1015,9 @@ def add_H2(
     )
     electrolysis_caps = _load_powerplants(
         regional_grid_electrolysis_capacities_inc_eur_inc_tech_data, year
+    )
+    electrolysis_efficiency_float = (
+        pd.read_csv(electrolysis_efficiency, index_col="year").squeeze().loc[year]
     )
 
     n.add("Carrier", "H2")
@@ -1052,7 +1056,7 @@ def add_H2(
         bus0=electrolysis_caps.bus,
         p_nom=electrolysis_caps.p_nom,
         carrier="H2 Electrolysis",
-        efficiency=electrolysis_caps.efficiency,
+        efficiency=electrolysis_efficiency_float,
         marginal_cost=electrolysis_caps.marginal_cost,
         capital_cost=0,
         lifetime=electrolysis_caps.lifetime,
