@@ -189,7 +189,8 @@ From ``config/config.gb.2024.yaml``:
 
 .. literalinclude:: ../../config/config.gb.2024.yaml
    :language: yaml
-   :lines: 939-947
+   :start-after: # [doc:ev-config-start]
+   :end-before: # [doc:ev-config-end]
 
 The demand profile transformation parameters control the two-step scaling used to match both the annual energy total and the peak demand (see :ref:`ev-unmanaged-demand`).
 Where simple scaling satisfies the peak constraint (within ``relative_peak_tolerance``, default 5%), no transformation is applied.
