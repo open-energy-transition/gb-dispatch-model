@@ -222,7 +222,6 @@ The EV system is built through a pipeline implemented across ``rules/gb-model/ev
       "-f rules/gb-model/ev.smk"
 
    ``utils/filter_ev_dag.py`` trims the full DAG to EV-related rules only.
-   Requires `Graphviz <https://graphviz.org>`_ (``dot``) on your ``PATH``.
 
 1. **Demand shape** (``process_ev_demand_shape``): Builds normalised hourly EV charging profile from KFZ traffic data
 2. **Peak demand table** (``create_ev_peak_charging_table``): Extracts annual EV unmanaged peak demand from FES ED5
