@@ -76,10 +76,10 @@ The scaling applies GB ratios between EV demand and total electricity consumptio
 
 The temporal profile (demand shape) of EV charging is derived from German road traffic count data (KFZ dataset from PyPSA-Eur):
 
-- Weekly traffic counts (averaged 2010–2015) define when EVs are on the road
-- A ``plug_in_offset`` shifts the traffic peak to represent when EVs arrive home and plug in
-- A rolling sum over ``charging_duration`` hours simulates the charging session duration
-- The resulting profile is normalised so it sums to 1 across the year
+- Weekly traffic counts (averaged 2010–2015) define when EVs are on the road.
+- A ``plug_in_offset`` shifts the traffic peak to represent when EVs arrive home and plug in.
+- A rolling sum over ``charging_duration`` hours simulates the charging session duration.
+- The resulting profile is normalised so it sums to 1 across the year.
 
 
 .. _ev-components:
@@ -218,10 +218,10 @@ The EV system is built through a pipeline implemented across ``rules/gb-model/ev
       resources/GB/gb-model/HT/regional_ev_dsr_inc_eur.csv" \
       "doc/gb-model/img/ev_workflow.svg" \
       "-w fes_scenario -w year" \
-      "-s 8,8"
+      "-s 10,8"
       "-f rules/gb-model/ev.smk"
 
-   ``utils/filter_ev_dag.py`` trims the full DAG to EV-related rules only.
+   The ``filtered_rulegraph`` task allows us to trim the full DAG to EV-related rules only.
 
 1. **Demand shape** (``process_ev_demand_shape``): Builds normalised hourly EV charging profile from KFZ traffic data
 2. **Peak demand table** (``create_ev_peak_charging_table``): Extracts annual EV unmanaged peak demand from FES ED5

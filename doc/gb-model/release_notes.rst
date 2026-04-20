@@ -12,6 +12,9 @@ Release Notes
 Unreleased
 ==========
 
+* Add ``pixi`` task to generate filtered snakemake DAGs for use in documenting gb-dispatch-model subsystems.
+* Add EV subsystem documentation (#279).
+* Add hydrogen subsystem documentation (#280).
 * Add HiGHS HiPO solver to `pixi` dependencies and to the solver config options.
 * Fix demand profile scaling to correctly match annual FES demands.
   This increases heat, EV, and baseline electricity demand in all model regions (GB & EUR) compared to the previous version.
