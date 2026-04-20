@@ -24,8 +24,7 @@ def parse_hydrogen_data(
     fes_scenario: str,
     year_range: list,
     data_selection: dict,
-    electrolysis_efficiency: float,
-) -> tuple[pd.Series, pd.Series, pd.Series]:
+) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
     """
     Parse the hydrogen demand data from FES workbook to obtain hydrogen demand in the required format.
 
@@ -34,7 +33,10 @@ def parse_hydrogen_data(
         fes_scenario (str): FES scenario name to filter the data for
         year_range (list): Two-element list [start_year, end_year] defining the year range
     Returns:
-
+        networked_h2_supply: annual H2 supply from networked electrolysis (TWh)
+        non_networked_electrolysis_demand: annual electricity demand for non-networked electrolysis (TWh)
+        electrolysis_efficiency: efficiency of electrolysis from FES data (TWh H2 / TWh electricity)
+        storage_data: annual hydrogen storage capacity (TWh)
 
     """
 
@@ -44,15 +46,25 @@ def parse_hydrogen_data(
         & (fes_data["Units"] == "TWh")
         & fes_data["year"].between(year_range[0], year_range[1], inclusive="both")
     ]
-    supply_data = _select_data(filtered_data, data_selection["all_supply"])
-    demand_data = _select_data(filtered_data, data_selection["all_demand"])
-    storage_data = _select_data(filtered_data, data_selection["storage"])
-    net_demand = demand_data - supply_data
-    non_networked_electrolysis_demand = _select_data(
-        filtered_data, data_selection["non_networked_supply"]
-    ).div(electrolysis_efficiency)
+    networked_h2_supply = _select_data(
+        filtered_data, data_selection["networked_h2_supply"]
+    )
+    networked_electrolysis_demand = _select_data(
+        filtered_data, data_selection["networked_electricity_demand"]
+    )
 
-    return net_demand, non_networked_electrolysis_demand, storage_data
+    electrolysis_efficiency = networked_h2_supply / networked_electrolysis_demand
+    storage_data = _select_data(filtered_data, data_selection["storage"])
+    non_networked_electrolysis_demand = _select_data(
+        filtered_data, data_selection["non_networked_electricity_demand"]
+    )
+
+    return (
+        networked_h2_supply,
+        non_networked_electrolysis_demand,
+        electrolysis_efficiency,
+        storage_data,
+    )
 
 
 def _select_data(fes_data: pd.DataFrame, data_filter: dict) -> pd.Series:
@@ -85,16 +97,19 @@ if __name__ == "__main__":
     fes_data = pd.read_csv(snakemake.input.whole_system_data)
 
     # Parse demand data
-    net_demand, non_networked_electrolysis_demand, storage_capacity = (
-        parse_hydrogen_data(
-            fes_data,
-            get_scenario_name(snakemake),
-            snakemake.params.year_range,
-            snakemake.params.data_selection,
-            snakemake.params.electrolysis_efficiency,
-        )
+    (
+        networked_h2_supply,
+        non_networked_electrolysis_demand,
+        electrolysis_efficiency,
+        storage_data,
+    ) = parse_hydrogen_data(
+        fes_data,
+        get_scenario_name(snakemake),
+        snakemake.params.year_range,
+        snakemake.params.data_selection,
     )
 
-    net_demand.to_csv(snakemake.output.hydrogen_demand)
+    networked_h2_supply.to_csv(snakemake.output.hydrogen_demand)
     non_networked_electrolysis_demand.to_csv(snakemake.output.electricity_demand)
-    storage_capacity.to_csv(snakemake.output.storage)
+    electrolysis_efficiency.to_csv(snakemake.output.electrolysis_efficiency)
+    storage_data.to_csv(snakemake.output.storage)

@@ -58,17 +58,21 @@ rule create_ev_v2g_storage_table:
         scripts("gb_model/ev/create_ev_v2g_storage_table.py")
 
 
-use rule scaled_demand_profile as scaled_ev_demand_profile with:
+rule scaled_ev_demand_profile:
+    message:
+        "Generate EV demand profile for model year {wildcards.year}"
     input:
         gb_demand_annual=resources(
-            "gb-model/{fes_scenario}/regional_{demand_type}_demand_annual.csv"
+            "gb-model/{fes_scenario}/regional_ev_demand_annual.csv"
         ),
         eur_demand_annual=resources("gb-model/{fes_scenario}/eur_demand_annual.csv"),
-        demand_shape=resources("gb-model/{demand_type}_demand_shape.csv"),
-        gb_demand_peak=resources(
-            "gb-model/{fes_scenario}/regional_{demand_type}_peak_demand.csv"
-        ),
+        demand_shape=resources("gb-model/ev_demand_shape.csv"),
+        gb_demand_peak=resources("gb-model/{fes_scenario}/regional_ev_peak_demand.csv"),
     params:
         scaling_params=config["ev"]["ev_demand_profile_transformation"],
-    wildcard_constraints:
-        demand_type="ev",
+    output:
+        csv=resources("gb-model/{fes_scenario}/ev_demand/{year}.csv"),
+    log:
+        logs("scaled_demand_profile_{fes_scenario}_ev_{year}.log"),
+    script:
+        scripts("gb_model/ev/scaled_demand_profile.py")

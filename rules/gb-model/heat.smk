@@ -37,9 +37,9 @@ rule process_fes_heat_technologies:
         fes_heat_technology_data=resources(f"gb-model/fes/ED3.csv"),
     output:
         residential=resources(
-            "gb-model/{fes_scenario}/residential_heat_techs_consumption.csv"
+            "gb-model/{fes_scenario}/residential_heat_demand_annual.csv"
         ),
-        services=resources("gb-model/{fes_scenario}/iandc_heat_techs_consumption.csv"),
+        services=resources("gb-model/{fes_scenario}/iandc_heat_demand_annual.csv"),
     log:
         logs("process_fes_heat_technologies_{fes_scenario}.log"),
     script:
@@ -48,37 +48,42 @@ rule process_fes_heat_technologies:
 
 rule resistive_heater_demand_profile:
     message:
-        "Process resistive heat demand profile shape into CSV format for {wildcards.year}"
+        "Process historical and future resistive heat demand profile for {wildcards.year}"
     input:
         energy_totals=resources("pop_weighted_energy_totals_s_clustered.csv"),
         heat_demand_shape=resources("hourly_heat_demand_total_base_s_clustered.nc"),
-        residential_heat_techs_consumption=resources(
-            "gb-model/{fes_scenario}/regional_residential_heat_techs_consumption_inc_eur.csv"
+        residential_heat_demand_annual=resources(
+            "gb-model/{fes_scenario}/regional_residential_heat_demand_annual_inc_eur.csv"
         ),
-        services_heat_techs_consumption=resources(
-            "gb-model/{fes_scenario}/regional_iandc_heat_techs_consumption_inc_eur.csv"
+        services_heat_demand_annual=resources(
+            "gb-model/{fes_scenario}/regional_iandc_heat_demand_annual_inc_eur.csv"
         ),
     output:
-        csv=resources("gb-model/{fes_scenario}/resistive_heater_demand/{year}.csv"),
+        historical=resources(
+            "gb-model/{fes_scenario}/historical_resistive_heater_demand/{year}.csv"
+        ),
+        future=resources(
+            "gb-model/{fes_scenario}/future_resistive_heater_demand/{year}.csv"
+        ),
     log:
         logs("resistive_heater_demand_profile_{fes_scenario}_{year}.log"),
     script:
         scripts("gb_model/heat/resistive_heater_demand_profile.py")
 
 
-rule process_heat_demand_shape:
+rule heat_demand_electricity_load_profile:
     message:
-        "Cluster default PyPSA-Eur {wildcards.sector} heat demand shape by bus for future year {wildcards.year}"
+        "Scale PyPSA-Eur {wildcards.sector} heat demand profiles to create heat bus electricity load profiles for future year {wildcards.year}"
     input:
         demand=resources("hourly_heat_demand_total_base_s_clustered.nc"),
         cop_profile=resources("gb-model/cop/{year}.csv"),
         heating_mix=resources(
-            "gb-model/{fes_scenario}/{sector}_heat_techs_consumption.csv"
+            "gb-model/{fes_scenario}/regional_{sector}_heat_demand_annual_inc_eur.csv"
         ),
         energy_totals=resources("pop_weighted_energy_totals_s_clustered.csv"),
     output:
-        csv=resources("gb-model/{fes_scenario}/{sector}_heat_demand_shape/{year}.csv"),
+        csv=resources("gb-model/{fes_scenario}/{sector}_heat_demand/{year}.csv"),
     log:
         logs("heat_demand_s_clustered_{fes_scenario}_{sector}_{year}.log"),
     script:
-        scripts("gb_model/heat/process_heat_demand_shape.py")
+        scripts("gb_model/heat/heat_demand_electricity_load_profile.py")

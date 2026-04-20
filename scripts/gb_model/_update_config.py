@@ -376,6 +376,15 @@ class FESDemandConfig(GBBaseConfig):
         default_factory=dict,
     )
 
+    expected_total_data_item: list[str] = Field(
+        description="FES ED1 worksheet data item name(s) to use for total demand",
+        default_factory=list,
+    )
+    losses_data_item: list[str] = Field(
+        description="FES ED1 worksheet data item name(s) to use for transmisison & distribution losses",
+        default_factory=list,
+    )
+
 
 class FESFlexibilityConfig(GBBaseConfig):
     """FES flexibility configuration."""
@@ -462,16 +471,19 @@ class FESEURConfig(GBBaseConfig):
 class FESHydrogenDataSelection(GBBaseConfig):
     """FES hydrogen data selection filter."""
 
-    all_supply: dict[str, str | list[str]] = Field(
-        description="Filter to get all hydrogen supply data from the FES workbook. Keys are column names, values are column value(s) to select.",
+    networked_h2_supply: dict[str, str | list[str]] = Field(
+        description="Filter to get all relevant sources of hydrogen supply data from the FES workbook. "
+        "Keys are column names, values are column value(s) to select.",
         default_factory=dict,
     )
-    all_demand: dict[str, str | list[str]] = Field(
-        description="Filter to get all hydrogen demand data. Keys are column names, values are column value(s) to select.",
+    networked_electricity_demand: dict[str, str | list[str]] = Field(
+        description="Filter to get all input electricity required to generate the hydrogen defined by `networked_h2_supply` "
+        ". Keys are column names, values are column value(s) to select.",
         default_factory=dict,
     )
-    non_networked_supply: dict[str, str | list[str]] = Field(
-        description="Filter to get all hydrogen non-networked supply data from the FES workbook. Keys are column names, values are column value(s) to select.",
+    non_networked_electricity_demand: dict[str, str | list[str]] = Field(
+        description="Filter to get all input electricity required for non-networked hydrogen supply. "
+        "Keys are column names, values are column value(s) to select.",
         default_factory=dict,
     )
     storage: dict[str, str | list[str]] = Field(
@@ -486,11 +498,6 @@ class FESHydrogenConfig(GBBaseConfig):
     data_selection: FESHydrogenDataSelection = Field(
         description="FES workbook data aggregation filters for hydrogen",
         default_factory=FESHydrogenDataSelection,
-    )
-    electrolysis_efficiency: float = Field(
-        gt=0,
-        description="Non-networked electrolysis efficiency (MWh[H2]/MWh[electricity])",
-        default=0.7,
     )
 
 
