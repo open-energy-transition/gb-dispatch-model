@@ -77,12 +77,12 @@ The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windo
 
    system
    dispatch_redispatch
+   demand_and_dsr
    hydrogen_overview
    ev
    heat_system
    implementation
    data_cleaning
-   demand_and_dsr
 
 .. toctree::
    :hidden:
