@@ -39,10 +39,11 @@ Great Britain Data
 
 The GB data for the model is sourced as follows:
 
-1. **ED3 (Gas Demand Summary)**: Annual heat demand totals for residential and I&C sectors, broken down by heating technology categories from the FES workbook.
+1. **BB1 (Building Block Data)**: Regional GSP-level data for residential and I&C sectors
 
-2. **COP Profiles**: The model incorporates the efficiency of heat pump technologies through the use of Coefficient of Performance (COP) profiles (produced via `build_cop_profiles`). These profiles capture the variation in heat pump performance based on factors such as ambient temperature and geographic location. The COP profiles are generated based on data from the PyPSA-Eur workflow, which provides population-weighted COP values for ASHP and GSHP across different nodes in the network.
-The ASHP COP profiles are available for all geographic location types such as urban central, urban decentral and rural areas, while the GSHP COP profiles are only available for rural areas.
+2. **ED3 (Gas Demand Summary)**: Annual heat demand totals at national level for residential and I&C sectors, broken down by heating technology categories from the FES workbook (in TWh, converted to MWh)
+
+3. **FES FLX1 (Flexibility)**: Annual DSR capacity for residential and I&C sectors by scenario and year (in GW, converted to MW)
 
 
 European Data 
@@ -63,6 +64,13 @@ To consolidate the European data with the GB data, the EU scenarios are mapped t
 
 The heat demands for the European countries are calculated by scaling the annual electricity demands to match the annual heat demands as a share of the total electricity demand in GB. 
 
+PyPSA-Eur Data
+----------------
+Apart from the data from FES workbook, the model also uses baseline COP profiles and district heating shares from the PyPSA-Eur workflow.
+
+The COP profiles provides population-weighted COP values for ASHP and GSHP across different nodes in the network. The ASHP COP profiles are available for all geographic location types such as urban central, urban decentral and rural areas, while the GSHP COP profiles are only available for rural areas.
+
+The district heating shares are used to determine the share of heat demand that is met through district heating in the model. The district heating shares are applied only for GB nodes in the network and are not applied to the European countries.
 
 .. _heat_system_components:
 
