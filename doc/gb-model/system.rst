@@ -51,7 +51,9 @@ We represent the GB model in PyPSA as follows:
          style=dashed;
 
         // Hydrogen system (top middle)
-        h2_bus [label="H2 Bus", fillcolor="#CCFFFF"];
+        h2_bus [label="Grid H2 Bus", fillcolor="#CCFFFF"];
+        blended_h2_bus [label="Blended H2 Bus", fillcolor="#CCFFFF"];
+        purchased_h2 [label="Purchased H2 supply", fillcolor="#2ea8ff"];
         h2_load [label="H2 Load", fillcolor="#FFDAB9"];
         h2_store [label="H2 Store", fillcolor="#FFFACD"];
       }
@@ -104,7 +106,9 @@ We represent the GB model in PyPSA as follows:
 
       // Hydrogen connections
       AC_bus -> h2_bus [label="Electrolysis"];
-      h2_bus -> AC_bus [label="Fuel Cell/\nTurbine"];
+      h2_bus -> blended_h2_bus
+      purchased_h2 -> blended_h2_bus
+      blended_h2_bus -> AC_bus [label="Fuel Cell/\nTurbine"];
       h2_bus -> h2_load;
       h2_bus -> h2_store [dir=both, label="charge/discharge"];
 

@@ -257,6 +257,11 @@ class EntsoeUnavailabilityConfig(GBBaseConfig):
         description="Carrier mapping from ENTSO-E to model carriers",
         default_factory=dict,
     )
+    extend_to_eur_regions: bool = Field(
+        default=False,
+        description="Whether to extend the unavailability data to European regions. "
+        "This is done by applying the GB availability fraction to all generators in European regions, which is a simplification in lieu of actually processing European unavailability data.",
+    )
 
 
 class TransmissionAvailabilityZoneConfig(GBBaseConfig):
@@ -498,6 +503,11 @@ class FESHydrogenConfig(GBBaseConfig):
     data_selection: FESHydrogenDataSelection = Field(
         description="FES workbook data aggregation filters for hydrogen",
         default_factory=FESHydrogenDataSelection,
+    )
+    enable_eur_h2_bus: bool = Field(
+        default=False,
+        description="Whether to enable the H2 bus (incl. electrolysis to generate H2, H2 demand, and storage) for European countries. "
+        "This is optional as the necessary data is not available in the FES and it is unclear whether modelled generation capacity is designed to meet electrolysis demands or not.",
     )
 
 

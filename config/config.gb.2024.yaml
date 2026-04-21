@@ -102,7 +102,7 @@ renewable:
 
 conventional:
   nuclear:
-    max_annual_capacity_factor: 1
+    max_annual_capacity_factor: 0.87
     min_annual_capacity_factor: 0.50
 
 fes_costs:
@@ -245,12 +245,12 @@ fes_costs:
     engine CHP: Gas-Engine CHP
     OCGT PP: Gas-OCGT
     OCGT CHP: Gas-GT CHP
-    hydrogen turbine PP: Low Carbon-Hydrogen
-    hydrogen fuel cell PP: Storage-Fuel Cells
-    hydrogen turbine CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
     oil PP: Gasoil-Steam Oil
     waste PP: WoodPellets-Waste
     waste CHP: Gas-Waste CHP
+    hydrogen turbine PP: Hydrogen-CCGT
+    hydrogen turbine CHP: Hydrogen-CCGT
+    hydrogen fuel cell PP: Hydrogen-CCGT
   voll: 6000 #£/MWh - based on `value_of_lost_load` from (https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf)
 
 low_carbon_register:
@@ -507,6 +507,7 @@ entsoe_unavailability:
     Hydro Run-of-river and poundage: hydro
     Nuclear: nuclear
     Waste: waste
+  extend_to_eur_regions: false
 
 transmission_availability:
   years: [2020, 2021, 2022, 2023, 2024]
@@ -917,6 +918,7 @@ fes:
     # This gives us slightly more realistic European marginal prices when we have load shedding.
     load_shedding_cost_above_marginal: 1
 
+# [doc:hydrogen-config-start]
   hydrogen:
     data_selection:
       networked_h2_supply:
@@ -933,6 +935,8 @@ fes:
         - Non Networked Electricity
       storage:
         Category: storage
+    enable_eur_h2_bus: false
+# [doc:hydrogen-config-end]
 
 # [doc:ev-config-start]
 ev:

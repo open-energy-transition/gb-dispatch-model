@@ -12,6 +12,10 @@ Release Notes
 Unreleased
 ==========
 
+* Update European future electrolysis-derived hydrogen demand to be based on the TYNDP model outputs.
+  This decreases overall electrolysis electricity demand in Europe but also redistributes the demand between countries, with some increasing compared to previously.
+* Add blue hydrogen as a costed source of supply for hydrogen turbines/fuel cells (#301).
+* Make hydrogen subsystem & generator unavailability profiles optional for non-GB regions (#306).
 * Add ``pixi`` task to generate filtered snakemake DAGs for use in documenting gb-dispatch-model subsystems.
 * Add EV subsystem documentation (#279).
 * Add hydrogen subsystem documentation (#280).
