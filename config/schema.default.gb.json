@@ -4523,7 +4523,7 @@
         },
         "redispatch_profit_mitigation_penalty": {
           "default": 0,
-          "description": "Penalty cost in \u00a3/MWh applied to redispatch actions in order to mitigate against unrealistic levels of redispatch profit that can occur due to favourable differences in bid/offer costs of different technologies.",
+          "description": "penalty (per MWh) applied to redispatch actions in order to mitigate against unrealistic levels of redispatch profit that can occur due to favourable differences in bid/offer costs of different technologies.",
           "minimum": 0,
           "type": "number"
         },
@@ -16912,7 +16912,7 @@
         },
         "redispatch_profit_mitigation_penalty": {
           "default": 0,
-          "description": "Penalty cost in \u00a3/MWh applied to redispatch actions in order to mitigate against unrealistic levels of redispatch profit that can occur due to favourable differences in bid/offer costs of different technologies.",
+          "description": "penalty (per MWh) applied to redispatch actions in order to mitigate against unrealistic levels of redispatch profit that can occur due to favourable differences in bid/offer costs of different technologies.",
           "minimum": 0,
           "type": "number"
         },
