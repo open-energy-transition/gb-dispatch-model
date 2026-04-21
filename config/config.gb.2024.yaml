@@ -1258,6 +1258,7 @@ redispatch:
     10: 0.85
     11: 0.85
     12: 1.0
+  redispatch_profit_mitigation_penalty: 250
   elexon: # Elexon API data
     technology_mapping: # ignoring renewables in mapping as they come from CfD data
       coal: coal

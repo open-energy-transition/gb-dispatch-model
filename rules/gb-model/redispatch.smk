@@ -186,6 +186,9 @@ rule solve_constrained:
         monthly_boundary_capability_scaling=config_provider(
             "redispatch", "monthly_boundary_capability_scaling"
         ),
+        redispatch_profit_mitigation_penalty=config_provider(
+            "redispatch", "redispatch_profit_mitigation_penalty"
+        ),
     input:
         network=resources("networks/{fes_scenario}/constrained_clustered/{year}.nc"),
         current_etys_caps=resources("gb-model/etys_boundary_capabilities.csv"),
