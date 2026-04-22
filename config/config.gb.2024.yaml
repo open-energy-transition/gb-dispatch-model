@@ -1275,3 +1275,7 @@ redispatch:
     years: [2020, 2021, 2022, 2023, 2024]
     api_bmu_fuel_map: false # Boolean to decide source of Elexon BMU unit - fuel map, If True - data is fetched using API else uses data uploaded to the repo
     max_concurrent_requests: 4
+  bid_offer_multiplier_mapping:
+    purchased H2: CCGT
+    PHS: battery storage
+    hydro: battery storage

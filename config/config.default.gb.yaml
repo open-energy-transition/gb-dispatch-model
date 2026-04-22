@@ -1636,6 +1636,7 @@ redispatch:
     max_concurrent_requests: 4
   no_redispatch_carriers: []
   boundary_flow_mainland_buffer_m: 1000
+  bid_offer_multiplier_mapping: {}
 
 # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#time_aggregation
 time_aggregation: []

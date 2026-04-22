@@ -4578,6 +4578,13 @@
           "description": "Buffer distance in meters to apply to mainland GB when identifying flow directions for boundary crossings. This ensures we correctly identify flows on island boundaries (e.g. Anglesey).",
           "minimum": 0,
           "type": "number"
+        },
+        "bid_offer_multiplier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from carriers that have received a bid/offer multipliers from processing the Elexon API to other carriers in the model. Keys are other carriers, values are carriers with Elexon bid/offer multipliers.",
+          "type": "object"
         }
       }
     },
@@ -16971,6 +16978,13 @@
           "description": "Buffer distance in meters to apply to mainland GB when identifying flow directions for boundary crossings. This ensures we correctly identify flows on island boundaries (e.g. Anglesey).",
           "minimum": 0,
           "type": "number"
+        },
+        "bid_offer_multiplier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from carriers that have received a bid/offer multipliers from processing the Elexon API to other carriers in the model. Keys are other carriers, values are carriers with Elexon bid/offer multipliers.",
+          "type": "object"
         }
       }
     },

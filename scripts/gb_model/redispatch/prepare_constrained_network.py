@@ -80,6 +80,7 @@ def _apply_multiplier(
     df: pd.DataFrame,
     multiplier: dict[str, float],
     renewable_strike_prices: pd.Series,
+    multiplier_mapping: dict[str, str],
     direction: Literal["bid", "offer"],
 ) -> pd.Series:
     """
@@ -93,9 +94,14 @@ def _apply_multiplier(
         Mapping of conventional carrier to multiplier
     renewable_strike_prices: pd.Series
         Renewable CfD strike prices for each renewable generator
+    multiplier_mapping: dict[str, str]
+        Mapping from carrier without a multiplier to a carrier with a multiplier.
+        Used to apply multipliers to more carriers based on the multipliers available in the input.
     direction: Literal["bid", "offer"]
         Direction of the multiplier, either "bid" or "offer"
     """
+    extra_multipliers = {k: multiplier[v] for k, v in multiplier_mapping.items()}
+    multiplier = {**multiplier, **extra_multipliers}
     new_marginal_costs = (
         (df["carrier"].map(renewable_strike_prices) - df["marginal_cost"])
         # if strike price is lower than marginal cost, then we apply zero charge for bids/offers
@@ -125,6 +131,7 @@ def create_up_down_plants(
     interconnector_bid_offer_profile: pd.DataFrame,
     gb_buses: pd.Index,
     no_redispatch_carriers: list[str],
+    bid_offer_multiplier_mapping: dict[str, str],
 ):
     """
     Add generators and storage units components that mimic increase / decrease in dispatch
@@ -145,6 +152,8 @@ def create_up_down_plants(
         Index of GB buses
     no_redispatch_carriers: list[str]
         List of carriers to exclude from being redispatched.
+    bid_offer_multiplier_mapping: dict[str, str]
+        Mapping from carrier without a multiplier to a carrier with a multiplier.
     """
     for comp in constrained_network.components:
         if comp.name not in ["Generator", "StorageUnit", "Link"]:
@@ -192,6 +201,7 @@ def create_up_down_plants(
                     df,
                     bids_and_offers[f"{direction}_multiplier"],
                     renewable_strike_prices,
+                    bid_offer_multiplier_mapping,
                     direction,
                 )
             else:
@@ -323,6 +333,7 @@ if __name__ == "__main__":
         interconnector_bid_offer_profile,
         gb_buses,
         snakemake.params.no_redispatch_carriers,
+        snakemake.params.bid_offer_multiplier_mapping,
     )
 
     drop_existing_eur_buses(network)

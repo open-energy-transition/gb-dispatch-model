@@ -1051,7 +1051,6 @@ def add_H2(
     )
 
     n.add("Carrier", "H2")
-    breakpoint()
     all_h2_nodes = n.buses.query("carrier == 'AC'" + add_query).index
     n.add(
         "Bus",

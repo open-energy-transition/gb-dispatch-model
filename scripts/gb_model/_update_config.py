@@ -700,6 +700,11 @@ class RedispatchConfig(GBBaseConfig):
         description="Buffer distance in meters to apply to mainland GB when identifying flow directions for boundary crossings. "
         "This ensures we correctly identify flows on island boundaries (e.g. Anglesey).",
     )
+    bid_offer_multiplier_mapping: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping from carriers that have received a bid/offer multipliers from processing the Elexon API to other carriers in the model. "
+        "Keys are other carriers, values are carriers with Elexon bid/offer multipliers.",
+    )
 
     @field_validator("year_range_incl")
     @classmethod
@@ -719,6 +724,33 @@ class RedispatchConfig(GBBaseConfig):
         if any(factor < 0 or factor > 1 for factor in v.values()):
             raise ValueError("Monthly scaling factors must be between 0 and 1")
         return v
+
+    @model_validator(mode="after")
+    def validate_bid_offer_multiplier_mapping(self) -> Self:
+        """
+        Validate that keys in bid_offer_multiplier_mapping are not:
+        (a) already in the Elexon API mapping and
+        (b) in the `no_redispatch_carriers` list.
+
+        Also validate that the values in bid_offer_multiplier_mapping are carriers that are in the Elexon API mapping.
+        """
+        elexon_mapping = self.elexon.technology_mapping
+        elexon_mapped_carriers = set(elexon_mapping.values())
+        no_redispatch_carriers = set(self.no_redispatch_carriers)
+        for carrier, mapped_carrier in self.bid_offer_multiplier_mapping.items():
+            if carrier in elexon_mapped_carriers:
+                raise ValueError(
+                    f"Carrier '{carrier}' in bid_offer_multiplier_mapping cannot be a carrier that already has Elexon API bid/offer multipliers."
+                )
+            if carrier in no_redispatch_carriers:
+                raise ValueError(
+                    f"Carrier '{carrier}' in bid_offer_multiplier_mapping cannot be a carrier that is in the no_redispatch_carriers list."
+                )
+            if mapped_carrier not in elexon_mapped_carriers:
+                raise ValueError(
+                    f"Mapped carrier '{mapped_carrier}' for carrier '{carrier}' in bid_offer_multiplier_mapping must be a carrier that has Elexon API bid/offer multipliers."
+                )
+        return self
 
 
 class TimeAggregationConfig(GBBaseConfig):
