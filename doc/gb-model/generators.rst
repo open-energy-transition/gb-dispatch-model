@@ -19,6 +19,7 @@ Generators are split into two broad groups:
 
 - **Conventional generators**: Thermal and nuclear plant (CCGT, OCGT, gas engine, coal, nuclear, oil, waste, biomass, geothermal) that can be dispatched by the model within physical and contractual limits
 - **Renewable generators**: Solar, onshore wind, offshore wind, run-of-river hydro, and pumped hydro storage (PHS) whose output is constrained by weather-derived capacity-factor time series
+- **Hydrogen-to-electricity generators**: Fuel cells and hydrogen turbines — documented in :doc:`hydrogen_overview`
 
 Additionally, a subset of conventional generators with heat-driven cogeneration duties are subject to simplified *combined heat and power (CHP)* constraints that enforce minimum loading when heat demand is present.
 
@@ -221,6 +222,7 @@ The pipeline:
 where :math:`C_\text{total}` is the total installed capacity for a carrier (from DUKES) and :math:`\overline{U}_m` is the mean unavailable capacity in month *m*.
 
 The resulting monthly profile is applied uniformly across all generators of the same carrier for the simulated year, scaling their effective ``p_nom``.
+This is also applied to European neighbouring countries by default unless explicitly de-selected (entsoe_unavailability.extend_to_eur_regions).
 
 .. _generators-costs:
 
