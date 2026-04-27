@@ -148,7 +148,6 @@ The carriers modelled are:
 +---------------------------+---------------------------------+
 
 Capacity is set to the FES BB1 projection for the model year, spatially distributed to model regions.
-A ``powerplants_filter`` (configured in ``electricity``) can exclude retired or out-of-scope plant.
 
 .. _generators-renewables:
 
@@ -171,8 +170,6 @@ The renewable carriers are:
 | ``offwind-dc``            | Offshore wind (DC-connected)             |
 +---------------------------+------------------------------------------+
 | ``hydro``                 | Run-of-river hydro                       |
-+---------------------------+------------------------------------------+
-| ``PHS``                   | Pumped hydro storage (``StorageUnit``)   |
 +---------------------------+------------------------------------------+
 
 .. _generators-chp:
