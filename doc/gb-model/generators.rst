@@ -315,6 +315,23 @@ The generator system is built through a pipeline implemented in ``rules/gb-model
 4. **Cost assignment** (``assign_costs``): Enriches the powerplants table with fuel costs, VOM, carbon costs, capital costs, and technical parameters; produces ``fes_powerplants_inc_tech_data.csv``
 5. **CHP minimum operation profile** (``create_chp_p_min_pu_profile``): Derives the hourly ``p_min_pu`` time series for CHP generators from the aggregated heat demand dataset
 
+**Network Assembly via PyPSA-Eur Methods**:
+
+The artefacts produced by ``generators.smk`` are consumed by the ``compose_network`` rule (``rules/gb-model.smk``), which assembles the final PyPSA network.
+In addition to the generator-specific outputs above, ``compose_network`` also receives several standard PyPSA-Eur inputs:
+
+- **Renewable capacity-factor profiles** (``profile_{tech}_clustered.nc``): Hourly ``p_max_pu`` time series for solar, onshore wind, offshore wind, and hydro, produced by the atlite cutout pipeline from ERA5/SARAH reanalysis data
+- **Technology costs CSV** (``costs_{year}.csv``): The PyPSA technology-data cost table for the planning horizon year, used here only to supply efficiency values for conventional carriers not covered by the FES costing workbook
+- **Hydro capacities** (``data/hydro_capacities.csv``): Reservoir and run-of-river hydro installed capacity by country
+
+Rather than reimplementing generator attachment logic, ``compose_network`` calls PyPSA-Eur's standard functions from ``scripts/add_electricity.py`` directly:
+
+- ``attach_conventional_generators`` — adds thermal and nuclear ``Generator`` components from the enriched powerplants table
+- ``attach_hydro`` — adds hydro ``Generator`` and ``StorageUnit`` components (including PHS) using the capacity-factor profiles and hydro capacities file
+- ``attach_wind_and_solar`` (local wrapper) — adds renewable ``Generator`` components with time-varying ``p_max_pu`` from the clustered profiles
+
+This reuse of upstream PyPSA-Eur methods ensures that the GB model stays consistent with the broader PyPSA-Eur network representation while layering GB-specific capacity data, costs, and availability fractions on top.
+
 **Capacity Distribution**:
 
 When FES supplies only TO-level (Transmission Owner region) totals rather than GSP-level data, capacities are distributed to GSPs using a four-step hierarchy:
