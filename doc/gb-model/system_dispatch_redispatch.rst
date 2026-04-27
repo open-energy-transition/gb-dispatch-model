@@ -3,7 +3,7 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _dispatch_redispatch:
+.. _system-dispatch_redispatch:
 
 ##########################################
 Dispatch and Redispatch Modelling
@@ -186,7 +186,7 @@ Bid/Offer Profile Calculation
 ------------------------------
 
 .. seealso::
-    For details on the different system components defined here, see: :ref:`system_repr`.
+    For details on the different system components defined here, see: :ref:`system_overview_gb`.
 
 **Conventional Generators**
 

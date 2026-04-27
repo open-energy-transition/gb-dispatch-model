@@ -3,10 +3,10 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _hydrogen-overview:
+.. _system-hydrogen:
 
 ##########################################
-Hydrogen System
+Hydrogen Subsystem
 ##########################################
 
 This page describes the hydrogen subsystem, its data sources, components, configuration, and implementation.
@@ -308,10 +308,9 @@ The hydrogen system is built through a multi-stage data processing pipeline impl
 
    **Related Documentation**:
 
-   - :ref:`system-hydrogen` - Hydrogen in the broader system representation
+   - :ref:`system-hydrogen-summary` - Hydrogen in the broader system representation
    - :ref:`gb_data_sources` - FES and other data sources
-   - :doc:`configuration` - Full configuration reference
-   - :doc:`dispatch_redispatch` - Hydrogen in dispatch optimization
+   - :ref:`model_config_gb` - Full configuration reference
 
    **External Resources**:
 

@@ -53,7 +53,7 @@ Open the image in a new tab/window to view it in more detail.
 
 .. note::
     The graph above was generated using
-    ``snakemake --rulegraph -F | sed -n "/digraph/,/}/p" | dot -Tsvg -o doc/gb-model/img/workflow.svg``
+    ``snakemake --rulegraph -F gb_all | sed -n "/digraph/,/}/p" | dot -Tsvg -o doc/gb-model/img/workflow.svg``
 
 Operating Systems
 =================
@@ -64,21 +64,35 @@ The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windo
 .. toctree::
    :hidden:
    :maxdepth: 2
+   :caption: Getting Started
+
+   introduction
+   installation
+   faq
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+   :caption: System representation
+
+   system_overview
+   system_dispatch_redispatch
+   system_hydrogen
+   system_ev
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
    :caption: Configuration
 
-   installation
+   wildcards
    configuration
-   faq
 
 .. toctree::
    :hidden:
    :maxdepth: 2
    :caption: Development
 
-   system
-   dispatch_redispatch
-   hydrogen_overview
-   ev
    implementation
    data_cleaning
 

@@ -102,7 +102,7 @@ Running the Model
 
 .. dropdown:: Q: What's the difference between "dispatch" and "redispatch"?
 
-   See the :ref:`detailed documentation <dispatch_redispatch>`.
+   See the :ref:`detailed documentation <system-dispatch_redispatch>`.
       Briefly:
 
    - **Dispatch**: Initial optimisation with relaxed constraints, reflecting the GB day-ahead market.

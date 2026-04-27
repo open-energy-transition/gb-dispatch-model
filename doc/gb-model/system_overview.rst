@@ -3,10 +3,10 @@
 ..
 .. SPDX-License-Identifier: CC-BY-4.0
 
-.. _system_repr:
+.. _system_overview_gb:
 
 ##########################################
-System Representation
+System Overview
 ##########################################
 
 We represent the GB model in PyPSA as follows:
@@ -279,7 +279,7 @@ The number of hours in the day in which it can shift load has been assumed and i
 Subsystems
 ----------
 
-.. _system-evs:
+.. _system-ev-summary:
 
 Electric vehicles (EVs)
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -292,9 +292,9 @@ The magnitude of DSR capacity varies in time depending on the number of vehicles
 In addition to the standard load components, it is also possible for EVs to feed back to the grid using a vehicle-to-grid (V2G) component.
 This allows energy to be stored by EVs for later return to the grid.
 
-For detailed information about the EV system components, data sources, and implementation, see :doc:`ev`.
+For detailed information about the EV system components, data sources, and implementation, see :ref:`system-ev`.
 
-.. _system-hydrogen:
+.. _system-hydrogen-summary:
 
 Hydrogen
 ^^^^^^^^
@@ -304,4 +304,4 @@ Within the hydrogen subsystem is a static load, required for non-power system us
 To create hydrogen from electricity, an electrolyser is used.
 To create electricity from hydrogen, a fuel cell or hydrogen gas turbine can be used.
 
-For detailed information about the hydrogen system components, data sources, and implementation, see :doc:`hydrogen_overview`.
+For detailed information about the hydrogen system components, data sources, and implementation, see :ref:`system-hydrogen`.

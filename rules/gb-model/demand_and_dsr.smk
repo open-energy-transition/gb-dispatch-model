@@ -88,20 +88,22 @@ rule create_flexibility_table:
 
 rule synthesise_gb_regional_data:
     message:
-        "Process regional {wildcards.data} data from FES workbook into CSV format"
+        "Process regional {wildcards.regional_reference} data from FES workbook into CSV format"
     params:
         regional_distribution_reference=lambda wildcards: config["fes"]["gb"][
             "regional_distribution_reference"
-        ][wildcards.data],
+        ][wildcards.regional_reference],
     input:
-        national_gb_data=resources("gb-model/{fes_scenario}/{data}.csv"),
+        national_gb_data=resources("gb-model/{fes_scenario}/{regional_reference}.csv"),
         regional_gb_data=resources("gb-model/{fes_scenario}/regional_gb_data.csv"),
     output:
-        csv=resources("gb-model/{fes_scenario}/regional_{data}.csv"),
+        csv=resources("gb-model/{fes_scenario}/regional_{regional_reference}.csv"),
     wildcard_constraints:
-        data="|".join(config["fes"]["gb"]["regional_distribution_reference"].keys()),
+        regional_reference="|".join(
+            config["fes"]["gb"]["regional_distribution_reference"].keys()
+        ),
     log:
-        logs("synthesise_gb_regional_data_{fes_scenario}_{data}.log"),
+        logs("synthesise_gb_regional_data_{fes_scenario}_{regional_reference}.log"),
     script:
         scripts("gb_model/demand_and_dsr/synthesise_gb_regional_data.py")
 
