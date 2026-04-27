@@ -80,7 +80,6 @@ The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windo
    demand_and_dsr
    hydrogen_overview
    ev
-   heat_system
    implementation
    data_cleaning
 
