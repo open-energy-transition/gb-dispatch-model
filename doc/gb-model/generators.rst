@@ -182,6 +182,7 @@ Combined Heat and Power (CHP)
 
 CHPs are conventional generators (CCGT, OCGT, biomass, waste, etc.) that also supply heat.
 Rather than implementing full sector-coupling, the model applies a simplified *minimum loading* constraint based on local heat demand.
+CHPs are identified from the powerplants table via the ``set`` column (``"CHP"``), which distinguishes them from regular power plants (``"PP"``) and storage units (``"Store"``).
 
 The ``p_min_pu`` profile for each CHP generator is derived from the normalised hourly heat demand of the model region it serves:
 
@@ -200,7 +201,10 @@ where:
 - :math:`p_\text{min}` — minimum operation level when running (``chp.min_operation_level``, default 0.3)
 - :math:`\delta_\text{shutdown}` — heat demand threshold below which the CHP may shut down completely (``chp.shutdown_threshold``, default 0.1)
 
+Heat demand :math:`\hat{q}(t)` is computed by summing all four sectoral components—residential space, residential water, services space, services water—from the PyPSA-Eur ``hourly_heat_demand_total_base_s_clustered.nc`` dataset, then normalising by the annual peak.
+
 This ensures CHPs run at least enough to cover heat demand, without modelling a separate heat bus.
+CHP constraints can be disabled entirely via ``chp.enable: false``, in which case the plants are treated as unconstrained conventional generators.
 
 .. _generators-availability:
 
