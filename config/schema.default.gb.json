@@ -2918,6 +2918,16 @@
               "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
               "type": "object"
             },
+            "BB2_to_ES1_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+              "type": "object"
+            },
             "demand": {
               "additionalProperties": false,
               "description": "FES demand configuration.",
@@ -3410,6 +3420,16 @@
                 "PP",
                 "Store"
               ],
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+          "type": "object"
+        },
+        "BB2_to_ES1_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
               "type": "string"
             },
             "type": "object"
@@ -16438,6 +16458,16 @@
                     "PP",
                     "Store"
                   ],
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+              "type": "object"
+            },
+            "BB2_to_ES1_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
                   "type": "string"
                 },
                 "type": "object"

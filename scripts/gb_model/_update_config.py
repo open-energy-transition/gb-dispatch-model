@@ -429,6 +429,10 @@ class FESGBConfig(GBBaseConfig):
         description="Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
         default_factory=dict,
     )
+    BB2_to_ES1_mapping: dict[str, list[str]] = Field(
+        description="Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+        default_factory=dict,
+    )
     demand: FESDemandConfig = Field(
         description="Demand configuration", default_factory=FESDemandConfig
     )

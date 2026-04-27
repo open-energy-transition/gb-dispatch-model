@@ -1569,6 +1569,7 @@ fes:
   gb:
     carrier_mapping: {}
     set_mapping: {}
+    BB2_to_ES1_mapping: {}
     demand:
       Technology Detail: {}
       heat: {}

@@ -251,6 +251,7 @@ fes_costs:
     oil PP: Gasoil-Steam Oil
     waste PP: WoodPellets-Waste
     waste CHP: Gas-Waste CHP
+
   voll: 6000 #£/MWh - based on `value_of_lost_load` from (https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf)
 
 low_carbon_register:
@@ -723,6 +724,15 @@ fes:
       rename:
         columns: year
 
+    # Electricity supply table
+    ES1:
+      usecols: "F:AM"
+      skiprows: 9
+      index_col: [0, 1, 2, 3, 4, 5]
+      header: 0
+      rename:
+        columns: year
+
   gb:
     carrier_mapping:
       # Mapping undertaken in different columns for different carriers
@@ -759,6 +769,9 @@ fes:
         Non-renewable CHP: CHP
         Storage: Store
 
+    BB2_to_ES1_mapping:
+      CCGTs (non CHP): ["CCGT", "CCS Gas"]
+      Biomass & Energy Crops (including CHP): ["Biomass", "CCS Biomass", "Biomass CHP"]
 
     demand:
       Technology Detail:

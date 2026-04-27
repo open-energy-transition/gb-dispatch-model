@@ -103,6 +103,7 @@ def process_bb1_data(
 def parse_inputs(
     bb1_path: str,
     bb2_path: str,
+    es1_path: str,
     manual_gsp_mapping: dict,
     fes_scenario: str,
     year_range: list,
@@ -114,6 +115,7 @@ def parse_inputs(
     Args:
         bb1_path (str): path of extracted sheet BB1 of the FES workbook
         bb2_path (str): path of extracted sheet BB2 of the FES workbook
+        es1_path (str): path of extracted sheet ES1 of the FES workbook
         df_gsp_coordinates (pd.DataFrame): DataFrame of GSP supply point coordinates
         fes_scenario (str): FES scenario
     """
@@ -196,6 +198,83 @@ def parse_inputs(
     return df_final
 
 
+def split_technologies(
+    df_with_regions: pd.DataFrame,
+    es1_path: str,
+    technology_mapping: dict,
+    fes_scenario: str,
+    year_range: list[int],
+) -> pd.DataFrame:
+    """
+    To split technologies based on subtypes present in ES1 sheet of the FES workbook
+
+    Parameters
+    ----------
+    df_with_regions: pd.DataFrame
+        Pandas dataframe to modify
+    es1_path: str
+        Path to the ES1 sheet CSV file
+    technology_mappingL dict[str, list[str]]
+        Dictionary to map technologies in BB1 sheet to ES1 sheet
+    fes_scenario: str
+        FES scenario
+    year_range: list[int]
+        Year range of the simulation
+    """
+
+    # Read ES1 sheet data
+    df_es1 = pd.read_csv(es1_path)
+    df_es1_reqd = df_es1[
+        (df_es1["Pathway"].str.lower() == fes_scenario.lower())
+        & (df_es1["year"].between(year_range[0], year_range[1], inclusive="both"))
+        & (df_es1["Variable"] == "Capacity (MW)")
+    ]
+
+    # Iterate through the technologies with more subtypes in ES1 sheet
+    for tech in technology_mapping.keys():
+        df_tech = df_with_regions.loc[df_with_regions.Technology == tech]
+
+        df_es1_tech = pd.DataFrame(
+            df_es1_reqd[df_es1_reqd["SubType"].isin(technology_mapping[tech])]
+            .groupby(["SubType", "year"])["data"]
+            .sum()
+        )
+
+        # Calculate %share of each technology subtype for every year
+        df_es1_tech["pct"] = df_es1_tech["data"] / df_es1_tech.groupby("year")[
+            "data"
+        ].transform("sum")
+
+        # Merge the original dataframe indexed from BB1 sheet and the data from ES1 sheet
+        df_tech = df_tech.merge(df_es1_tech.reset_index(), on="year")
+
+        # Multiply the regional data with the percentage share of the technology subtype
+        df_tech["data"] = df_tech["data_x"].mul(df_tech["pct"])
+        df_tech["Technology"] = df_tech["SubType"]
+
+        # Calculate % diff in the total capacity of the technology
+        df_diff = (
+            (
+                df_es1_tech.groupby("year")["data"].sum()
+                - df_tech.groupby("year")["data"].sum()
+            )
+            * 100
+            / df_es1_tech.groupby("year")["data"].sum()
+        )
+        logger.info(
+            f"The percentage difference in capacity data for the {tech}, indexed by year in ES1 and BB1 sheet is {df_diff}"
+        )
+
+        df_with_regions_updated = pd.concat(
+            [
+                df_with_regions.query("Technology != @tech"),
+                df_tech.drop(["data_x", "data_y", "pct", "SubType"], axis=1),
+            ]
+        )
+
+        return df_with_regions_updated
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
@@ -215,6 +294,7 @@ if __name__ == "__main__":
     df = parse_inputs(
         bb1_path=snakemake.input.bb1_sheet,
         bb2_path=snakemake.input.bb2_sheet,
+        es1_path=snakemake.input.es1_sheet,
         df_gsp_coordinates=df_gsp_coordinates,
         manual_gsp_mapping=snakemake.params.manual_gsp_mapping,
         fes_scenario=fes_scenario,
@@ -245,4 +325,12 @@ if __name__ == "__main__":
         )
     logger.info(f"Extracted the {fes_scenario} relevant data")
 
-    df_with_regions.to_csv(snakemake.output.csv, index=False)
+    df_with_regions_updated = split_technologies(
+        df_with_regions=df_with_regions,
+        es1_path=snakemake.input.es1_sheet,
+        technology_mapping=snakemake.params.bb2_es1_mapping,
+        fes_scenario=fes_scenario,
+        year_range=snakemake.params.year_range,
+    )
+
+    df_with_regions_updated.to_csv(snakemake.output.csv, index=False)

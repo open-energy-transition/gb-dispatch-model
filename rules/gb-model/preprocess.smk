@@ -149,9 +149,11 @@ rule process_fes_gsp_data:
         target_crs=config["target_crs"],
         fill_gsp_lat_lons=config["grid_supply_points"]["fill-lat-lons"],
         manual_gsp_mapping=config["grid_supply_points"]["manual_mapping"],
+        bb2_es1_mapping=config["fes"]["gb"]["BB2_to_ES1_mapping"],
     input:
         bb1_sheet=resources(f"gb-model/fes/BB1.csv"),
         bb2_sheet=resources(f"gb-model/fes/BB2.csv"),
+        es1_sheet=resources(f"gb-model/fes/ES1.csv"),
         gsp_coordinates="data/gb-model/downloaded/gsp-coordinates.csv",
         regions=resources("gb-model/merged_shapes.geojson"),
     output:
