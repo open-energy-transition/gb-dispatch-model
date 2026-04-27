@@ -23,8 +23,39 @@ The model includes the following demand sectors with DSR capabilities:
 3. **Residential Heat** - Electricity demand for residential heating systems
 4. **I&C Heat** - Electricity demand for industrial and commercial heating systems
 5. **EV Charging** - Electric vehicle charging demand
-6. **Hydrogen Electrolyser Demand** - Electricity demand for hydrogen production via electrolysis
-7. **Additional Demand** - Other electricity demand not captured in the above categories (e.g., direct transmission demand, T&D losses)
+6. **Additional Demand** - Other electricity demand not captured in the above categories (e.g., direct transmission demand, T&D losses)
+
+Model Representation
+--------------------
+
+.. _model_representation:
+
+The DSR implementation for each demand type (residential, I&C, EV and heat) follows this structure:
+
+.. graphviz::
+
+  digraph Flow {
+      rankdir=LR;   // Left to Right
+
+      node [shape=box, style=filled];
+
+      AC_bus [label="AC Bus", fillcolor="#B3D9FF", shape=ellipse, width=2, height=1.5, fixedsize=true];
+      Sector_bus [label="Sector Bus", fillcolor="#FFD1DC", shape=ellipse, width=1.8, height=1.2, fixedsize=true];
+      Sector_DSR_bus [label="Sector DSR Bus", fillcolor="#FFD1DC", shape=ellipse, width=1.8, height=1.2, fixedsize=true];
+      heat_load [label="Sector Load", fillcolor="#FFDAB9"];
+      sector_dsr_store [label="Sector DSR Store", fillcolor="#FFFACD"];
+
+      AC_bus -> Sector_bus [label="unmanaged load link"];
+      Sector_bus -> heat_load;
+      Sector_bus -> Sector_DSR_bus [label="charge"];
+      Sector_DSR_bus -> Sector_bus [label="discharge"];
+      Sector_DSR_bus -> sector_dsr_store [dir=both];
+  }
+
+"Sector" refers to the specific demand sector being modeled (e.g., residential, I&C, EV, heat or hydrogen).
+Whilst the general structure is consistent across demand types, some extra components are added for specific sectors which can be found in the corresponding documentation sections (e.g., EV charging includes additional V2G storage components).
+
+
 
 Data Sources
 ============
@@ -63,51 +94,18 @@ The table below summarizes the specific sheets extracted from the FES workbook f
 European data
 ---------------
 
-For European neighbour countries included in the model, the demand data is sourced from the ENTSO-E energy balance data (via ``energy_totals.csv``). Specific data requirements are explained in detail in the corresponding sections of the documentation (e.g., :ref:`heat_system` uses ES2 from the FES workbook for European demand assumptions).
+For European neighbour countries included in the model, the demand data is sourced from the PyPSA-Eur workflow (via ``energy_totals.csv``). 
+Specific data requirements are explained in detail in the corresponding sections of the documentation (e.g., :ref:`heat_system` uses ES2 from the FES workbook for European demand assumptions).
 
 Configuration
 =============
 
 DSR is configured in the model configuration files under the ``fes.gb.flexibility`` section:
 
-.. code-block:: yaml
-
-   flexibility:
-     carrier_mapping:
-       battery:
-          Data item: "Electricity storage energy storage potential"
-          Detail: "Battery"
-       ev_v2g:
-          Detail: "V2G maximum potential"
-       ev_dsr:
-          Detail: "smart charging impact at peak"
-       residential_dsr:
-          Detail: "residential DSR impact at peak"
-       residential_heat_dsr:
-          Detail:
-          - Residential peak reduction - storage heater flex
-          - Residential peak reduction - hybrid heat pump flex
-          - Residential peak reduction - thermal storage and district heating flex
-       iandc_dsr:
-          Detail: "i&c dsr impact at peak"
-       iandc_heat_dsr:
-          Detail:
-          - Non-residential peak reduction - storage heater flex
-          - Non-residential peak reduction - hybrid heat pump flex
-          - Non-residential peak reduction - thermal storage and district heating flex
-     dsr_hours:  # hours during which demand-side management can occur (E.g., 5pm-8pm)
-       residential_heat_dsr: [0, 22]
-       residential_dsr: [17, 20]
-       iandc_dsr: [17, 20]
-       iandc_heat_dsr: [0, 22]
-       ev_dsr: [8, 6]
-     carrier_suffix:
-       residential: " Baseline Electricity (Residential) DSR"
-       iandc: " Baseline Electricity (I&C) DSR"
-       ev: " EV DSR"
-       residential_heat: " Residential Heat DSR"
-       iandc_heat: " I&C Heat DSR"
-     v2g_storage_to_capacity_ratio: 7.14 # based on ratio in FES 2021. Same value will be applied to all future years.
+.. literalinclude:: ../../config/config.gb.2024.yaml
+   :language: yaml
+   :start-after: # [doc:flexibility-start]
+   :end-before: # [doc:flexibility-end]
 
 System Components
 ==================
@@ -125,44 +123,15 @@ The representation of each demand sector is illustrated in the :ref:`_model_repr
 Implementation Notes
 ====================
 
-Model Representation
---------------------
-
-.. _model_representation:
-
-The DSR implementation for each demand type (residential, I&C, EV and heat) follows this structure:
-
-.. graphviz::
-
-  digraph Flow {
-      rankdir=LR;   // Left to Right
-
-      node [shape=box, style=filled];
-
-      AC_bus [label="AC Bus", fillcolor="#B3D9FF", shape=ellipse, width=2, height=1.5, fixedsize=true];
-      Sector_bus [label="Sector Bus", fillcolor="#FFD1DC", shape=ellipse, width=1.8, height=1.2, fixedsize=true];
-      Sector_DSR_bus [label="Sector DSR Bus", fillcolor="#FFD1DC", shape=ellipse, width=1.8, height=1.2, fixedsize=true];
-      heat_load [label="Sector Load", fillcolor="#FFDAB9"];
-      sector_dsr_store [label="Sector DSR Store", fillcolor="#FFFACD"];
-
-      AC_bus -> Sector_bus [label="unmanaged load link"];
-      Sector_bus -> heat_load;
-      Sector_bus -> Sector_DSR_bus [label="charge"];
-      Sector_DSR_bus -> Sector_bus [label="discharge"];
-      Sector_DSR_bus -> sector_dsr_store [dir=both];
-  }
-
-"Sector" refers to the specific demand sector being modeled (e.g., residential, I&C, EV, heat or hydrogen).
-Whilst the general structure is consistent across demand types, some extra components are added for specific sectors which can be found in the corresponding documentation sections (e.g., EV charging includes additional V2G storage components).
-
-
 DSR Parameters
 --------------
 
 DSR operation is controlled by several key parameters:
 
 **DSR Hours**
-  Time windows during which DSR can operate. Configured per sector:
+  Time windows during which DSR can operate. 
+
+  These time windows are not published by NESO, so we have assumed values per sector as follows:
 
   - Residential baseline electricity: 17:00-20:00 (5pm-8pm)
   - I&C baseline electricity: 17:00-20:00 (5pm-8pm)
@@ -170,23 +139,16 @@ DSR operation is controlled by several key parameters:
   - I&C heat: 00:00-22:00 (all day)
   - EV charging: 08:00-06:00 (8am-6am next day)
 
+The appropriate time zone conversions are accounted for when modelling DSR time windows for European countries.
+
 **Storage Capacity**
-  Calculated as DSR power capacity × duration hours. Represents the maximum energy that can be shifted.
+  Calculated as DSR power capacity × duration hours. 
+  Represents the maximum energy that can be shifted.
 
 **Availability Profiles**
-  Time-dependent constraints on when DSR can operate. This is specific for EV DSR and is linked to vehicle availability patterns.
+  Time-dependent constraints on when DSR can operate. 
+  This is specific for EV DSR and is linked to vehicle availability patterns.
 
-
-European Integration
---------------------
-
-For European neighbour countries included in the model, demand and DSR data are synthesized by:
-
-1. Using GB data as a reference for technology mixes
-2. Scaling based on relative annual demand totals from energy balance data
-3. Applying appropriate time zone shifts for DSR operation windows
-
-This ensures consistent representation of cross-border demand flexibility effects.
 
 Data Processing Workflow
 ========================
@@ -204,10 +166,22 @@ Data Processing Pipeline
 
 The demand and DSR workflow is implemented through Snakemake rules in `rules/gb-model/demand_and_dsr.smk` and Python scripts in the folder `scripts/gb_model/demand_and_dsr`.
 
-The rulegraph for the demand and DSR workflow is illustrated below, showing the key processing steps and their dependencies:
-
+The rulegraph for the demand and DSR workflow is illustrated below:
 .. image:: img/demand_and_dsr.svg
    :align: center
+
+.. note::
+  The graph above was generated using::
+
+      pixi run filtered_rulegraph \
+      "resources/GB/gb-model/HT/baseline_electricity_demand/2030.csv" \
+      "resources/GB/gb-model/HT/additional_demand/2030.csv" \
+      " resources/GB/gb-model/HT/residential_dsr.csv" \
+      "-w fes_scenario" \
+      "-w year -s 10,8 "\
+      "-f rules/gb-model/demand_and_dsr.smk"
+
+  The ``filtered_rulegraph`` task allows us to trim the full DAG to `demand and DSR`` rules only.
 
 The demand and DSR workflow was built based on several key processing steps as follows:
 
