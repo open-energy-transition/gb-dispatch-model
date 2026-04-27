@@ -222,7 +222,7 @@ The pipeline:
 where :math:`C_\text{total}` is the total installed capacity for a carrier (from DUKES) and :math:`\overline{U}_m` is the mean unavailable capacity in month *m*.
 
 The resulting monthly profile is applied uniformly across all generators of the same carrier for the simulated year, scaling their effective ``p_nom``.
-This is also applied to European neighbouring countries by default unless explicitly de-selected (entsoe_unavailability.extend_to_eur_regions).
+This is also applied to European neighbouring countries by default unless explicitly de-selected (``entsoe_unavailability.extend_to_eur_regions``).
 
 .. _generators-costs:
 
@@ -233,7 +233,7 @@ Each generator in the powerplants table is enriched with cost and technical para
 
 1. **FES AS.1**: Provides year-specific fuel costs and VOM for GB-relevant technologies; averaged across scenarios because scenario names change between FES editions
 2. **FES AS.7**: Provides year-specific carbon price (£/tCO₂); averaged across scenarios
-3. **PyPSA technology-data**: Provides capital costs (£/MW), fixed O&M (£/MW/year), efficiency, and lifetime for technologies absent from the FES costing workbook
+3. **PyPSA technology-data**: Provides capital costs (£/MW), fixed O&M (£/MW/year), efficiency, and lifetime for technologies absent from the FES costing workbook. In the current workflow only **efficiency** is actively used in dispatch runs; the remaining parameters are written to the output for reference only
 4. **Default characteristics**: Fallbacks defined in ``fes_costs.default_characteristics`` ensure all columns exist even when data is missing
 
 Marginal costs are assembled as:
@@ -332,7 +332,7 @@ This hierarchy preserves known regional concentrations (e.g., offshore wind clus
 - **Uniform availability**: Monthly availability fractions are applied uniformly to all generators of the same carrier across all regions
 - **CHP heat coupling**: CHPs are constrained to run above a heat-demand-derived floor but are not connected to a separate heat bus; heat demand is satisfied exogenously
 - **Cost averaging**: FES fuel and VOM costs are averaged across scenarios due to naming changes between FES editions; this has a small effect (≤ ~10% for battery VOM) on marginal costs
-- **European generators**: European countries use the PyPSA-Eur conventional generator database; availability and CHP constraints are not applied outside GB
+- **European generators**: European countries use the PyPSA-Eur conventional generator database; availability fractions are applied outside GB by default (disable via ``entsoe_unavailability.extend_to_eur_regions``), but CHP constraints are not applied outside GB
 
 
 .. seealso::
