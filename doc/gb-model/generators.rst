@@ -332,6 +332,7 @@ This hierarchy preserves known regional concentrations (e.g., offshore wind clus
 - **Uniform availability**: Monthly availability fractions are applied uniformly to all generators of the same carrier across all regions
 - **CHP heat coupling**: CHPs are constrained to run above a heat-demand-derived floor but are not connected to a separate heat bus; heat demand is satisfied exogenously
 - **Cost averaging**: FES fuel and VOM costs are averaged across scenarios due to naming changes between FES editions; this has a small effect (≤ ~10% for battery VOM) on marginal costs
+- **Infinite fuel supply**: Fuel feedstocks (gas, coal, oil, biomass, etc.) are assumed to be available in unlimited quantities at the modelled marginal cost; no supply constraints or fuel capacity limits are enforced
 - **European generators**: European countries use the PyPSA-Eur conventional generator database; availability fractions are applied outside GB by default (disable via ``entsoe_unavailability.extend_to_eur_regions``), but CHP constraints are not applied outside GB
 
 
@@ -339,8 +340,7 @@ This hierarchy preserves known regional concentrations (e.g., offshore wind clus
 
    **Related Documentation**:
 
-   - :ref:`hydrogen-electrolysis` - Electrolysis as an additional flexible load
-   - :doc:`ev` - EV demand and flexibility
+   - :ref:`hydrogen-conversion` - Hydrogen-to-electricity generators (fuel cells and turbines)
    - :doc:`dispatch_redispatch` - How generators are dispatched in the optimisation
    - :doc:`configuration` - Full configuration reference
 
