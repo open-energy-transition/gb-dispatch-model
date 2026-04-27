@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Add generation components documentation (#308).
 * Add ``pixi`` task to generate filtered snakemake DAGs for use in documenting gb-dispatch-model subsystems.
 * Add EV subsystem documentation (#279).
 * Add hydrogen subsystem documentation (#280).
