@@ -695,6 +695,7 @@ sector:
     dh_areas:
       buffer: 1000
       handle_missing_countries: fill
+  # [doc:heat-pump-sources-start]
   heat_pump_sources:
     urban central:
     - air
@@ -703,6 +704,7 @@ sector:
     rural:
     - air
     - ground
+  # [doc:heat-pump-sources-end]
   residential_heat:
     dsm:
       enable: false
