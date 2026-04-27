@@ -73,7 +73,7 @@ DUKES 5.11 — Existing Infrastructure
 The **Digest of UK Energy Statistics (DUKES) table 5.11** provides a snapshot of *current* (2023) installed capacities for major power producers in Great Britain.
 It is used to:
 
-1. Anchor the spatial distribution of generators where FES does not provide GSP-level data
+1. Anchor the spatial distribution of generators where FES does not provide GSP-level data, only Transmission Operator (TO) level data.
 2. Provide current-year capacity baselines that are blended with FES future projections for the distribution step
 
 Carrier assignment from DUKES uses the ``dukes-5.11.carrier_mapping`` and ``dukes-5.11.set_mapping`` configuration sections.
@@ -169,7 +169,7 @@ The renewable carriers are:
 +---------------------------+------------------------------------------+
 | ``offwind-dc``            | Offshore wind (DC-connected)             |
 +---------------------------+------------------------------------------+
-| ``hydro``                 | Run-of-river hydro                       |
+| ``hydro``                 | Reservoir hydro                       |
 +---------------------------+------------------------------------------+
 
 .. _generators-chp:
