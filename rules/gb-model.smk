@@ -60,6 +60,7 @@ rule compose_network:
         tech_costs=Path(COSTS_DATASET["folder"])
         / f"costs_{config['scenario']['planning_horizons'][0]}.csv",
         hydro_capacities=ancient("data/hydro_capacities.csv"),
+        max_hours_path=resources("gb-model/{fes_scenario}/max_hours.csv"),
         chp_p_min_pu=resources("gb-model/chp_p_min_pu.csv"),
         interconnectors_p_nom=resources(
             "gb-model/{fes_scenario}/interconnectors_p_nom.csv"

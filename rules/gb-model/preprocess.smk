@@ -150,6 +150,7 @@ rule process_fes_gsp_data:
         fill_gsp_lat_lons=config["grid_supply_points"]["fill-lat-lons"],
         manual_gsp_mapping=config["grid_supply_points"]["manual_mapping"],
         bb2_es1_mapping=config["fes"]["gb"]["BB2_to_ES1_mapping"],
+        tech_max_hours=config["fes"]["gb"]["tech_max_hours"],
     input:
         bb1_sheet=resources(f"gb-model/fes/BB1.csv"),
         bb2_sheet=resources(f"gb-model/fes/BB2.csv"),
@@ -158,6 +159,7 @@ rule process_fes_gsp_data:
         regions=resources("gb-model/merged_shapes.geojson"),
     output:
         csv=resources("gb-model/{fes_scenario}/regional_gb_data.csv"),
+        max_hours=resources("gb-model/{fes_scenario}/max_hours.csv"),
     log:
         logs("process_fes_gsp_data_{fes_scenario}.log"),
     script:

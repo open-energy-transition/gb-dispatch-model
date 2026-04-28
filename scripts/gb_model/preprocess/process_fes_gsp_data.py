@@ -201,7 +201,7 @@ def parse_inputs(
 
 def split_technologies(
     df_with_regions: pd.DataFrame,
-    es1_path: str,
+    df_es1: pd.DataFrame,
     technology_mapping: dict,
     fes_scenario: str,
     year_range: list[int],
@@ -213,8 +213,8 @@ def split_technologies(
     ----------
     df_with_regions: pd.DataFrame
         Pandas dataframe to modify
-    es1_path: str
-        Path to the ES1 sheet CSV file
+    df_es1: pd.DataFrame
+        Pandas dataframe of FES workbook ES1 sheet
     technology_mappingL dict[str, list[str]]
         Dictionary to map technologies in BB1 sheet to ES1 sheet
     fes_scenario: str
@@ -223,8 +223,7 @@ def split_technologies(
         Year range of the simulation
     """
 
-    # Read ES1 sheet data
-    df_es1 = pd.read_csv(es1_path)
+    # Filter ES1 sheet
     df_es1_reqd = df_es1[
         (df_es1["Pathway"].str.lower() == fes_scenario.lower())
         & (df_es1["year"].between(year_range[0], year_range[1], inclusive="both"))
@@ -283,6 +282,32 @@ def split_technologies(
     return df_with_regions
 
 
+def get_max_hours(df_es1: pd.DataFrame, tech_max_hours: list[str]) -> pd.DataFrame:
+    df_es1_reqd = df_es1[
+        (df_es1["Pathway"].str.lower() == fes_scenario.lower())
+        & (
+            df_es1["year"].between(
+                snakemake.params.year_range[0],
+                snakemake.params.year_range[1],
+                inclusive="both",
+            )
+        )
+    ]
+    df_es1_grouped = (
+        df_es1_reqd.query("SubType in @tech_max_hours")
+        .groupby(["SubType", "year", "Variable"])
+        .data.sum()
+    )
+    df_es1_unstacked = df_es1_grouped.unstack("Variable")
+    df_max_hours = (
+        df_es1_unstacked["Storage Capacity (GWh)"]
+        / df_es1_unstacked["Capacity (MW)"]
+        * 1000
+    )
+    df_max_hours.name = "max_hours"
+    return df_max_hours
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
@@ -333,12 +358,24 @@ if __name__ == "__main__":
         )
     logger.info(f"Extracted the {fes_scenario} relevant data")
 
+    df_es1 = pd.read_csv(snakemake.input.es1_sheet)
+
     df_with_regions_updated = split_technologies(
         df_with_regions=df_with_regions,
-        es1_path=snakemake.input.es1_sheet,
+        df_es1=df_es1,
         technology_mapping=snakemake.params.bb2_es1_mapping,
         fes_scenario=fes_scenario,
         year_range=snakemake.params.year_range,
     )
 
     df_with_regions_updated.to_csv(snakemake.output.csv, index=False)
+    logger.info(
+        f"Exported processed GSP-level powerplant information to {snakemake.output.csv}"
+    )
+
+    df_max_hours = get_max_hours(
+        df_es1=df_es1, tech_max_hours=snakemake.params.tech_max_hours
+    )
+
+    df_max_hours.to_csv(snakemake.output.max_hours)
+    logger.info(f"Exported max_hours information to {snakemake.output.max_hours}")

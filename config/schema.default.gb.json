@@ -2920,13 +2920,20 @@
             },
             "BB2_to_ES1_mapping": {
               "additionalProperties": {
-                "additionalProperties": {
+                "items": {
                   "type": "string"
                 },
-                "type": "object"
+                "type": "array"
               },
               "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
               "type": "object"
+            },
+            "tech_max_hours": {
+              "description": "Technology list for which to compute max storage hours",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
             },
             "demand": {
               "additionalProperties": false,
@@ -3429,13 +3436,20 @@
         },
         "BB2_to_ES1_mapping": {
           "additionalProperties": {
-            "additionalProperties": {
+            "items": {
               "type": "string"
             },
-            "type": "object"
+            "type": "array"
           },
           "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
           "type": "object"
+        },
+        "tech_max_hours": {
+          "description": "Technology list for which to compute max storage hours",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "demand": {
           "additionalProperties": false,
@@ -16467,13 +16481,20 @@
             },
             "BB2_to_ES1_mapping": {
               "additionalProperties": {
-                "additionalProperties": {
+                "items": {
                   "type": "string"
                 },
-                "type": "object"
+                "type": "array"
               },
               "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
               "type": "object"
+            },
+            "tech_max_hours": {
+              "description": "Technology list for which to compute max storage hours",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
             },
             "demand": {
               "additionalProperties": false,

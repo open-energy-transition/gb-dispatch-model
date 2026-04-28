@@ -1259,6 +1259,7 @@ def compose_network(
     flex_carrier_suffixes: dict[str, str],
     time_aggregation: list[dict],
     year: int,
+    max_hours_path: str,
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -1311,6 +1312,8 @@ def compose_network(
         Whether to enable CHP constraints
     year: int
         Modelling year
+    max_hours_path: str
+        Path to max hours data
     """
     network = pypsa.Network(network_path)
     max_hours = electricity_config["max_hours"]
@@ -1321,6 +1324,14 @@ def compose_network(
 
     # Load FES powerplants data (already enriched with costs from create_powerplants_table)
     ppl = _load_powerplants(powerplants_path, year)
+    df_max_hours = pd.read_csv(max_hours_path).query("year == @year")
+    max_hours_dict = dict(df_max_hours[["SubType", "max_hours"]].values)
+    ppl.loc[ppl["country"] == "GB", "max_hours"] = (
+        ppl.loc[ppl["country"] == "GB"]["carrier"]
+        .map(max_hours_dict)
+        .replace(np.nan, 0)
+        .tolist()
+    )
 
     # Define costs file
     costs = _prepare_costs(ppl, year)
@@ -1441,4 +1452,5 @@ if __name__ == "__main__":
         flex_carrier_suffixes=snakemake.params.flex_carrier_suffixes,
         time_aggregation=snakemake.params.time_aggregation,
         year=int(snakemake.wildcards.year),
+        max_hours_path=snakemake.input.max_hours_path,
     )

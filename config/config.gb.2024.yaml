@@ -304,7 +304,7 @@ electricity:
   extendable_carriers:
     Generator: []
     Store: []
-  conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass, CCS Gas, Biomass CHP, CCS Biomass]
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass, CCS Gas, Biomass CHP, CCS Biomass, Compressed Air, Liquid Air]
   renewable_carriers: [solar, onwind, offwind-dc, hydro]
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
@@ -864,6 +864,7 @@ fes:
         residential_heat: " Residential Heat DSR"
         iandc_heat: " I&C Heat DSR"
       v2g_storage_to_capacity_ratio: 7.14 # based on ratio in FES 2021. Same value will be applied to all future years.
+    tech_max_hours: ['Compressed Air', 'Liquid Air']
 
     regional_distribution_reference:
       ev_dsr:
