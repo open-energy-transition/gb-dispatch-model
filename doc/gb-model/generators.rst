@@ -247,7 +247,8 @@ Each generator in the powerplants table is enriched with cost and technical para
 
 1. **FES AS.1**: Provides year-specific fuel costs and VOM for GB-relevant technologies; averaged across scenarios because scenario names change between FES editions
 2. **FES AS.7**: Provides year-specific carbon price (£/tCO₂); averaged across scenarios
-3. **PyPSA technology-data**: Provides capital costs (£/MW), fixed O&M (£/MW/year), efficiency, and lifetime for technologies absent from the FES costing workbook. In the current workflow only **efficiency** is actively used in dispatch runs; the remaining parameters are written to the output for reference only
+3. **PyPSA technology-data**: Provides capital costs (£/MW), fixed O&M (£/MW/year), efficiency, and lifetime for technologies absent from the FES costing workbook. 
+   In the current workflow only **efficiency** is actively used in dispatch runs; the remaining parameters are written to the output for reference only
 4. **Default characteristics**: Fallbacks defined in ``fes_costs.default_characteristics`` ensure all columns exist even when data is missing
 
 Marginal costs are assembled as:
