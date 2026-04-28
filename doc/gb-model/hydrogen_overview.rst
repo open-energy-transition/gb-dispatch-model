@@ -267,6 +267,7 @@ From ``config/config.gb.2024.yaml``:
    :language: yaml
    :start-after: # [doc:hydrogen-config-start]
    :end-before: # [doc:hydrogen-config-end]
+   :prepend: fes:
 
 
 .. _hydrogen-implementation-notes:
