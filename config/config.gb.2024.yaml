@@ -238,6 +238,8 @@ fes_costs:
     waste PP: Waste-Waste
     waste CHP: Waste-Waste CHP
     CCS Gas PP: CCS-CCS Gas
+    Compressed Air Store: Storage-Compressed Air
+    Liquid Air Store: Storage-Liquid Air
   fes_fuel_carrier_mapping:
     biomass PP: Biomass-Biomass
     Biomass CHP CHP: Biomass-Biomass CHP
@@ -767,6 +769,8 @@ fes:
         CCS Biomass: CCS Biomass
         Nuclear - Large: nuclear
         Nuclear - SMR: nuclear
+        Compressed Air: Compressed Air
+        Liquid Air: Liquid Air
       Technology Detail:
         Domestic Batteries (G98): battery
         Batteries: battery
@@ -774,6 +778,7 @@ fes:
         Offshore Wind: offwind-dc
         Onshore Wind <1MW: onwind
         Onshore Wind >=1MW: onwind
+
 
     set_mapping:
       Technology:
@@ -783,11 +788,14 @@ fes:
         Storage: Store
         Biomass CHP: CHP
         Hydrogen CHP: CHP
+        Compressed Air: Store
+        Liquid Air: Store
 
     BB2_to_ES1_mapping:
       CCGTs (non CHP): ["CCGT", "CCS Gas"]
       Biomass & Energy Crops (including CHP): ["Biomass", "CCS Biomass", "Biomass CHP"]
       Nuclear: ["Nuclear - Large", "Nuclear - SMR"]
+      Other: ["Liquid Air", "Compressed Air"]
 
     demand:
       Technology Detail:
@@ -926,6 +934,7 @@ fes:
         Biomass CHP: CHP
         Gas CHP: CHP
         Hydrogen CHP: CHP
+
 
     totals_to_demand_groups:
       ev: [total road]

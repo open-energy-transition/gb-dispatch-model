@@ -234,44 +234,51 @@ def split_technologies(
     # Iterate through the technologies with more subtypes in ES1 sheet
     for tech in technology_mapping.keys():
         df_tech = df_with_regions.loc[df_with_regions.Technology == tech]
+        if df_tech.empty:
+            df_tech = df_with_regions.loc[df_with_regions["Technology Detail"] == tech]
 
-        df_es1_tech = pd.DataFrame(
-            df_es1_reqd[df_es1_reqd["SubType"].isin(technology_mapping[tech])]
-            .groupby(["SubType", "year"])["data"]
-            .sum()
-        )
-
-        # Calculate %share of each technology subtype for every year
-        df_es1_tech["pct"] = df_es1_tech["data"] / df_es1_tech.groupby("year")[
-            "data"
-        ].transform("sum")
-
-        # Merge the original dataframe indexed from BB1 sheet and the data from ES1 sheet
-        df_tech = df_tech.merge(df_es1_tech.reset_index(), on="year")
-
-        # Multiply the regional data with the percentage share of the technology subtype
-        df_tech["data"] = df_tech["data_x"].mul(df_tech["pct"]).replace(np.nan, 0)
-        df_tech["Technology"] = df_tech["SubType"]
-
-        # Calculate % diff in the total capacity of the technology
-        df_diff = (
-            (
-                df_es1_tech.groupby("year")["data"].sum()
-                - df_tech.groupby("year")["data"].sum()
+        if df_tech.empty:
+            logger.error(
+                f"Technology {tech} does not exist in the BB1 workbook sheet. Recheck the mapping of the technologies"
             )
-            * 100
-            / df_es1_tech.groupby("year")["data"].sum()
-        )
-        logger.info(
-            f"The percentage difference in capacity data for the {tech}, indexed by year in ES1 and BB1 sheet is {df_diff}"
-        )
+        else:
+            df_es1_tech = pd.DataFrame(
+                df_es1_reqd[df_es1_reqd["SubType"].isin(technology_mapping[tech])]
+                .groupby(["SubType", "year"])["data"]
+                .sum()
+            )
 
-        df_with_regions = pd.concat(
-            [
-                df_with_regions.query("Technology != @tech"),
-                df_tech.drop(["data_x", "data_y", "pct", "SubType"], axis=1),
-            ]
-        )
+            # Calculate %share of each technology subtype for every year
+            df_es1_tech["pct"] = df_es1_tech["data"] / df_es1_tech.groupby("year")[
+                "data"
+            ].transform("sum")
+
+            # Merge the original dataframe indexed from BB1 sheet and the data from ES1 sheet
+            df_tech = df_tech.merge(df_es1_tech.reset_index(), on="year")
+
+            # Multiply the regional data with the percentage share of the technology subtype
+            df_tech["data"] = df_tech["data_x"].mul(df_tech["pct"]).replace(np.nan, 0)
+            df_tech["Technology"] = df_tech["SubType"]
+
+            # Calculate % diff in the total capacity of the technology
+            df_diff = (
+                (
+                    df_es1_tech.groupby("year")["data"].sum()
+                    - df_tech.groupby("year")["data"].sum()
+                )
+                * 100
+                / df_es1_tech.groupby("year")["data"].sum()
+            )
+
+            logger.info(
+                f"The percentage difference in capacity data for the {tech}, indexed by year in ES1 and BB1 sheet is {df_diff}"
+            )
+            df_with_regions = pd.concat(
+                [
+                    df_with_regions.query("Technology != @tech"),
+                    df_tech.drop(["data_x", "data_y", "pct", "SubType"], axis=1),
+                ]
+            )
 
     return df_with_regions
 
