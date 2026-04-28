@@ -95,10 +95,12 @@ clustering:
 # see https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal for options
 time_aggregation: []
 
+# [doc:renewable-hydro-config-start]
 renewable:
   hydro:
     cutout: default
     carriers: [PHS, hydro]
+# [doc:renewable-hydro-config-end]
 
 conventional:
   nuclear:
@@ -209,6 +211,7 @@ fes_costs:
       hydrogen Store: hydrogen storage tank type 1 including compressor
       electrolysis Other: electrolysis
 
+  # [doc:fes-vom-config-start]
   fes_VOM_carrier_mapping:
     battery Store: Storage-Battery
     biomass PP: Biomass-Biomass
@@ -234,6 +237,7 @@ fes_costs:
     solar PP: Solar-Solar PV
     waste PP: Waste-Waste
     waste CHP: Waste-Waste CHP
+  # [doc:fes-vom-config-end]
   fes_fuel_carrier_mapping:
     biomass PP: Biomass-Biomass
     biomass CHP: Biomass-Biomass CHP
@@ -799,9 +803,11 @@ fes:
       - "GBFES System Losses: Transmission"
     flexibility:
       carrier_mapping:
+        # [doc:storage-battery-flx1-config-start]
         battery:
           Data item: "Electricity storage energy storage potential"
           Detail: "Battery"
+        # [doc:storage-battery-flx1-config-end]
         ev_v2g:
           Detail: "V2G maximum potential"
         ev_dsr:
