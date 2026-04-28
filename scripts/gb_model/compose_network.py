@@ -996,6 +996,42 @@ def add_battery_storage(
     )
 
 
+def add_other_storage(
+    n: pypsa.Network, ppl: pd.DataFrame, tech_max_hours: dict
+) -> None:
+    """
+    Add other storage (Compressed and Liquid Air) to the network.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        The PyPSA network to attach the battery storage to.
+    ppl : pd.DataFrame
+        DataFrame containing the power plant data.
+    """
+
+    for carr in list(tech_max_hours):
+        ppl_storage = ppl[ppl.carrier == carr]
+
+        max_hours = ppl_storage["max_hours"]
+        n.add("Carrier", carr)
+        n.add(
+            "StorageUnit",
+            ppl_storage.index,
+            bus=ppl_storage.bus,
+            carrier=carr,
+            p_nom=ppl_storage.p_nom,
+            p_nom_extendable=False,
+            marginal_cost=ppl_storage.marginal_cost,
+            capital_cost=0,
+            lifetime=ppl_storage.lifetime,
+            efficiency_store=ppl_storage.efficiency**0.5,
+            efficiency_dispatch=ppl_storage.efficiency**0.5,
+            max_hours=max_hours,
+            cyclic_state_of_charge=True,
+        )
+
+
 def add_H2(
     n: pypsa.Network,
     ppl: pd.DataFrame,
@@ -1400,6 +1436,8 @@ def compose_network(
     )
 
     add_battery_storage(network, ppl, battery_e_nom_path, year)
+    add_other_storage(network, ppl, max_hours_dict.keys())
+
     _add_generator_availability(network, generator_availability_path)
     add_load_shedding(network, voll)
 

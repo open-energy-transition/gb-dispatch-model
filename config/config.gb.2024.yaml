@@ -304,7 +304,7 @@ electricity:
   extendable_carriers:
     Generator: []
     Store: []
-  conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass, CCS Gas, Biomass CHP, CCS Biomass, Compressed Air, Liquid Air]
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass, CCS Gas, Biomass CHP, CCS Biomass]
   renewable_carriers: [solar, onwind, offwind-dc, hydro]
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
