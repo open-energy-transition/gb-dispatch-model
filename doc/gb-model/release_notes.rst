@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Add line/link components documentation (#316).
 * Add storage components documentation (#315).
 * Add generation components documentation (#308).
 * Documentation related to the heat system (#293)
