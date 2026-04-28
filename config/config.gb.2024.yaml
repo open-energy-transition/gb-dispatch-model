@@ -925,6 +925,7 @@ fes:
     # This gives us slightly more realistic European marginal prices when we have load shedding.
     load_shedding_cost_above_marginal: 1
 
+# [doc:hydrogen-config-start]
   hydrogen:
     data_selection:
       networked_h2_supply:
@@ -941,6 +942,7 @@ fes:
         - Non Networked Electricity
       storage:
         Category: storage
+# [doc:hydrogen-config-end]
 
 # [doc:ev-config-start]
 ev:

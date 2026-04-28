@@ -265,7 +265,8 @@ From ``config/config.gb.2024.yaml``:
 
 .. literalinclude:: ../../config/config.gb.2024.yaml
    :language: yaml
-   :lines: 906-938
+   :start-after: # [doc:hydrogen-config-start]
+   :end-before: # [doc:hydrogen-config-end]
 
 
 .. _hydrogen-implementation-notes:
