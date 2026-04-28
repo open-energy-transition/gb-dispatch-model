@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Add storage components documentation (#315).
 * Add generation components documentation (#308).
 * Documentation related to the heat system (#293)
 * Add ``pixi`` task to generate filtered snakemake DAGs for use in documenting gb-dispatch-model subsystems.
