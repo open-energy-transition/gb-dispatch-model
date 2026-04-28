@@ -259,6 +259,19 @@ def split_technologies(
             df_tech["data"] = df_tech["data_x"].mul(df_tech["pct"]).replace(np.nan, 0)
             df_tech["Technology"] = df_tech["SubType"]
 
+            # Scaling factor to scale the mismatch in total capacity values in BB1 and ES1 sheet
+            # The factor scales the values to match the value in the ES1 sheet
+            scaling_factor = (
+                df_es1_tech.groupby("year")["data"].sum()
+                / df_tech.groupby("year")["data"].sum()
+            )
+            scaling_factor.name = "scaling_factor"
+            df_tech = df_tech.merge(scaling_factor, on="year")
+
+            df_tech["data"] = (
+                df_tech["data"].mul(df_tech["scaling_factor"]).replace(np.nan, 0)
+            )
+
             # Calculate % diff in the total capacity of the technology
             df_diff = (
                 (
@@ -272,10 +285,13 @@ def split_technologies(
             logger.info(
                 f"The percentage difference in capacity data for the {tech}, indexed by year in ES1 and BB1 sheet is {df_diff}"
             )
+
             df_with_regions = pd.concat(
                 [
                     df_with_regions.query("Technology != @tech"),
-                    df_tech.drop(["data_x", "data_y", "pct", "SubType"], axis=1),
+                    df_tech.drop(
+                        ["data_x", "data_y", "pct", "SubType", "scaling_factor"], axis=1
+                    ),
                 ]
             )
 

@@ -996,9 +996,7 @@ def add_battery_storage(
     )
 
 
-def add_other_storage(
-    n: pypsa.Network, ppl: pd.DataFrame, tech_max_hours: dict
-) -> None:
+def add_other_storage(n: pypsa.Network, ppl: pd.DataFrame, tech_list: dict) -> None:
     """
     Add other storage (Compressed and Liquid Air) to the network.
 
@@ -1008,9 +1006,11 @@ def add_other_storage(
         The PyPSA network to attach the battery storage to.
     ppl : pd.DataFrame
         DataFrame containing the power plant data.
+    tech_list: list
+        List of technologies to be added as storage units
     """
 
-    for carr in list(tech_max_hours):
+    for carr in list(tech_list):
         ppl_storage = ppl[ppl.carrier == carr]
 
         max_hours = ppl_storage["max_hours"]
