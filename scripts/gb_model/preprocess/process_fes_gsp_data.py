@@ -13,6 +13,7 @@ import logging
 from pathlib import Path
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 
 from scripts._helpers import configure_logging, set_scenario_config
@@ -249,7 +250,7 @@ def split_technologies(
         df_tech = df_tech.merge(df_es1_tech.reset_index(), on="year")
 
         # Multiply the regional data with the percentage share of the technology subtype
-        df_tech["data"] = df_tech["data_x"].mul(df_tech["pct"])
+        df_tech["data"] = df_tech["data_x"].mul(df_tech["pct"]).replace(np.nan, 0)
         df_tech["Technology"] = df_tech["SubType"]
 
         # Calculate % diff in the total capacity of the technology
@@ -265,14 +266,14 @@ def split_technologies(
             f"The percentage difference in capacity data for the {tech}, indexed by year in ES1 and BB1 sheet is {df_diff}"
         )
 
-        df_with_regions_updated = pd.concat(
+        df_with_regions = pd.concat(
             [
                 df_with_regions.query("Technology != @tech"),
                 df_tech.drop(["data_x", "data_y", "pct", "SubType"], axis=1),
             ]
         )
 
-        return df_with_regions_updated
+    return df_with_regions
 
 
 if __name__ == "__main__":

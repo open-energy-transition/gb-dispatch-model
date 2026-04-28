@@ -181,13 +181,15 @@ fes_costs:
       waste: biomass
     default:
       CCGT PP: CCGT
+      CCS Gas PP: CCS Gas
       OCGT PP: OCGT
       CCGT CHP: central gas CHP
       OCGT CHP: central gas CHP
       PHS Store: PHS
       battery Store: battery storage
       biomass PP: biomass
-      biomass CHP: biomass CHP
+      Biomass CHP CHP: Biomass CHP
+      CCS Biomass PP: CCS Biomass
       coal PP: coal
       coal CHP: central coal CHP
       engine PP: central gas CHP # `direct firing gas` is a better fit but the data is spurious
@@ -212,7 +214,8 @@ fes_costs:
   fes_VOM_carrier_mapping:
     battery Store: Storage-Battery
     biomass PP: Biomass-Biomass
-    biomass CHP: Biomass-Biomass CHP
+    Biomass CHP CHP: Biomass-Biomass CHP
+    CCS Biomass PP: CCS-CCS Biomass
     CCGT PP: Gas-CCGT
     CCGT CHP: Gas-Gas CHP
     coal PP: Coal-Coal
@@ -234,9 +237,11 @@ fes_costs:
     solar PP: Solar-Solar PV
     waste PP: Waste-Waste
     waste CHP: Waste-Waste CHP
+    CCS Gas PP: CCS-CCS Gas
   fes_fuel_carrier_mapping:
     biomass PP: Biomass-Biomass
-    biomass CHP: Biomass-Biomass CHP
+    Biomass CHP CHP: Biomass-Biomass CHP
+    CCS Biomass PP: CCSBiomass-Biomass
     CCGT PP: Gas-CCGT
     CCGT CHP: Gas-CCGT CHP
     coal PP: Coal-Coal
@@ -251,6 +256,7 @@ fes_costs:
     oil PP: Gasoil-Steam Oil
     waste PP: WoodPellets-Waste
     waste CHP: Gas-Waste CHP
+    CCS Gas PP: CCSGas-CCS Gas
 
   voll: 6000 #£/MWh - based on `value_of_lost_load` from (https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf)
 
@@ -296,7 +302,7 @@ electricity:
   extendable_carriers:
     Generator: []
     Store: []
-  conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass]
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass, CCS Gas, Biomass CHP, CCS Biomass]
   renewable_carriers: [solar, onwind, offwind-dc, hydro]
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
@@ -754,6 +760,13 @@ fes:
         Renewable Engines (Landfill Gas, Sewage Gas, Biogas): biomass
         Solar Generation: solar
         Waste Incineration (including CHP): waste
+        CCGT: CCGT
+        CCS Gas: CCS Gas
+        Biomass: biomass
+        Biomass CHP: Biomass CHP
+        CCS Biomass: CCS Biomass
+        Nuclear - Large: nuclear
+        Nuclear - SMR: nuclear
       Technology Detail:
         Domestic Batteries (G98): battery
         Batteries: battery
@@ -768,10 +781,13 @@ fes:
         Waste Incineration (including CHP): CHP
         Non-renewable CHP: CHP
         Storage: Store
+        Biomass CHP: CHP
+        Hydrogen CHP: CHP
 
     BB2_to_ES1_mapping:
       CCGTs (non CHP): ["CCGT", "CCS Gas"]
       Biomass & Energy Crops (including CHP): ["Biomass", "CCS Biomass", "Biomass CHP"]
+      Nuclear: ["Nuclear - Large", "Nuclear - SMR"]
 
     demand:
       Technology Detail:
