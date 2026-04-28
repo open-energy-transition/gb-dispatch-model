@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Add 'extra' technologies represented in ES1 sheet of the FES workbook to the model (#310)
 * Documentation related to the heat system (#293)
 * Add ``pixi`` task to generate filtered snakemake DAGs for use in documenting gb-dispatch-model subsystems.
 * Add EV subsystem documentation (#279).
