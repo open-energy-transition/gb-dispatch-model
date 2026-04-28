@@ -518,6 +518,7 @@ entsoe_unavailability:
     Waste: waste
 # [doc:entsoe-unavailability-config-end]
 
+# [doc:transmission-availability-config-start]
 transmission_availability:
   years: [2020, 2021, 2022, 2023, 2024]
   intra_gb:
@@ -537,6 +538,7 @@ transmission_availability:
     SPTL: 22
     SHETL: 33
     interconnectors: 44
+# [doc:transmission-availability-config-end]
 
 dukes-5.11:
   # list of major power producers
