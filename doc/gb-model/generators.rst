@@ -180,9 +180,19 @@ Combined Heat and Power (CHP)
 
 **PyPSA Component**: ``Generator`` with a time-varying ``p_min_pu`` profile
 
-CHPs are conventional generators (CCGT, OCGT, biomass, waste, etc.) that also supply heat.
-Rather than implementing full sector-coupling, the model applies a simplified *minimum loading* constraint based on local heat demand.
-CHPs are identified from the powerplants table via the ``set`` column (``"CHP"``), which distinguishes them from regular power plants (``"PP"``) and storage units (``"Store"``).
+Many conventional carriers (CCGT, biomass, waste, etc.) exist in two variants: pure power plants and CHP units.
+FES BB1 reports some technologies (e.g. "Biomass & Energy Crops (including CHP)", "Waste Incineration (including CHP)", "Non-renewable CHP") as inherently cogeneration.
+These are assigned ``set = "CHP"`` via the ``fes.gb.set_mapping`` configuration, while the remaining capacity of the same carrier is assigned ``set = "PP"``.
+The resulting ``set`` column in the powerplants table therefore determines which fraction of each carrier is subject to CHP constraints — not the carrier itself.
+
+From ``config/config.gb.2024.yaml``:
+
+.. literalinclude:: ../../config/config.gb.2024.yaml
+   :language: yaml
+   :start-after: # [doc:fes-gb-set-mapping-start]
+   :end-before: # [doc:fes-gb-set-mapping-end]
+
+Rather than implementing full sector-coupling, the model applies a simplified *minimum loading* constraint based on local heat demand to the CHP subset.
 
 The ``p_min_pu`` profile for each CHP generator is derived from the normalised hourly heat demand of the model region it serves:
 

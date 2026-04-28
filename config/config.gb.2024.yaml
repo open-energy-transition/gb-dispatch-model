@@ -758,12 +758,14 @@ fes:
         Onshore Wind <1MW: onwind
         Onshore Wind >=1MW: onwind
 
+    # [doc:fes-gb-set-mapping-start]
     set_mapping:
       Technology:
         Biomass & Energy Crops (including CHP): CHP
         Waste Incineration (including CHP): CHP
         Non-renewable CHP: CHP
         Storage: Store
+    # [doc:fes-gb-set-mapping-end]
 
 
     demand:
