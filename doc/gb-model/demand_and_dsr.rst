@@ -5,13 +5,14 @@
 .. _demand_and_dsr:
 
 ##########################
-Demand and DSR
+Baseline demand & demand-side response (DSR)
 ##########################
 
 Overview
 ========
 
-The GB dispatch model incorporates demand-side response (DSR) capabilities across multiple demand sectors to provide flexibility in the electricity system. DSR allows for the shifting of electricity consumption from peak to off-peak periods, helping to balance supply and demand while reducing the need for additional generation capacity.
+The GB dispatch model incorporates demand-side response (DSR) capabilities across multiple demand sectors to provide flexibility in the electricity system. 
+DSR allows for the shifting of electricity consumption from peak to off-peak periods, helping to balance supply and demand while reducing the need for additional generation capacity.
 
 Demand Sectors
 ---------------
@@ -54,15 +55,13 @@ The DSR implementation for each demand type (residential, I&C, EV and heat) foll
 
 "Sector" refers to the specific demand sector being modeled (e.g., residential, I&C, EV, heat or hydrogen).
 Whilst the general structure is consistent across demand types, some extra components are added for specific sectors which can be found in the corresponding documentation sections (e.g., EV charging includes additional V2G storage components).
-
-
-
 Data Sources
 ============
 
 Great Britain data
 ------------------
-Demand and flexibility data are sourced from the Future Energy Scenario FES 2024 workbooks. The model processes FES data to extract:
+Demand and flexibility data are sourced from the Future Energy Scenario FES 2024 workbooks.
+The model processes FES data to extract:
 
 - Annual electricity demand by sector and region
 - DSR capacity and flexibility potential
@@ -85,7 +84,7 @@ The table below summarizes the specific sheets extracted from the FES workbook f
    * - I&C Heat
      - Building Block Data (BB1), Gas Demand Summary (ED3) and Flexibility (FLX1)
    * - EV Charging
-     - Building Block Data (BB1), FES ED5(EV Demand) and Flexibility (FLX1)
+     - Building Block Data (BB1), Road Transport Summary (ED5) and Flexibility (FLX1)
    * - Hydrogen Electrolyser Demand
      - Building Block Data (BB1), WS1 (Whole System)
    * - Additional demand
@@ -176,7 +175,8 @@ The rulegraph for the demand and DSR workflow is illustrated below:
       pixi run filtered_rulegraph \
       "resources/GB/gb-model/HT/baseline_electricity_demand/2030.csv" \
       "resources/GB/gb-model/HT/additional_demand/2030.csv" \
-      " resources/GB/gb-model/HT/residential_dsr.csv" \
+      " resources/GB/gb-model/HT/regional_iandc_dsr_inc_eur.csv" \
+      " resources/GB/gb-model/HT/regional_residential_dsr_inc_eur.csv" \
       "-w fes_scenario" \
       "-w year -s 10,8 "\
       "-f rules/gb-model/demand_and_dsr.smk"
