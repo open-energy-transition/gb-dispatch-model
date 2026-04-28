@@ -79,6 +79,7 @@ The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windo
    dispatch_redispatch
    hydrogen_overview
    ev
+   heat_system
    implementation
    data_cleaning
 

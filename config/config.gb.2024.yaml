@@ -796,6 +796,7 @@ fes:
         residential_hp_heat: ["residential hp demand"]
         iandc_hp_heat: ["i&c hp demand"]
       heat:
+        # [doc:heat-tech-start]
         electrified_heating_technologies:
           Electric resistive: resistive
           Electric storage: resistive
@@ -805,6 +806,7 @@ fes:
           Hybrid (ASHP + Hydrogen boiler): ASHP
           Hybrid (ASHP + Biofuel boiler): ASHP
           GSHP: GSHP
+        # [doc:heat-tech-end]
       bus_suffix:
         baseline_electricity: " Baseline Electricity"
         residential: " Baseline Electricity"
