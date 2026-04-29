@@ -14,10 +14,11 @@ This page describes how electrical storage assets are represented in the model, 
 Overview
 ========
 
-The model includes three types of storage assets:
+The model includes four types of storage assets:
 
 - **Battery storage**: Grid-scale battery storage, sized by future FES scenarios
 - **Pumped hydro storage (PHS)**: Gravity-based hydro reservoirs that can pump water uphill to store energy and generate on demand
+- **Reservoir hydro**: Run-of-river and reservoir hydro modelled as storage units with ERA5-derived inflow time series
 - **Hydrogen storage**: Storage capacity that buffers the hydrogen system — documented in :doc:`hydrogen_overview`
 
 All storage assets are modelled as *fixed-capacity*, non-extendable units — the model dispatches within the capacities provided and does not invest in new storage.
@@ -39,6 +40,7 @@ The figure below gives a high-level view of the storage data pipeline:
       fes_flx1   [label="FES FLX1\n(battery e_nom)", fillcolor="#B3D9FF"];
       fes_bb1    [label="FES BB1\n(battery p_nom,\nPHS capacity)", fillcolor="#B3D9FF"];
       dukes      [label="DUKES 5.11\n(PHS existing caps)", fillcolor="#B3D9FF"];
+      es2        [label="FES ES2\n(EUR battery p_nom)", fillcolor="#B3D9FF"];
       hydro_cap  [label="hydro_capacities.csv\n(PyPSA-Eur)", fillcolor="#B3D9FF"];
 
       ppl         [label="Powerplants table\n(carrier=battery,\ncarrier=PHS)", fillcolor="#FFFACD"];
@@ -48,6 +50,7 @@ The figure below gives a high-level view of the storage data pipeline:
 
       fes_bb1   -> ppl;
       dukes     -> ppl;
+      es2       -> ppl;
       fes_flx1  -> battery_csv;
       ppl       -> battery_csv [label="p_nom\ndistribution"];
       ppl       -> network     [label="PHS p_nom\n(attach_hydro)"];
@@ -86,13 +89,19 @@ Carrier assignment from DUKES uses the ``dukes-5.11.carrier_mapping`` configurat
 PyPSA-Eur — Hydro Capacities
 ------------------------------
 
-PHS inflow and storage parameters are read from ``data/hydro_capacities.csv``, which is produced by the standard PyPSA-Eur pipeline from ERA5-derived runoff data.
-This file provides per-country hydro storage volumes and is used by the ``attach_hydro`` function to size the ``StorageUnit`` energy capacity for PHS.
+Storage volume and inflow parameters for PHS and reservoir hydro are read from ``data/hydro_capacities.csv``.
+The file provides per-country values for ``E_store[TWh]`` (reservoir energy capacity), ``p_nom_discharge[GW]``, ``p_nom_store[GW]``, and ``InflowHourlyAvg[GWh]``.
 
-European Data
---------------
+``attach_hydro`` uses ``E_store[TWh]`` to derive ``max_hours`` for reservoir hydro units whose value is missing or zero in the powerplants table.
+For PHS, ``max_hours`` is taken directly from the powerplants table (defaulting to 6 hours if absent).
 
-For European countries, battery storage capacity is estimated by applying the GB mean energy-to-power ratio (:math:`e_\text{nom}/p_\text{nom}`) to the European battery ``p_nom`` entries from the PyPSA-Eur powerplant database.
+FES ES2 — European Capacity Data
+----------------------------------
+
+European battery power capacity (``p_nom``) is sourced from the **FES ES2** sheet of the FES 2024 workbook, which provides scenario-aligned capacity projections for European countries.
+This sheet is processed by the ``process_fes_eur_data`` rule into ``national_eur_data.csv`` and merged into the powerplants table alongside the GB GSP-level data.
+
+For European countries, battery energy capacity is then estimated by applying the GB mean energy-to-power ratio (:math:`e_\text{nom}/p_\text{nom}`) to the European battery ``p_nom`` from ES2.
 PHS for European countries is handled entirely through the ``attach_hydro`` PyPSA-Eur function using ``hydro_capacities.csv``.
 
 
@@ -144,7 +153,7 @@ Pumped Hydro Storage (PHS)
 
 **PyPSA Component**: ``StorageUnit`` added via the PyPSA-Eur ``attach_hydro`` function
 
-PHS is modelled alongside run-of-river hydro as part of the hydro carrier group.
+PHS is modelled as part of the hydro carrier group alongside reservoir hydro.
 The carriers included in hydro attachment are configured as:
 
 .. literalinclude:: ../../config/config.gb.2024.yaml
@@ -159,6 +168,24 @@ The carriers included in hydro attachment are configured as:
 - Inflow time series from the ERA5/runoff cutout
 
 PHS units use bidirectional PyPSA ``StorageUnit`` semantics: charging pumps water uphill; discharging generates electricity.
+
+.. _storage-hydro:
+
+Reservoir Hydro
+---------------
+
+**PyPSA Component**: ``StorageUnit`` added via the PyPSA-Eur ``attach_hydro`` function
+
+Reservoir hydro (``carrier = "hydro"``) is attached alongside PHS through the same ``attach_hydro`` call.
+Like PHS, it is represented as a ``StorageUnit`` — energy is stored as water in the reservoir and discharged on demand, subject to an ERA5-derived inflow time series that fills the reservoir over time.
+
+``attach_hydro`` reads:
+
+- ``p_nom`` from the powerplants table (``carrier = "hydro"``) — sourced from the PyPSA-Eur powerplant database for European countries
+- ``max_hours`` derived from the ``E_store[TWh]`` column in ``data/hydro_capacities.csv``, distributed across plants in each country in proportion to their ``p_nom``
+- Inflow time series from the ERA5/runoff cutout, scaled by each plant's share of national ``p_nom``
+
+Unlike PHS, reservoir hydro cannot pump (``p_min_pu = 0``); it can only discharge.
 
 .. _storage-hydrogen:
 
