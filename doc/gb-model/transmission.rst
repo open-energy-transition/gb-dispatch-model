@@ -85,6 +85,8 @@ Each interconnector entry specifies:
 - **Lat/lon**: approximate location of the GB connection point, used to assign the interconnector to the nearest model region
 
 The ``interconnectors.plan`` section maps each FES scenario to a list of active interconnector projects by year, reflecting that different FES pathways assume different build-out of cross-border capacity.
+Since the FES workbook does not detail which projects it has chosen to reach its optimal GB interconnector capacities, we have defined this list based on our best understanding of the available projects. 
+See `our interconnector GitHub issue <https://github.com/open-energy-transition/gb-dispatch-model/issues/232>`_ for more details.
 
 NESO Transmission Availability Reports — Line Availability
 -----------------------------------------------------------
