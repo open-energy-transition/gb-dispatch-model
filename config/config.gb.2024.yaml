@@ -288,6 +288,7 @@ solving:
       run_crossover: 'off'
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
+# [doc:electricity-config-start]
 electricity:
   voltages: [132, 220., 275., 300., 330., 380., 400., 500., 750.]
   base_network: osm
@@ -297,6 +298,7 @@ electricity:
     Store: []
   conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass]
   renewable_carriers: [solar, onwind, offwind-dc, hydro]
+# [doc:electricity-config-end]
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 lines:
@@ -305,11 +307,13 @@ lines:
 
 # Simplified CHP configuration for GB model (electricity-only)
 # CHPs are modeled as generators with minimum operation constraints based on heat demand
+# [doc:chp-config-start]
 chp:
   enable: true  # Enable simplified CHP constraints
   heat_to_power_ratio: 1.5  # Heat-to-power ratio (c_b coefficient) - typical for gas CHPs
   min_operation_level: 0.3  # Minimum operation level when running (30% of capacity)
   shutdown_threshold: 0.1  # Heat demand threshold below which CHPs can shut down completely (fraction of peak demand)
+# [doc:chp-config-end]
 
 urls:
   gb-etys-boundaries: https://api.neso.energy/dataset/997f4820-1ad4-499b-b1fe-4b8d3d7fbc72/resource/e914fcec-1dc9-4f1f-97e7-59c0d9521bea/download/etys-boundary-gis-data-mar25.zip
@@ -489,6 +493,7 @@ etys:
 
 # Note: Set ENTSO_E_API_KEY in your .env file or environment variables
 # Register at https://transparency.entsoe.eu/ to get API key
+# [doc:entsoe-unavailability-config-start]
 entsoe_unavailability:
   start_date: "2020-01-01"
   end_date: "2024-12-31"
@@ -507,6 +512,7 @@ entsoe_unavailability:
     Hydro Run-of-river and poundage: hydro
     Nuclear: nuclear
     Waste: waste
+# [doc:entsoe-unavailability-config-end]
 
 transmission_availability:
   years: [2020, 2021, 2022, 2023, 2024]
@@ -752,12 +758,14 @@ fes:
         Onshore Wind <1MW: onwind
         Onshore Wind >=1MW: onwind
 
+    # [doc:fes-gb-set-mapping-start]
     set_mapping:
       Technology:
         Biomass & Energy Crops (including CHP): CHP
         Waste Incineration (including CHP): CHP
         Non-renewable CHP: CHP
         Storage: Store
+    # [doc:fes-gb-set-mapping-end]
 
 
     demand:
@@ -767,6 +775,7 @@ fes:
         residential_hp_heat: ["residential hp demand"]
         iandc_hp_heat: ["i&c hp demand"]
       heat:
+        # [doc:heat-tech-start]
         electrified_heating_technologies:
           Electric resistive: resistive
           Electric storage: resistive
@@ -776,6 +785,7 @@ fes:
           Hybrid (ASHP + Hydrogen boiler): ASHP
           Hybrid (ASHP + Biofuel boiler): ASHP
           GSHP: GSHP
+        # [doc:heat-tech-end]
       bus_suffix:
         baseline_electricity: " Baseline Electricity"
         residential: " Baseline Electricity"

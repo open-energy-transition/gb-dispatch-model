@@ -13,6 +13,8 @@ Unreleased
 ==========
 
 * Add documentation for Demand and DSR implementation in the GB dispatch model (#295)
+* Add generation components documentation (#308).
+* Documentation related to the heat system (#293)
 * Add ``pixi`` task to generate filtered snakemake DAGs for use in documenting gb-dispatch-model subsystems.
 * Add EV subsystem documentation (#279).
 * Add hydrogen subsystem documentation (#280).
