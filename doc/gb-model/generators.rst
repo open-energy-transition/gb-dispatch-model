@@ -25,7 +25,13 @@ Additionally, a subset of conventional generators with heat-driven cogeneration 
 
 All generators are modelled as *fixed-capacity*, non-extendable assets — the model dispatches within the capacities supplied and cannot invest in new plant.
 
-The figure below gives a high-level view of the generator pipeline:
+
+.. _generators-data-sources:
+
+Data Sources
+============
+
+The figure below gives a high-level view of the generator data pipeline:
 
 .. graphviz::
 
@@ -54,11 +60,6 @@ The figure below gives a high-level view of the generator pipeline:
       entsoe -> avail -> network;
    }
 
-
-.. _generators-data-sources:
-
-Data Sources
-============
 
 FES BB1 — Future Capacity Projections
 --------------------------------------

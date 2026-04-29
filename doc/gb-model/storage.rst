@@ -22,7 +22,13 @@ The model includes three types of storage assets:
 
 All storage assets are modelled as *fixed-capacity*, non-extendable units — the model dispatches within the capacities provided and does not invest in new storage.
 
-The figure below gives a high-level view of the storage pipeline:
+
+.. _storage-data-sources:
+
+Data Sources
+============
+
+The figure below gives a high-level view of the storage data pipeline:
 
 .. graphviz::
 
@@ -50,11 +56,6 @@ The figure below gives a high-level view of the storage pipeline:
       hydro_cap -> network     [label="PHS e_nom\n(attach_hydro)"];
    }
 
-
-.. _storage-data-sources:
-
-Data Sources
-============
 
 FES FLX1 — Battery Energy Capacity
 ------------------------------------
