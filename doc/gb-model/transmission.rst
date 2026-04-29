@@ -117,41 +117,111 @@ System Components
 =================
 
 .. _transmission-ac-lines:
-
-AC Lines
---------
-
-**PyPSA Component**: ``Line`` connecting regional AC buses
-
-The internal GB transmission grid is represented as a set of AC lines derived from the OSM pre-built network.
-After OSM import and voltage filtering (retaining lines at the voltages listed in ``electricity.voltages``), the network is clustered to the model's regional resolution.
-
-Offshore wind farm connection points appear as stub buses in the OSM network.
-These are resolved to their nearest onshore regional bus via the ``identify_regions_for_offshore_buses`` rule before clustering (see :ref:`transmission-offshore-busmap`).
-
 .. _transmission-interconnectors:
 
-DC Interconnectors
-------------------
+The table below lists the key PyPSA attributes for both transmission component types.
+AC lines (``n.lines``) represent the internal GB meshed grid, clustered from the OSM pre-built network.
+GB cross-border DC interconnectors (``n.links``, ``carrier = "DC"``) connect GB regional buses to neighbouring country buses and are sized by FES scenario and year.
+Intra-EU DC links (also ``n.links``) enter the model unchanged from the base PyPSA-Eur workflow via the ENTSO-E TYNDP and are not listed here.
 
-**PyPSA Component**: ``Link`` with ``carrier = "DC"``
+.. list-table:: PyPSA network component attributes — AC Lines and DC Interconnectors
+   :header-rows: 1
+   :widths: 14 16 12 15 43
 
-Cross-border DC interconnectors are added as bidirectional ``Link`` components (``p_min_pu = -1``) connecting a GB regional AC bus to the AC bus of the neighbouring country.
-
-**Capacity**:
-
-``p_nom`` is scenario- and year-dependent, following the FES commissioning plan:
-
-- Interconnectors are accumulated year-by-year (``cumsum``), so a project commissioned in year *Y* remains active in all subsequent years
-- The capacity represents the *one-directional* nameplate rating; bidirectional flow is enabled via ``p_min_pu = -1``
-- Projects assigned to countries not included in the model scope (i.e., not in ``countries``) are silently excluded with a logged warning
-
-Interconnector geometry (the shortest-path line from the GB connection lat/lon to the nearest point of the neighbouring country region) is synthesised and stored for visualisation.
+   * - Component
+     - Attribute
+     - Static / Dynamic
+     - Source
+     - Notes
+   * - ``Line``
+     - ``bus0``, ``bus1``
+     - Static
+     - OSM + clustering
+     - Regional AC buses at each end; assigned during the PyPSA-Eur clustering step
+   * - ``Line``
+     - ``s_nom``
+     - Static
+     - OSM
+     - Thermal rating (MVA) before availability scaling; derived from OSM voltage and line type
+   * - ``Line``
+     - ``x``, ``r``
+     - Static
+     - OSM
+     - Series reactance and resistance (p.u.) from OSM line type and length; used in power-flow calculations
+   * - ``Line``
+     - ``num_parallel``
+     - Static
+     - OSM
+     - Number of parallel circuits; aggregated during clustering
+   * - ``Line``
+     - ``type``
+     - Static
+     - OSM
+     - Standard line type string (e.g. ``"Al/St 240/40 2-bundle 380.0"``); determines per-unit-length impedance
+   * - ``Line``
+     - ``s_nom_extendable``
+     - Static
+     - Default (``False``)
+     - Capacity is fixed; the model does not invest in new AC lines
+   * - ``Line``
+     - ``s_nom_pu``
+     - Dynamic (hourly)
+     - Workflow (NESO PDFs) — *not yet applied*
+     - Hourly availability series derived by random-sampling the monthly TO-zone unavailability fraction with a fixed seed per zone. Currently processed but not applied to line ratings; the intent is to apply TO-zone availability to boundary transfer capabilities rather than individual line ``s_nom`` values (see :ref:`transmission-availability`)
+   * - ``Link`` (DC)
+     - ``bus0``, ``bus1``
+     - Static
+     - Workflow (config + regions)
+     - ``bus0`` is the GB regional AC bus nearest to the configured lat/lon; ``bus1`` is the AC bus of the neighbouring country
+   * - ``Link`` (DC)
+     - ``carrier``
+     - Static
+     - Workflow
+     - Set to ``"DC"`` for all GB cross-border interconnectors
+   * - ``Link`` (DC)
+     - ``p_nom``
+     - Static (per model year)
+     - Workflow (FES config plan)
+     - One-directional nameplate transfer capacity (MW); scenario- and year-dependent. Projects are accumulated forward in time so a commissioned link retains its capacity in all later years
+   * - ``Link`` (DC)
+     - ``p_min_pu``
+     - Static
+     - Workflow (``-1``)
+     - Set to ``-1`` to enable full bidirectional flow; combined with ``p_nom`` this allows power up to the nameplate rating in either direction
+   * - ``Link`` (DC)
+     - ``p_nom_extendable``
+     - Static
+     - Default (``False``)
+     - Capacity is fixed to the FES plan value; no investment in additional interconnector capacity
+   * - ``Link`` (DC)
+     - ``efficiency``
+     - Static
+     - Default (``1``)
+     - No transmission losses modelled
+   * - ``Link`` (DC)
+     - ``p_nom_pu``
+     - Dynamic (monthly)
+     - Workflow (NESO PDFs)
+     - Monthly availability fraction; a single value shared across all interconnectors per month, averaged over all projects and report years (see :ref:`transmission-availability`)
 
 .. _transmission-configuration:
 
 Configuration
 =============
+
+Example interconnector option entry (one entry per project under ``interconnectors.options``):
+
+.. literalinclude:: ../../config/config.gb.2024.yaml
+   :language: yaml
+   :start-after: # [doc:interconnector-option-example-start]
+   :end-before: # [doc:interconnector-option-example-end]
+
+Interconnector commissioning plan (maps FES scenarios to project lists by year):
+
+.. literalinclude:: ../../config/config.gb.2024.yaml
+   :language: yaml
+   :start-after: # [doc:interconnector-plan-start]
+   :end-before: # [doc:interconnector-plan-end]
 
 Transmission availability data configuration:
 
@@ -200,6 +270,9 @@ The transmission system is built through a pipeline implemented in ``rules/gb-mo
 - **Reproducible random sampling**: Hourly availability realisation uses fixed random seeds per zone to ensure model results are reproducible across runs
 - **Cumulative commissioning**: Interconnector capacities are accumulated forward in time — a project appearing in any year's plan remains active for all later years
 - **Country scope filtering**: Interconnectors to countries not in the ``countries`` list are excluded; the model logs excluded projects at INFO level
+- **No new intra-GB lines**: No additional AC transmission lines are assumed in future years; only the existing OSM topology is used. This is acceptable because the model constrains intra-GB power flows via boundary transfer capabilities rather than individual line ratings
+- **Interconnector onshoring locations**: The lat/lon of each interconnector's GB connection point is based on a best-guess interpretation of substation names in public project documentation
+- **Interconnector capacity plan**: The mapping of FES scenarios to specific projects and commissioning years is a best-guess derived by comparing cumulative interconnector capacities against the FES headline figures — see `our interconnector GitHub issue <https://github.com/open-energy-transition/gb-dispatch-model/issues/232>`_ for details
 
 .. _transmission-offshore-busmap:
 
@@ -224,9 +297,9 @@ Monthly availability fractions are derived separately for intra-GB lines and cro
 
 **Intra-GB (NGET, SPTL, SHETL)**:
 
-Zone-level unavailability fractions are averaged over the configured report years and applied uniformly to all lines within each zone.
-The monthly mean is then converted to an hourly ``0/1`` availability series by random sampling: for each month, a fraction of hours equal to the mean unavailability is drawn at random (using a fixed seed per zone for reproducibility) and marked as unavailable.
-The complement gives the effective hourly ``s_nom_pu`` applied to lines in that zone.
+Zone-level unavailability fractions are averaged over the configured report years.
+The monthly mean is converted to an hourly ``0/1`` availability series by random sampling: for each month, a fraction of hours equal to the mean unavailability is drawn at random (using a fixed seed per zone for reproducibility) and marked as unavailable.
+This series is currently processed but not applied to individual line ratings; the intended use is to reduce boundary transfer capabilities rather than individual line ``s_nom`` values, consistent with how the model constrains intra-GB flows via boundary MW limits.
 
 **Cross-border interconnectors**:
 
