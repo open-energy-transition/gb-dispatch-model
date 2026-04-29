@@ -110,89 +110,50 @@ PHS for European countries is handled entirely through the ``attach_hydro`` PyPS
 System Components
 =================
 
-.. _storage-battery:
+All three active storage types are modelled as PyPSA ``StorageUnit`` components.
+Hydrogen storage is documented separately in :doc:`hydrogen_overview`.
 
-Battery Storage
----------------
+.. list-table::
+   :header-rows: 1
+   :stub-columns: 1
+   :widths: 20 26 27 27
 
-**PyPSA Component**: ``StorageUnit`` attached to the regional AC bus
-
-Grid-scale battery storage is added to every model region that has non-zero battery capacity in the powerplants table for the given scenario and year.
-
-**Power capacity** (``p_nom``):
-
-``p_nom`` is taken from the powerplants table (``carrier = "battery"``, ``set = "Store"``), derived from FES BB1 for GB regions and from the PyPSA-Eur powerplant database for European regions.
-
-**Energy capacity** (``e_nom``) and storage duration:
-
-The maximum storage duration follows directly:
-
-.. math::
-
-   \text{max_hours} = \frac{e_\text{nom}}{p_\text{nom}}
-
-**Efficiency**:
-
-Round-trip efficiency is split equally between charging and discharging, so that the product recovers the configured cycle efficiency :math:`\eta`:
-
-.. math::
-
-   \eta_\text{store} = \eta_\text{dispatch} = \sqrt{\eta}
-
-**Other parameters**:
-
-- ``cyclic_state_of_charge = True`` — the state of charge at the end of each optimisation period must equal the state at the start
-- ``p_nom_extendable = False`` — capacity is fixed; the model cannot invest in additional storage
-- ``capital_cost = 0`` — existing capacity is treated as a sunk cost; only dispatch costs are optimised
-- Marginal costs (fuel and variable O&M) are assigned from the FES costing workbook via the powerplants enrichment pipeline
-
-.. _storage-phs:
-
-Pumped Hydro Storage (PHS)
---------------------------
-
-**PyPSA Component**: ``StorageUnit`` added via the PyPSA-Eur ``attach_hydro`` function
-
-PHS is modelled as part of the hydro carrier group alongside reservoir hydro.
-The carriers included in hydro attachment are configured as:
-
-.. literalinclude:: ../../config/config.gb.2024.yaml
-   :language: yaml
-   :start-after: # [doc:renewable-hydro-config-start]
-   :end-before: # [doc:renewable-hydro-config-end]
-
-``attach_hydro`` reads:
-
-- ``p_nom`` from the powerplants table (``carrier = "PHS"``, ``set = "Store"``) — sourced from FES BB1 and DUKES
-- Energy storage volume from ``data/hydro_capacities.csv`` (PyPSA-Eur ERA5-derived hydro capacities)
-- Inflow time series from the ERA5/runoff cutout
-
-PHS units use bidirectional PyPSA ``StorageUnit`` semantics: charging pumps water uphill; discharging generates electricity.
-
-.. _storage-hydro:
-
-Reservoir Hydro
----------------
-
-**PyPSA Component**: ``StorageUnit`` added via the PyPSA-Eur ``attach_hydro`` function
-
-Reservoir hydro (``carrier = "hydro"``) is attached alongside PHS through the same ``attach_hydro`` call.
-Like PHS, it is represented as a ``StorageUnit`` — energy is stored as water in the reservoir and discharged on demand, subject to an ERA5-derived inflow time series that fills the reservoir over time.
-
-``attach_hydro`` reads:
-
-- ``p_nom`` from the powerplants table (``carrier = "hydro"``) — sourced from the PyPSA-Eur powerplant database for European countries
-- ``max_hours`` derived from the ``E_store[TWh]`` column in ``data/hydro_capacities.csv``, distributed across plants in each country in proportion to their ``p_nom``
-- Inflow time series from the ERA5/runoff cutout, scaled by each plant's share of national ``p_nom``
-
-Unlike PHS, reservoir hydro cannot pump (``p_min_pu = 0``); it can only discharge.
-
-.. _storage-hydrogen:
-
-Hydrogen Storage
-----------------
-
-Hydrogen storage is part of the hydrogen subsystem and is documented in :doc:`hydrogen_overview`.
+   * - Attribute
+     - Battery
+     - PHS
+     - Reservoir Hydro
+   * - **Carrier**
+     - ``battery``
+     - ``PHS``
+     - ``hydro``
+   * - **p_nom source**
+     - Powerplants table — FES BB1 (GB), FES ES2 (EUR)
+     - Powerplants table — FES BB1 + DUKES (GB); ``hydro_capacities.csv`` (EUR)
+     - Powerplants table — PyPSA-Eur powerplant database
+   * - **e_nom / max_hours source**
+     - FES FLX1 national total distributed by regional ``p_nom`` share (GB); GB mean ratio applied to EUR ``p_nom``
+     - Powerplants table; defaults to 6 h when missing
+     - Derived from ``E_store[TWh]`` in ``hydro_capacities.csv``, distributed across plants by ``p_nom`` share per country
+   * - **Inflow time series**
+     - —
+     - — (no natural inflow assumed)
+     - ERA5/runoff cutout, scaled by plant share of national ``p_nom``
+   * - **Efficiency** (store / dispatch)
+     - :math:`\sqrt{\eta}` / :math:`\sqrt{\eta}`
+     - :math:`\sqrt{\eta_\text{PHS}}` / :math:`\sqrt{\eta_\text{PHS}}`
+     - —
+   * - **Bidirectional**
+     - Yes
+     - Yes — pumping (store) and generation (dispatch)
+     - No — discharge only
+   * - **cyclic_state_of_charge**
+     - Yes
+     - Yes
+     - Yes
+   * - **p_nom_extendable**
+     - No
+     - No
+     - No
 
 
 .. _storage-config:
