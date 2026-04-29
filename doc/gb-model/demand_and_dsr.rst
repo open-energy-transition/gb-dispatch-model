@@ -4,9 +4,9 @@
 
 .. _demand_and_dsr:
 
-##########################
+############################################
 Baseline demand & demand-side response (DSR)
-##########################
+############################################
 
 Overview
 ========
@@ -25,6 +25,7 @@ The model includes the following demand sectors with DSR capabilities:
 4. **I&C Heat** - Electricity demand for industrial and commercial heating systems
 5. **EV Charging** - Electric vehicle charging demand
 6. **Additional Demand** - Other electricity demand not captured in the above categories (e.g., direct transmission demand, T&D losses)
+
 
 Model Representation
 --------------------
@@ -54,7 +55,8 @@ The DSR implementation for each demand type (residential, I&C, EV and heat) foll
   }
 
 "Sector" refers to the specific demand sector being modeled (e.g., residential, I&C, EV, heat or hydrogen).
-Whilst the general structure is consistent across demand types, some extra components are added for specific sectors which can be found in the corresponding documentation sections (e.g., EV charging includes additional V2G storage components).
+Whilst the general structure is consistent across demand types, some extra components are added for specific sectors which can be found in the corresponding documentation sections (see :doc:`ev`, :doc:`heat_system`, :doc:`hydrogen_overview`).
+
 Data Sources
 ============
 
@@ -99,6 +101,13 @@ Specific data requirements are explained in detail in the corresponding sections
 Configuration
 =============
 
+The electricity demands are configured under the ``fes.gb.demand`` section:
+
+.. literalinclude:: ../../config/config.gb.2024.yaml
+   :language: yaml
+   :start-after: # [doc:demand-start]
+   :end-before: # [doc:demand-end]
+
 DSR is configured in the model configuration files under the ``fes.gb.flexibility`` section:
 
 .. literalinclude:: ../../config/config.gb.2024.yaml
@@ -121,6 +130,17 @@ The representation of each demand sector is illustrated in the :ref:`_model_repr
 
 Implementation Notes
 ====================
+
+Baseline electricity demand generation
+-------------------------------------
+
+Baseline electricity demand is built from a combination of historic demand shapes obtained from the PyPSA-Eur workflow and annual demand totals from the FES workbook:
+
+- Historic hourly demand shapes are derived from the PyPSA-Eur default baseline electricity demand timeseries (via `electricity_demand_base_s.nc`) and clustered to the gb-model bus layout using `cluster_baseline_electricity_demand_timeseries.py`.
+- The resulting clustered profile has estimated historical resistive heater demand removed so that resistive heating is not double counted with dedicated heat demand processing.
+- Normalized demand shapes are then created by region and year using `process_baseline_demand_shape.py`.
+- The normalized shapes are scaled to annual baseline electricity demand totals from FES and European neighbour demand totals in `scaled_demand_profile.py`.
+- Lastly, extra demand from the FES workbook is added as a static load (extra I&C load) and T&D losses are included as a profile proportional to the base electricity demand profile without losses. 
 
 DSR Parameters
 --------------
