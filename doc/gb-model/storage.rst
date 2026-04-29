@@ -115,19 +115,6 @@ Grid-scale battery storage is added to every model region that has non-zero batt
 
 **Energy capacity** (``e_nom``) and storage duration:
 
-Total GB battery energy capacity from FES FLX1 (GWh → MWh) is distributed to model regions in proportion to the regional ``p_nom`` fractions:
-
-.. math::
-
-   e_\text{nom,r} = E_\text{total} \times \frac{p_\text{nom,r}}{\sum_r p_\text{nom,r}}
-
-For European regions, the mean GB ratio is applied to each European battery ``p_nom``:
-
-.. math::
-
-   e_\text{nom,r}^\text{EUR} = \bar{\rho} \times p_\text{nom,r}^\text{EUR}, \qquad
-   \bar{\rho} = \overline{\left(\frac{e_\text{nom}}{p_\text{nom}}\right)}_\text{GB}
-
 The maximum storage duration follows directly:
 
 .. math::
@@ -223,7 +210,9 @@ The storage system is built through a pipeline implemented in ``rules/gb-model/s
    The graph above was generated using::
 
       pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/regional_battery_storage_capacity_inc_eur.csv" \
+      "resources/GB/gb-model/HT/regional_battery_storage_capacity_inc_eur.csv
+      resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv
+      resources/GB/gb-model/HT/fes_powerplants_inc_tech_data.csv" \
       "doc/gb-model/img/storage_workflow.svg" \
       "-w fes_scenario -w year" \
       "-s 10,8" \

@@ -803,9 +803,9 @@ fes:
       losses_data_item:
       - "GBFES System Losses: Distribution"
       - "GBFES System Losses: Transmission"
+    # [doc:storage-battery-flx1-config-start]
     flexibility:
       carrier_mapping:
-        # [doc:storage-battery-flx1-config-start]
         battery:
           Data item: "Electricity storage energy storage potential"
           Detail: "Battery"
