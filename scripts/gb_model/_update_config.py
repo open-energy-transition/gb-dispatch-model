@@ -430,8 +430,13 @@ class FESGBConfig(GBBaseConfig):
         default_factory=dict,
     )
     BB2_to_ES1_mapping: dict[str, list[str]] = Field(
-        description="Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+        description="Set mappings based on values in different columns. "
+        "Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
         default_factory=dict,
+    )
+    BB1_ES1_mismatch_percentage: float = Field(
+        description="Mismatch percentage allowed between total capacity of a technology in BB1 and ES1 sheet",
+        default_factory=float,
     )
     tech_max_hours: list[str] = Field(
         description="Technology list for which to compute max storage hours",

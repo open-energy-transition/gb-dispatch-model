@@ -258,6 +258,7 @@ def assign_technical_and_costs_defaults(
     costs_config: dict[str, dict],
     fes_scenario: str,
     data_file: str,
+    max_hours_path: str,
 ) -> pd.DataFrame:
     """
     Enrich powerplants dataframe with cost and technical parameters.
@@ -270,6 +271,7 @@ def assign_technical_and_costs_defaults(
         costs_config: Configuration dict containing mappings and conversion rates
         fes_scenario: FES scenario name (e.g., "leading the way")
         data_file: Data file identifier
+        max_hours_path: Path to max hours CSV file
 
     Returns:
         Enriched powerplants DataFrame with efficiency, marginal_cost, VOM, fuel,
@@ -284,6 +286,7 @@ def assign_technical_and_costs_defaults(
         6. Integrate FES carbon costs
         7. Calculate marginal_cost from VOM, fuel, efficiency, CO2 intensity, and carbon_cost
         8. Create unique index (bus carrier-year-idx)
+        9. Integrate max hours for storage technologies
     """
     # Load powerplant data
     df = pd.read_csv(ppl_path).assign(**costs_config["add_cols"][data_file])
@@ -310,6 +313,11 @@ def assign_technical_and_costs_defaults(
     # Add country columns
     df["country"] = df["bus"].str[:2]
 
+    # Integrate max_hours
+    df_max_hours = pd.read_csv(max_hours_path)
+    df_max_hours.rename(columns={"SubType": "carrier"}, inplace=True)
+    df = pd.merge(df, df_max_hours, on=["carrier", "year"], how="left")
+
     # Create unique index: "bus carrier-year-idx"
     df["idx_counter"] = df.groupby(["bus", "carrier", "year"]).cumcount()
     df["name"] = (
@@ -325,6 +333,7 @@ def assign_technical_and_costs_defaults(
 
     # PyPSA-Eur expects 'capital_cost' column name even though source technology data uses 'investment'
     df = df.rename(columns={"investment": "capital_cost"})
+
     return df
 
 
@@ -355,6 +364,7 @@ if __name__ == "__main__":
         costs_config=costs_config,
         fes_scenario=fes_scenario,
         data_file=snakemake.wildcards.data_file,
+        max_hours_path=snakemake.input.max_hours,
     )
     logger.info("Enriched powerplants with cost and technical parameters")
 

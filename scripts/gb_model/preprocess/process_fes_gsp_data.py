@@ -13,7 +13,6 @@ import logging
 from pathlib import Path
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
 
 from scripts._helpers import configure_logging, set_scenario_config
@@ -205,6 +204,7 @@ def split_technologies(
     technology_mapping: dict,
     fes_scenario: str,
     year_range: list[int],
+    allowed_mismatch: float,
 ) -> pd.DataFrame:
     """
     To split technologies based on subtypes present in ES1 sheet of the FES workbook
@@ -221,6 +221,8 @@ def split_technologies(
         FES scenario
     year_range: list[int]
         Year range of the simulation
+    allowed_mismatch: float
+        Mismatch in total capacity values between the BB1 and ES1 sheet entries for a technology
     """
 
     # Filter ES1 sheet
@@ -230,98 +232,72 @@ def split_technologies(
         & (df_es1["Variable"] == "Capacity (MW)")
     ]
 
+    df_with_regions_updated = df_with_regions.copy()
     # Iterate through the technologies with more subtypes in ES1 sheet
     for tech in technology_mapping.keys():
-        df_tech = df_with_regions.loc[df_with_regions.Technology == tech]
+        df_tech = df_with_regions.query("Technology == @tech")
         if df_tech.empty:
-            df_tech = df_with_regions.loc[df_with_regions["Technology Detail"] == tech]
+            df_tech = df_with_regions.query("`Technology Detail` == @tech")
 
         if df_tech.empty:
             logger.error(
                 f"Technology {tech} does not exist in the BB1 workbook sheet. Recheck the mapping of the technologies"
             )
-        else:
-            df_es1_tech = pd.DataFrame(
-                df_es1_reqd[df_es1_reqd["SubType"].isin(technology_mapping[tech])]
-                .groupby(["SubType", "year"])["data"]
-                .sum()
+
+        mapped_tech = technology_mapping[tech]
+
+        if not set(mapped_tech).issubset(df_es1_reqd["SubType"]):
+            logger.error(
+                f"One/more technologies in {mapped_tech} might not match with the SubType technology list in the ES1 workbook sheet."
             )
 
-            # Calculate %share of each technology subtype for every year
-            df_es1_tech["pct"] = df_es1_tech["data"] / df_es1_tech.groupby("year")[
-                "data"
-            ].transform("sum")
+        df_es1_tech = pd.DataFrame(
+            df_es1_reqd.query("SubType in @tech", local_dict={"tech": mapped_tech})
+            .groupby(["SubType", "year"])["data"]
+            .sum()
+        )
 
-            # Merge the original dataframe indexed from BB1 sheet and the data from ES1 sheet
-            df_tech = df_tech.merge(df_es1_tech.reset_index(), on="year")
+        # Calculate %share of each technology subtype for every year
+        df_es1_tech["pct"] = (
+            df_es1_tech["data"] / df_es1_tech.groupby("year")["data"].sum()
+        )
 
-            # Multiply the regional data with the percentage share of the technology subtype
-            df_tech["data"] = df_tech["data_x"].mul(df_tech["pct"]).replace(np.nan, 0)
-            df_tech["Technology"] = df_tech["SubType"]
+        # Merge the original dataframe indexed from BB1 sheet and the data from ES1 sheet
+        df_tech = df_tech.merge(df_es1_tech.reset_index(), on="year")
 
-            # Scaling factor to scale the mismatch in total capacity values in BB1 and ES1 sheet
-            # The factor scales the values to match the value in the ES1 sheet
-            scaling_factor = (
-                df_es1_tech.groupby("year")["data"].sum()
-                / df_tech.groupby("year")["data"].sum()
-            )
-            scaling_factor.name = "scaling_factor"
-            df_tech = df_tech.merge(scaling_factor, on="year")
+        # Multiply the regional data with the percentage share of the technology subtype
+        df_tech["data"] = df_tech["data_x"].mul(df_tech["pct"])
+        df_tech["Technology"] = df_tech["SubType"]
 
-            df_tech["data"] = (
-                df_tech["data"].mul(df_tech["scaling_factor"]).replace(np.nan, 0)
-            )
+        # Scaling factor to scale the mismatch in total capacity values in BB1 and ES1 sheet
+        # The factor scales the values to match the value in the ES1 sheet
+        es1_grouped = df_es1_tech.groupby("year")["data"].sum()
+        tech_grouped = df_tech.groupby("year")["data"].sum()
 
-            # Calculate % diff in the total capacity of the technology
-            df_diff = (
-                (
-                    df_es1_tech.groupby("year")["data"].sum()
-                    - df_tech.groupby("year")["data"].sum()
-                )
-                * 100
-                / df_es1_tech.groupby("year")["data"].sum()
-            )
+        # Calculate % diff in the total capacity of the technology
+        df_diff = (es1_grouped - tech_grouped) * 100 / es1_grouped
 
-            logger.info(
+        if df_diff.mean() > allowed_mismatch:
+            logger.warning(
                 f"The percentage difference in capacity data for the {tech}, indexed by year in ES1 and BB1 sheet is {df_diff}"
             )
 
-            df_with_regions = pd.concat(
-                [
-                    df_with_regions.query("Technology != @tech"),
-                    df_tech.drop(
-                        ["data_x", "data_y", "pct", "SubType", "scaling_factor"], axis=1
-                    ),
-                ]
-            )
+        scaling_factor = es1_grouped / tech_grouped
+        scaling_factor.name = "scaling_factor"
+        df_tech = df_tech.merge(scaling_factor, on="year")
 
-    return df_with_regions
+        df_tech["scaled_data"] = df_tech["data"].mul(df_tech["scaling_factor"])
 
+        df_tech["data"] = df_tech["scaled_data"]
 
-def get_max_hours(df_es1: pd.DataFrame, tech_max_hours: list[str]) -> pd.DataFrame:
-    df_es1_reqd = df_es1[
-        (df_es1["Pathway"].str.lower() == fes_scenario.lower())
-        & (
-            df_es1["year"].between(
-                snakemake.params.year_range[0],
-                snakemake.params.year_range[1],
-                inclusive="both",
-            )
+        df_with_regions_updated = pd.concat(
+            [
+                df_with_regions_updated.query("Technology != @tech"),
+                df_tech[df_with_regions_updated.columns],
+            ]
         )
-    ]
-    df_es1_grouped = (
-        df_es1_reqd.query("SubType in @tech_max_hours")
-        .groupby(["SubType", "year", "Variable"])
-        .data.sum()
-    )
-    df_es1_unstacked = df_es1_grouped.unstack("Variable")
-    df_max_hours = (
-        df_es1_unstacked["Storage Capacity (GWh)"]
-        / df_es1_unstacked["Capacity (MW)"]
-        * 1000
-    )
-    df_max_hours.name = "max_hours"
-    return df_max_hours
+
+    return df_with_regions_updated
 
 
 if __name__ == "__main__":
@@ -382,16 +358,10 @@ if __name__ == "__main__":
         technology_mapping=snakemake.params.bb2_es1_mapping,
         fes_scenario=fes_scenario,
         year_range=snakemake.params.year_range,
+        allowed_mismatch=snakemake.params.allowed_mismatch,
     )
 
     df_with_regions_updated.to_csv(snakemake.output.csv, index=False)
     logger.info(
         f"Exported processed GSP-level powerplant information to {snakemake.output.csv}"
     )
-
-    df_max_hours = get_max_hours(
-        df_es1=df_es1, tech_max_hours=snakemake.params.tech_max_hours
-    )
-
-    df_max_hours.to_csv(snakemake.output.max_hours)
-    logger.info(f"Exported max_hours information to {snakemake.output.max_hours}")

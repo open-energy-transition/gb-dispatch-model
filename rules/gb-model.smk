@@ -32,6 +32,7 @@ rule compose_network:
         load_bus_suffixes=config["fes"]["gb"]["demand"]["bus_suffix"],
         flex_carrier_suffixes=config["fes"]["gb"]["flexibility"]["carrier_suffix"],
         time_aggregation=config["time_aggregation"],
+        storage_list=config["fes"]["gb"]["BB2_to_ES1_mapping"]["Other"],
     input:
         unpack(input_profile_tech),
         demands=expand(
@@ -60,7 +61,6 @@ rule compose_network:
         tech_costs=Path(COSTS_DATASET["folder"])
         / f"costs_{config['scenario']['planning_horizons'][0]}.csv",
         hydro_capacities=ancient("data/hydro_capacities.csv"),
-        max_hours_path=resources("gb-model/{fes_scenario}/max_hours.csv"),
         chp_p_min_pu=resources("gb-model/chp_p_min_pu.csv"),
         interconnectors_p_nom=resources(
             "gb-model/{fes_scenario}/interconnectors_p_nom.csv"

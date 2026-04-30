@@ -977,7 +977,7 @@ def add_battery_storage(
         logger.info(f"No battery storage data found for year {year}")
         return
 
-    max_hours = all_data_battery.e_nom / all_data_battery.p_nom
+    max_hours = ppl_battery["max_hours"]
     n.add("Carrier", "Battery Storage")
     n.add(
         "StorageUnit",
@@ -996,7 +996,7 @@ def add_battery_storage(
     )
 
 
-def add_other_storage(n: pypsa.Network, ppl: pd.DataFrame, tech_list: dict) -> None:
+def add_other_storage(n: pypsa.Network, ppl: pd.DataFrame, storage_list: dict) -> None:
     """
     Add other storage (Compressed and Liquid Air) to the network.
 
@@ -1006,11 +1006,11 @@ def add_other_storage(n: pypsa.Network, ppl: pd.DataFrame, tech_list: dict) -> N
         The PyPSA network to attach the battery storage to.
     ppl : pd.DataFrame
         DataFrame containing the power plant data.
-    tech_list: list
+    storage_list: list
         List of technologies to be added as storage units
     """
 
-    for carr in list(tech_list):
+    for carr in list(storage_list):
         ppl_storage = ppl[ppl.carrier == carr]
 
         max_hours = ppl_storage["max_hours"]
@@ -1295,7 +1295,7 @@ def compose_network(
     flex_carrier_suffixes: dict[str, str],
     time_aggregation: list[dict],
     year: int,
-    max_hours_path: str,
+    storage_list: list[str],
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -1348,8 +1348,8 @@ def compose_network(
         Whether to enable CHP constraints
     year: int
         Modelling year
-    max_hours_path: str
-        Path to max hours data
+    storage_list: list[str]
+        List of storage technologies
     """
     network = pypsa.Network(network_path)
     max_hours = electricity_config["max_hours"]
@@ -1360,14 +1360,6 @@ def compose_network(
 
     # Load FES powerplants data (already enriched with costs from create_powerplants_table)
     ppl = _load_powerplants(powerplants_path, year)
-    df_max_hours = pd.read_csv(max_hours_path).query("year == @year")
-    max_hours_dict = dict(df_max_hours[["SubType", "max_hours"]].values)
-    ppl.loc[ppl["country"] == "GB", "max_hours"] = (
-        ppl.loc[ppl["country"] == "GB"]["carrier"]
-        .map(max_hours_dict)
-        .replace(np.nan, 0)
-        .tolist()
-    )
 
     # Define costs file
     costs = _prepare_costs(ppl, year)
@@ -1436,7 +1428,7 @@ def compose_network(
     )
 
     add_battery_storage(network, ppl, battery_e_nom_path, year)
-    add_other_storage(network, ppl, max_hours_dict.keys())
+    add_other_storage(network, ppl, storage_list)
 
     _add_generator_availability(network, generator_availability_path)
     add_load_shedding(network, voll)
@@ -1490,5 +1482,5 @@ if __name__ == "__main__":
         flex_carrier_suffixes=snakemake.params.flex_carrier_suffixes,
         time_aggregation=snakemake.params.time_aggregation,
         year=int(snakemake.wildcards.year),
-        max_hours_path=snakemake.input.max_hours_path,
+        storage_list=snakemake.params.storage_list,
     )

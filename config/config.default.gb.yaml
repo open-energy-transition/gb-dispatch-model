@@ -1570,6 +1570,7 @@ fes:
     carrier_mapping: {}
     set_mapping: {}
     BB2_to_ES1_mapping: {}
+    BB1_ES1_mismatch_percentage: 0.0
     tech_max_hours: []
     demand:
       Technology Detail: {}

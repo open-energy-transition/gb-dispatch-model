@@ -2928,6 +2928,10 @@
               "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
               "type": "object"
             },
+            "BB1_ES1_mismatch_percentage": {
+              "description": "Mismatch percentage allowed between total capacity of a technology in BB1 and ES1 sheet",
+              "type": "number"
+            },
             "tech_max_hours": {
               "description": "Technology list for which to compute max storage hours",
               "items": {
@@ -3443,6 +3447,10 @@
           },
           "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
           "type": "object"
+        },
+        "BB1_ES1_mismatch_percentage": {
+          "description": "Mismatch percentage allowed between total capacity of a technology in BB1 and ES1 sheet",
+          "type": "number"
         },
         "tech_max_hours": {
           "description": "Technology list for which to compute max storage hours",
@@ -16488,6 +16496,10 @@
               },
               "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
               "type": "object"
+            },
+            "BB1_ES1_mismatch_percentage": {
+              "description": "Mismatch percentage allowed between total capacity of a technology in BB1 and ES1 sheet",
+              "type": "number"
             },
             "tech_max_hours": {
               "description": "Technology list for which to compute max storage hours",

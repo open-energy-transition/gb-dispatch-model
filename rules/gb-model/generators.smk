@@ -74,6 +74,7 @@ rule assign_costs:
         fes_power_costs=resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
         fes_carbon_costs=resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
         fes_powerplants=resources("gb-model/{fes_scenario}/{data_file}.csv"),
+        max_hours=resources("gb-model/{fes_scenario}/max_hours.csv"),
     output:
         enriched_powerplants=resources(
             "gb-model/{fes_scenario}/{data_file}_inc_tech_data.csv"

@@ -196,7 +196,7 @@ fes_costs:
       engine CHP: central gas CHP
       geothermal PP: geothermal
       hydrogen turbine PP: CCGT
-      hydrogen turbine CHP: central hydrogen CHP
+      hydrogen turbine CHP CHP: central hydrogen CHP
       hydrogen fuel cell PP: fuel cell
       nuclear PP: nuclear
       offwind PP: offwind
@@ -225,7 +225,7 @@ fes_costs:
     hydro PP: Hydro-Hydro
     hydrogen turbine PP: Low Carbon-Hydrogen
     hydrogen fuel cell PP: Storage-Fuel Cells
-    hydrogen turbine CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
+    hydrogen turbine CHP CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
     marine PP: Marine-Marine
     OCGT PP: Gas-OCGT
     OCGT CHP: Gas-Gas CHP
@@ -236,7 +236,7 @@ fes_costs:
     PHS Store: Storage-Pumped Hydro
     solar PP: Solar-Solar PV
     waste PP: Waste-Waste
-    waste CHP: Waste-Waste CHP
+    waste CHP CHP: Waste-Waste CHP
     CCS Gas PP: CCS-CCS Gas
     Compressed Air Store: Storage-Compressed Air
     Liquid Air Store: Storage-Liquid Air
@@ -254,10 +254,10 @@ fes_costs:
     OCGT CHP: Gas-GT CHP
     hydrogen turbine PP: Low Carbon-Hydrogen
     hydrogen fuel cell PP: Storage-Fuel Cells
-    hydrogen turbine CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
+    hydrogen turbine CHP CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
     oil PP: Gasoil-Steam Oil
     waste PP: WoodPellets-Waste
-    waste CHP: Gas-Waste CHP
+    waste CHP CHP: Gas-Waste CHP
     CCS Gas PP: CCSGas-CCS Gas
 
   voll: 6000 #£/MWh - based on `value_of_lost_load` from (https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf)
@@ -304,7 +304,7 @@ electricity:
   extendable_carriers:
     Generator: []
     Store: []
-  conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass, CCS Gas, Biomass CHP, CCS Biomass]
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass, CCS Gas, Biomass CHP, CCS Biomass, Waste CHP]
   renewable_carriers: [solar, onwind, offwind-dc, hydro]
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
@@ -771,13 +771,19 @@ fes:
         Nuclear - SMR: nuclear
         Compressed Air: Compressed Air
         Liquid Air: Liquid Air
+        Hydrogen: hydrogen turbine
+        Hydrogen CHP: hydrogen turbine CHP
+        Waste: waste
+        Waste CHP: waste CHP
       Technology Detail:
         Domestic Batteries (G98): battery
         Batteries: battery
+        Battery: battery
         Pumped Hydro: PHS # FIXME: should this be just "hydro?"
         Offshore Wind: offwind-dc
         Onshore Wind <1MW: onwind
         Onshore Wind >=1MW: onwind
+
 
 
     set_mapping:
@@ -790,12 +796,17 @@ fes:
         Hydrogen CHP: CHP
         Compressed Air: Store
         Liquid Air: Store
+        Waste CHP: CHP
+        Hydrogen CHP: CHP
 
     BB2_to_ES1_mapping:
       CCGTs (non CHP): ["CCGT", "CCS Gas"]
       Biomass & Energy Crops (including CHP): ["Biomass", "CCS Biomass", "Biomass CHP"]
       Nuclear: ["Nuclear - Large", "Nuclear - SMR"]
       Other: ["Liquid Air", "Compressed Air"]
+      Hydrogen fuelled generation: ["Hydrogen", "Hydrogen CHP"]
+      Waste Incineration (including CHP): ["Waste", "Waste CHP"]
+    BB1_ES1_mismatch_percentage: 5
 
     demand:
       Technology Detail:
@@ -864,7 +875,7 @@ fes:
         residential_heat: " Residential Heat DSR"
         iandc_heat: " I&C Heat DSR"
       v2g_storage_to_capacity_ratio: 7.14 # based on ratio in FES 2021. Same value will be applied to all future years.
-    tech_max_hours: ['Compressed Air', 'Liquid Air']
+    tech_max_hours: ['Compressed Air', 'Liquid Air', "Battery", "Pumped Hydro"]
 
     regional_distribution_reference:
       ev_dsr:
