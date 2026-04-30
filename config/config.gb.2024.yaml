@@ -767,7 +767,7 @@ fes:
         Storage: Store
     # [doc:fes-gb-set-mapping-end]
 
-
+    # [doc:demand-start]
     demand:
       Technology Detail:
         baseline_electricity: ["baseline demand"]
@@ -799,6 +799,8 @@ fes:
       losses_data_item:
       - "GBFES System Losses: Distribution"
       - "GBFES System Losses: Transmission"
+    # [doc:demand-end]
+
     # [doc:flexibility-start]
     flexibility:
       carrier_mapping:
