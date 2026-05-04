@@ -309,7 +309,7 @@ electricity:
   extendable_carriers:
     Generator: []
     Store: []
-  conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass, CCS Gas, Biomass CHP, CCS Biomass, Waste CHP]
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass]
   renewable_carriers: [solar, onwind, offwind-dc, hydro]
 # [doc:electricity-config-end]
 
@@ -775,18 +775,18 @@ fes:
         Solar Generation: solar
         Waste Incineration (including CHP): waste
         CCGT: CCGT
-        CCS Gas: CCS Gas
+        CCS Gas: CCGT
         Biomass: biomass
-        Biomass CHP: Biomass CHP
-        CCS Biomass: CCS Biomass
+        Biomass CHP: biomass
+        CCS Biomass: biomass
         Nuclear - Large: nuclear
         Nuclear - SMR: nuclear
         Compressed Air: Compressed Air
         Liquid Air: Liquid Air
         Hydrogen: hydrogen turbine
-        Hydrogen CHP: hydrogen turbine CHP
+        Hydrogen CHP: hydrogen turbine
         Waste: waste
-        Waste CHP: waste CHP
+        Waste CHP: waste
       Technology Detail:
         Domestic Batteries (G98): battery
         Batteries: battery
@@ -796,28 +796,20 @@ fes:
         Onshore Wind <1MW: onwind
         Onshore Wind >=1MW: onwind
 
-<<<<<<< HEAD
-
-
-=======
     # [doc:fes-gb-set-mapping-start]
->>>>>>> origin/master
     set_mapping:
       Technology:
         Biomass & Energy Crops (including CHP): CHP
         Waste Incineration (including CHP): CHP
         Non-renewable CHP: CHP
         Storage: Store
-<<<<<<< HEAD
         Biomass CHP: CHP
         Hydrogen CHP: CHP
         Compressed Air: Store
         Liquid Air: Store
         Waste CHP: CHP
         Hydrogen CHP: CHP
-=======
     # [doc:fes-gb-set-mapping-end]
->>>>>>> origin/master
 
     BB2_to_ES1_mapping:
       CCGTs (non CHP): ["CCGT", "CCS Gas"]
