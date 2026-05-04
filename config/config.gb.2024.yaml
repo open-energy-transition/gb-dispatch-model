@@ -95,10 +95,12 @@ clustering:
 # see https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal for options
 time_aggregation: []
 
+# [doc:renewable-hydro-config-start]
 renewable:
   hydro:
     cutout: default
     carriers: [PHS, hydro]
+# [doc:renewable-hydro-config-end]
 
 conventional:
   nuclear:
@@ -211,6 +213,7 @@ fes_costs:
       hydrogen Store: hydrogen storage tank type 1 including compressor
       electrolysis Other: electrolysis
 
+  # [doc:fes-vom-config-start]
   fes_VOM_carrier_mapping:
     battery Store: Storage-Battery
     biomass PP: Biomass-Biomass
@@ -240,6 +243,7 @@ fes_costs:
     CCS Gas PP: CCS-CCS Gas
     Compressed Air Store: Storage-Compressed Air
     Liquid Air Store: Storage-Liquid Air
+  # [doc:fes-vom-config-end]
   fes_fuel_carrier_mapping:
     biomass PP: Biomass-Biomass
     Biomass CHP CHP: Biomass-Biomass CHP
@@ -297,6 +301,7 @@ solving:
       run_crossover: 'off'
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
+# [doc:electricity-config-start]
 electricity:
   voltages: [132, 220., 275., 300., 330., 380., 400., 500., 750.]
   base_network: osm
@@ -306,6 +311,7 @@ electricity:
     Store: []
   conventional_carriers: [nuclear, oil, OCGT, CCGT, engine, coal, waste, geothermal, biomass, CCS Gas, Biomass CHP, CCS Biomass, Waste CHP]
   renewable_carriers: [solar, onwind, offwind-dc, hydro]
+# [doc:electricity-config-end]
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#electricity
 lines:
@@ -314,11 +320,13 @@ lines:
 
 # Simplified CHP configuration for GB model (electricity-only)
 # CHPs are modeled as generators with minimum operation constraints based on heat demand
+# [doc:chp-config-start]
 chp:
   enable: true  # Enable simplified CHP constraints
   heat_to_power_ratio: 1.5  # Heat-to-power ratio (c_b coefficient) - typical for gas CHPs
   min_operation_level: 0.3  # Minimum operation level when running (30% of capacity)
   shutdown_threshold: 0.1  # Heat demand threshold below which CHPs can shut down completely (fraction of peak demand)
+# [doc:chp-config-end]
 
 urls:
   gb-etys-boundaries: https://api.neso.energy/dataset/997f4820-1ad4-499b-b1fe-4b8d3d7fbc72/resource/e914fcec-1dc9-4f1f-97e7-59c0d9521bea/download/etys-boundary-gis-data-mar25.zip
@@ -498,6 +506,7 @@ etys:
 
 # Note: Set ENTSO_E_API_KEY in your .env file or environment variables
 # Register at https://transparency.entsoe.eu/ to get API key
+# [doc:entsoe-unavailability-config-start]
 entsoe_unavailability:
   start_date: "2020-01-01"
   end_date: "2024-12-31"
@@ -516,7 +525,9 @@ entsoe_unavailability:
     Hydro Run-of-river and poundage: hydro
     Nuclear: nuclear
     Waste: waste
+# [doc:entsoe-unavailability-config-end]
 
+# [doc:transmission-availability-config-start]
 transmission_availability:
   years: [2020, 2021, 2022, 2023, 2024]
   intra_gb:
@@ -536,6 +547,7 @@ transmission_availability:
     SPTL: 22
     SHETL: 33
     interconnectors: 44
+# [doc:transmission-availability-config-end]
 
 dukes-5.11:
   # list of major power producers
@@ -784,20 +796,28 @@ fes:
         Onshore Wind <1MW: onwind
         Onshore Wind >=1MW: onwind
 
+<<<<<<< HEAD
 
 
+=======
+    # [doc:fes-gb-set-mapping-start]
+>>>>>>> origin/master
     set_mapping:
       Technology:
         Biomass & Energy Crops (including CHP): CHP
         Waste Incineration (including CHP): CHP
         Non-renewable CHP: CHP
         Storage: Store
+<<<<<<< HEAD
         Biomass CHP: CHP
         Hydrogen CHP: CHP
         Compressed Air: Store
         Liquid Air: Store
         Waste CHP: CHP
         Hydrogen CHP: CHP
+=======
+    # [doc:fes-gb-set-mapping-end]
+>>>>>>> origin/master
 
     BB2_to_ES1_mapping:
       CCGTs (non CHP): ["CCGT", "CCS Gas"]
@@ -839,11 +859,14 @@ fes:
       losses_data_item:
       - "GBFES System Losses: Distribution"
       - "GBFES System Losses: Transmission"
+    # [doc:storage-battery-flx1-config-start]
     flexibility:
       carrier_mapping:
+        # [doc:storage-battery-flx1-config-start]
         battery:
           Data item: "Electricity storage energy storage potential"
           Detail: "Battery"
+        # [doc:storage-battery-flx1-config-end]
         ev_v2g:
           Detail: "V2G maximum potential"
         ev_dsr:
@@ -969,6 +992,7 @@ fes:
     # This gives us slightly more realistic European marginal prices when we have load shedding.
     load_shedding_cost_above_marginal: 1
 
+# [doc:hydrogen-config-start]
   hydrogen:
     data_selection:
       networked_h2_supply:
@@ -985,6 +1009,7 @@ fes:
         - Non Networked Electricity
       storage:
         Category: storage
+# [doc:hydrogen-config-end]
 
 # [doc:ev-config-start]
 ev:
@@ -1003,6 +1028,7 @@ interconnectors:
   # Others are based on visual inspection of the TYNDP map.
 
   # Where the interconnection register provides a different import/export maximum, the value with one significant figure has been chosen (e.g. 1000 instead of 975, 700 instead of 730).
+  # [doc:interconnector-option-example-start]
   options:
   - name: Nemo
     neighbour: Belgium
@@ -1012,6 +1038,7 @@ interconnectors:
       year: [2016, 2018]
     lat: 51.31128166242589
     lon: 1.3452723677851797
+  # [doc:interconnector-option-example-end]
 
   - name: Cronos
     neighbour: Belgium
@@ -1248,6 +1275,7 @@ interconnectors:
       # https://www.nationalgrid.com/electricity-transmission/network-and-infrastructure/infrastructure-projects/creyke-beck-substation-extension
     lat: 53.81322
     lon: -0.41847
+  # [doc:interconnector-plan-start]
   plan:
     HT:
       2021: [BritNed, East-West, IFA, IFA2, NS Link (NSL), Nemo] # existing
@@ -1287,6 +1315,7 @@ interconnectors:
       2033: [NeuConnect, FAB Link] # NeuConnect could also be Aminth, Cronos, Tarchon; FAB could also be Gridlink, SENECA
       2034: [Cronos] # Could also be Aminth, NeuConnect, Tarchon
       2035: [MARES]
+  # [doc:interconnector-plan-end]
 
 
 redispatch:
