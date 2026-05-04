@@ -808,7 +808,6 @@ fes:
         Compressed Air: Store
         Liquid Air: Store
         Waste CHP: CHP
-        Hydrogen CHP: CHP
     # [doc:fes-gb-set-mapping-end]
 
     BB2_to_ES1_mapping:
