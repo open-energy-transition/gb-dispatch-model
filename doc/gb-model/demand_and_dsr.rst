@@ -11,7 +11,7 @@ Baseline demand & demand-side response (DSR)
 Overview
 ========
 
-The GB dispatch model incorporates demand-side response (DSR) capabilities across multiple demand sectors to provide flexibility in the electricity system. 
+The GB dispatch model incorporates demand-side response (DSR) capabilities across multiple demand sectors to provide flexibility in the electricity system.
 DSR allows for the shifting of electricity consumption from peak to off-peak periods, helping to balance supply and demand while reducing the need for additional generation capacity.
 
 Demand Sectors
@@ -95,7 +95,7 @@ The table below summarizes the specific sheets extracted from the FES workbook f
 European data
 ---------------
 
-For European neighbour countries included in the model, the demand data is sourced from the PyPSA-Eur workflow (via ``energy_totals.csv``). 
+For European neighbour countries included in the model, the demand data is sourced from the PyPSA-Eur workflow (via ``energy_totals.csv``).
 Specific data requirements are explained in detail in the corresponding sections of the documentation (e.g., :ref:`heat_system` uses ES2 from the FES workbook for European demand assumptions).
 
 Configuration
@@ -140,7 +140,7 @@ Baseline electricity demand is built from a combination of historic demand shape
 - The resulting clustered profile has estimated historical resistive heater demand removed so that resistive heating is not double counted with dedicated heat demand processing.
 - Normalized demand shapes are then created by region and year using `process_baseline_demand_shape.py`.
 - The normalized shapes are scaled to annual baseline electricity demand totals from FES and European neighbour demand totals in `scaled_demand_profile.py`.
-- Lastly, extra demand from the FES workbook is added as a static load (extra I&C load) and T&D losses are included as a profile proportional to the base electricity demand profile without losses. 
+- Lastly, extra demand from the FES workbook is added as a static load (extra I&C load) and T&D losses are included as a profile proportional to the base electricity demand profile without losses.
 
 DSR Parameters
 --------------
@@ -148,7 +148,7 @@ DSR Parameters
 DSR operation is controlled by several key parameters:
 
 **DSR Hours**
-  Time windows during which DSR can operate. 
+  Time windows during which DSR can operate.
 
   These time windows are not published by NESO, so we have assumed values per sector as follows:
 
@@ -161,11 +161,11 @@ DSR operation is controlled by several key parameters:
 The appropriate time zone conversions are accounted for when modelling DSR time windows for European countries.
 
 **Storage Capacity**
-  Calculated as DSR power capacity × duration hours. 
+  Calculated as DSR power capacity × duration hours.
   Represents the maximum energy that can be shifted.
 
 **Availability Profiles**
-  Time-dependent constraints on when DSR can operate. 
+  Time-dependent constraints on when DSR can operate.
   This is specific for EV DSR and is linked to vehicle availability patterns.
 
 
@@ -186,20 +186,22 @@ Data Processing Pipeline
 The demand and DSR workflow is implemented through Snakemake rules in `rules/gb-model/demand_and_dsr.smk` and Python scripts in the folder `scripts/gb_model/demand_and_dsr`.
 
 The rulegraph for the demand and DSR workflow is illustrated below:
+
 .. image:: img/demand_and_dsr.svg
-   :align: center
+    :align: center
 
 .. note::
   The graph above was generated using::
 
       pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/baseline_electricity_demand/2030.csv" \
-      "resources/GB/gb-model/HT/additional_demand/2030.csv" \
-      " resources/GB/gb-model/HT/regional_iandc_dsr_inc_eur.csv" \
-      " resources/GB/gb-model/HT/regional_residential_dsr_inc_eur.csv" \
-      "-w fes_scenario" \
-      "-w year -s 10,8 "\
-      "-f rules/gb-model/demand_and_dsr.smk"
+      "resources/GB/gb-model/HT/baseline_electricity_demand/2030.csv
+      resources/GB/gb-model/HT/additional_demand/2030.csv
+      resources/GB/gb-model/HT/regional_iandc_dsr_inc_eur.csv
+      resources/GB/gb-model/HT/regional_residential_dsr_inc_eur.csv
+      -w fes_scenario -w year
+      -f rules/gb-model/demand_and_dsr.smk
+      -s 10,12" \
+      "doc/gb-model/img/demand_and_dsr.svg"
 
   The ``filtered_rulegraph`` task allows us to trim the full DAG to `demand and DSR`` rules only.
 
@@ -217,5 +219,6 @@ The demand and DSR workflow was built based on several key processing steps as f
 
 Assumptions:
 ------------
- - DSR links operate at 100% efficiency (no losses in shifting energy).
- - DSR links and stores do not have any capital or operational costs associated with them, as the model focuses on the technical potential of DSR rather than economic optimization.
+
+- DSR links operate at 100% efficiency (no losses in shifting energy).
+- DSR links and stores do not have any capital or operational costs associated with them, as the model focuses on the technical potential of DSR rather than economic optimization.

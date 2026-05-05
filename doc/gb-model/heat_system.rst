@@ -20,7 +20,7 @@ The electrified heating system in the model is represented with three primary te
 - **Air source heat pump (ASHP)**
 - **Ground source heat pump (GSHP)**
 
-Various heating technologies such as district heating, hybrid systems (ASHP with hydrogen boiler, biofuel boiler or resistive heater), and storage heating are consolidated and mapped to one of these three primary technologies for model representation. 
+Various heating technologies such as district heating, hybrid systems (ASHP with hydrogen boiler, biofuel boiler or resistive heater), and storage heating are consolidated and mapped to one of these three primary technologies for model representation.
 This approach allows the model to capture the essential electrification pathways.
 The technology splits are sourced from the Future Energy Scenario (FES) workbook and are detailed in the :ref:`electrified_heating_technologies` section.
 
@@ -60,7 +60,7 @@ The heat system is represented in the model with the following components:
   }
 
 
-The Sector refers to either `Residential` or `I&C` depending on the demand sector being modeled. 
+The Sector refers to either `Residential` or `I&C` depending on the demand sector being modeled.
 The AC bus represents the electrical grid connection for the heat system, while the Sector Heat and Sector Heat DSR represent the heat demand and demand-side response capabilities respectively.
 
 
@@ -78,23 +78,23 @@ The GB data for the model is sourced as follows:
 3. **FES FLX1 (Flexibility)**: Annual DSR capacity for residential and I&C sectors by scenario and year (in GW, converted to MW)
 
 
-European Data 
+European Data
 -------------
 For countries outside of Great Britain, the model obtains the data from the FES workbook **ES2 (European Electricity Supply Table)**. The table provides annual electricity installed capacity and annual demand assumptions for each technology category by country.
 
-The heat demands for the European countries are calculated by scaling the annual electricity demands to match the annual heat demands as a share of the total electricity demand in GB (based on data from `energy_totals.csv`). 
+The heat demands for the European countries are calculated by scaling the annual electricity demands to match the annual heat demands as a share of the total electricity demand in GB (based on data from `energy_totals.csv`).
 
 PyPSA-Eur Data
 ----------------
 Apart from the data from FES workbook, the model also uses baseline COP profiles, district heating shares and hourly heat demand profiles from the PyPSA-Eur workflow.
 
-The COP profiles provides population-weighted COP values for ASHP and GSHP across different nodes in the network. 
+The COP profiles provides population-weighted COP values for ASHP and GSHP across different nodes in the network.
 The ASHP COP profiles are available for all geographic location types such as urban central, urban decentral and rural areas, while the GSHP COP profiles are only available for rural areas.
 
-The district heating shares are used to determine the share of heat demand that is met through district heating in the model. 
+The district heating shares are used to determine the share of heat demand that is met through district heating in the model.
 The district heating shares are applied only for GB nodes in the network and are not applied to the European countries.
 
-The hourly heat demand profiles are built using representative heat demand profiles from `BDEW`. 
+The hourly heat demand profiles are built using representative heat demand profiles from `BDEW`.
 Due to the absence of profile information in the FES workbook, this profile information is used to model heat demand profiles in the gb-dispatch-model after scaling.
 
 .. _heat_system_components:
@@ -165,14 +165,15 @@ The rulegraph for the heat system is illustrated below, showing the key processi
    :align: center
 
 .. note::
-    The graph above was generated using::
+   The graph above was generated using::
 
-    pixi run filtered_rulegraph \
-    "resources/GB/gb-model/HT/residential_heat_demand/2030.csv \
-    resources/GB/gb-model/HT/iandc_heat_demand/2030.csv" \
-    "-w fes_scenario" \
-    "-w year -s 10,8" \
-    "-f rules/gb-model/heat.smk"
+      pixi run filtered_rulegraph \
+      "resources/GB/gb-model/HT/residential_heat_demand/2030.csv
+      resources/GB/gb-model/HT/iandc_heat_demand/2030.csv
+      -w fes_scenario -w year
+      -f rules/gb-model/heat.smk
+      -s 10,8" \
+      "doc/gb-model/img/heat_workflow.svg"
 
 The ``filtered_rulegraph`` task allows us to trim the full DAG to heat system related rules only.
 

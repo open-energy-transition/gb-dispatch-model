@@ -248,7 +248,7 @@ Each generator in the powerplants table is enriched with cost and technical para
 
 1. **FES AS.1**: Provides year-specific fuel costs and VOM for GB-relevant technologies; averaged across scenarios because scenario names change between FES editions
 2. **FES AS.7**: Provides year-specific carbon price (£/tCO₂); averaged across scenarios
-3. **PyPSA technology-data**: Provides capital costs (£/MW), fixed O&M (£/MW/year), efficiency, and lifetime for technologies absent from the FES costing workbook. 
+3. **PyPSA technology-data**: Provides capital costs (£/MW), fixed O&M (£/MW/year), efficiency, and lifetime for technologies absent from the FES costing workbook.
    In the current workflow only **efficiency** is actively used in dispatch runs; the remaining parameters are written to the output for reference only
 4. **Default characteristics**: Fallbacks defined in ``fes_costs.default_characteristics`` ensure all columns exist even when data is missing
 
@@ -317,11 +317,11 @@ The generator system is built through a pipeline implemented in ``rules/gb-model
       pixi run filtered_rulegraph \
       "resources/GB/gb-model/HT/fes_powerplants_inc_tech_data.csv
       resources/GB/gb-model/GB_generator_monthly_availability_fraction.csv
-      resources/GB/gb-model/chp_p_min_pu.csv" \
-      "doc/gb-model/img/generators_workflow.svg" \
-      "-w fes_scenario -w year" \
-      "-s 10,8" \
-      "-f rules/gb-model/generators.smk"
+      resources/GB/gb-model/chp_p_min_pu.csv
+      -w fes_scenario -w year
+      -f rules/gb-model/generators.smk
+      -s 10,8" \
+      "doc/gb-model/img/generators_workflow.svg"
 
    The ``filtered_rulegraph`` task allows us to trim the full DAG to generator-related rules only.
 

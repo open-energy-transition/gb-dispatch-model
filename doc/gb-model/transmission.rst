@@ -95,7 +95,7 @@ Each interconnector entry specifies:
 - **Lat/lon**: approximate location of the GB connection point, used to assign the interconnector to the nearest model region
 
 The ``interconnectors.plan`` section maps each FES scenario to a list of active interconnector projects by year, reflecting that different FES pathways assume different build-out of cross-border capacity.
-Since the FES workbook does not detail which projects it has chosen to reach its optimal GB interconnector capacities, we have defined this list based on our best understanding of the available projects. 
+Since the FES workbook does not detail which projects it has chosen to reach its optimal GB interconnector capacities, we have defined this list based on our best understanding of the available projects.
 See `our interconnector GitHub issue <https://github.com/open-energy-transition/gb-dispatch-model/issues/232>`_ for more details.
 
 NESO Transmission Availability Reports — Line Availability
@@ -250,11 +250,11 @@ The transmission system is built through a pipeline implemented in ``rules/gb-mo
       "resources/GB/gb-model/HT/interconnectors_p_nom.csv
       resources/GB/gb-model/intra_gb_transmission_availability.csv
       resources/GB/gb-model/inter_gb_transmission_availability.csv
-      resources/GB/gb-model/custom_busmap.csv" \
-      "doc/gb-model/img/transmission_workflow.svg" \
-      "-w fes_scenario" \
-      "-s 10,8" \
-      "-f rules/gb-model/transmission.smk"
+      resources/GB/gb-model/custom_busmap.csv
+      -w fes_scenario -w year
+      -f rules/gb-model/transmission.smk
+      -s 10,8" \
+      "doc/gb-model/img/transmission_workflow.svg"
 
    The ``filtered_rulegraph`` task allows us to trim the full DAG to transmission-related rules only.
 
