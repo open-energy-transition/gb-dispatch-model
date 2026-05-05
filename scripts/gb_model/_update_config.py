@@ -686,7 +686,11 @@ class RedispatchConfig(GBBaseConfig):
         "This allows us to capture the impact of thermal constraints on boundary capabilities.",
         default_factory=lambda x: {month: 1.0 for month in range(1, 13)},
     )
-
+    redispatch_profit_mitigation_penalty: float = Field(
+        default=0,
+        ge=0,
+        description="penalty (per MWh) applied to redispatch actions in order to mitigate against unrealistic levels of redispatch profit that can occur due to favourable differences in bid/offer costs of different technologies.",
+    )
     elexon: ElexonConfig = Field(
         description="Elexon API configuration", default_factory=ElexonConfig
     )

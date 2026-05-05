@@ -4536,6 +4536,12 @@
           "description": "Monthly scaling factors for boundary capabilities, by month number (1-12). This allows us to capture the impact of thermal constraints on boundary capabilities.",
           "type": "object"
         },
+        "redispatch_profit_mitigation_penalty": {
+          "default": 0,
+          "description": "penalty (per MWh) applied to redispatch actions in order to mitigate against unrealistic levels of redispatch profit that can occur due to favourable differences in bid/offer costs of different technologies.",
+          "minimum": 0,
+          "type": "number"
+        },
         "elexon": {
           "additionalProperties": false,
           "description": "Elexon API configuration.",
@@ -16935,6 +16941,12 @@
           },
           "description": "Monthly scaling factors for boundary capabilities, by month number (1-12). This allows us to capture the impact of thermal constraints on boundary capabilities.",
           "type": "object"
+        },
+        "redispatch_profit_mitigation_penalty": {
+          "default": 0,
+          "description": "penalty (per MWh) applied to redispatch actions in order to mitigate against unrealistic levels of redispatch profit that can occur due to favourable differences in bid/offer costs of different technologies.",
+          "minimum": 0,
+          "type": "number"
         },
         "elexon": {
           "additionalProperties": false,
