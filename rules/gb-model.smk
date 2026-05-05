@@ -32,7 +32,7 @@ rule compose_network:
         load_bus_suffixes=config["fes"]["gb"]["demand"]["bus_suffix"],
         flex_carrier_suffixes=config["fes"]["gb"]["flexibility"]["carrier_suffix"],
         time_aggregation=config["time_aggregation"],
-        storage_list=config["fes"]["gb"]["BB2_to_ES1_mapping"]["Other"],
+        storage_list=config["fes"]["gb"]["BB2_to_ES1_mapping"]["Srg_BB004"],
     input:
         unpack(input_profile_tech),
         demands=expand(

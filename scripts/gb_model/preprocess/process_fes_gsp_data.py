@@ -161,9 +161,7 @@ def parse_inputs(
         f"{df_bb1_bb2_scenario[~units_match][['Unit', 'Units']]}"
     )
 
-    df_bb1_bb2_scenario = df_bb1_bb2_scenario.drop(
-        columns=["Units", "Building Block ID Number"]
-    )
+    df_bb1_bb2_scenario = df_bb1_bb2_scenario.drop(columns=["Units"])
 
     df_bb1_bb2_scenario["GSP"] = df_bb1_bb2_scenario["GSP"].replace(manual_gsp_mapping)
 
@@ -235,14 +233,7 @@ def split_technologies(
     df_with_regions_updated = df_with_regions.copy()
     # Iterate through the technologies with more subtypes in ES1 sheet
     for tech in technology_mapping.keys():
-        df_tech = df_with_regions.query("Technology == @tech")
-        if df_tech.empty:
-            df_tech = df_with_regions.query("`Technology Detail` == @tech")
-
-        if df_tech.empty:
-            logger.error(
-                f"Technology {tech} does not exist in the BB1 workbook sheet. Recheck the mapping of the technologies"
-            )
+        df_tech = df_with_regions.query("`Building Block ID Number` == @tech")
 
         mapped_tech = technology_mapping[tech]
 

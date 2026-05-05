@@ -811,12 +811,12 @@ fes:
     # [doc:fes-gb-set-mapping-end]
 
     BB2_to_ES1_mapping:
-      CCGTs (non CHP): ["CCGT", "CCS Gas"]
-      Biomass & Energy Crops (including CHP): ["Biomass", "CCS Biomass", "Biomass CHP"]
-      Nuclear: ["Nuclear - Large", "Nuclear - SMR"]
-      Other: ["Liquid Air", "Compressed Air"]
-      Hydrogen fuelled generation: ["Hydrogen", "Hydrogen CHP"]
-      Waste Incineration (including CHP): ["Waste", "Waste CHP"]
+      Gen_BB009: ["CCGT", "CCS Gas"]
+      Gen_BB010: ["Biomass", "CCS Biomass", "Biomass CHP"]
+      Gen_BB020: ["Nuclear - Large", "Nuclear - SMR"]
+      Srg_BB004: ["Liquid Air", "Compressed Air"]
+      Gen_BB023: ["Hydrogen", "Hydrogen CHP"]
+      Gen_BB011: ["Waste", "Waste CHP"]
     BB1_ES1_mismatch_percentage: 5
 
     demand:
