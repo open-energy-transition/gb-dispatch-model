@@ -3,7 +3,7 @@
 ..
 .. SPDX-License-Identifier: CC-BY-4.0
 
-.. _gb_wildcards:
+.. _wildcards_gb:
 
 #########
 Wildcards
@@ -28,7 +28,7 @@ Here, we describe the wildcards you will most likely utilise in your modelling w
 The ``{fes_scenario}`` wildcard
 -------------------------------
 
-The ``{fes_scenario}`` wildcard specified for which FES scenario to run the workflow.
+The ``{fes_scenario}`` wildcard specifies for which FES scenario to run the workflow.
 By default all FES2024 scenarios are available.
 The wildcard accepts shorthands for each scenario, which are defined in the configuration:
 
@@ -102,11 +102,17 @@ Since no information is given regarding a European hydrogen subsystem in the FES
 The ``{report_year}`` wildcard
 ------------------------------
 
-The ``{report_year}`` wildcard specified which NESO transmission availability report to process, of those listed in the configuration item ``transmission_availability.years``.
+The ``{report_year}`` wildcard specifies which NESO transmission availability report to process, of those listed in the configuration item ``transmission_availability.years``.
 
 .. _transmission_zone_wc:
 
-transmission_zone
------------------
+The ``{transmission_zone}`` wildcard
+------------------------------------
 
-The ``{transmission_zone}`` wildcard specified which GB transmission zone to process availability data for from NESO availability reports, of those listed in the configuration item ``transmission_availability.intra_gb.zones`` or ``transmission_availability.inter_gb.zones``.
+The ``{transmission_zone}`` wildcard specifies which GB transmission zone to process availability data for from NESO availability reports, of those listed in the configuration item ``transmission_availability.intra_gb.zones`` or ``transmission_availability.inter_gb.zones``.
+
+The ``{entsoe_country_code}`` wildcard
+--------------------------------------
+
+The ``{entsoe_country_code}`` wildcard specifies for which ENTSO-E member country to retrieve generator unavailability data.
+The workflow only uses the ``GB`` country code, but the same snakemake rule, ``retrieve_entsoe_unavailability_data``, can be used to generate data for other countries by requesting the output file using a different country code.

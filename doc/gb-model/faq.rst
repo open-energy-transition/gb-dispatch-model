@@ -92,13 +92,16 @@ Running the Model
 
 .. dropdown:: Q: How long does the workflow take to run?
 
-   This depends on configuration:
+   This depends on configuration and available solvers:
 
    - **Data processing only**: 3 - 4 hours with no parallelisation (approximately 1 hour with 4 parallel jobs).
-   - **Optimisation (full temporal resolution, 4 cores)**: approximately 30 - 45 minutes per model year for dispatch optimisation, 20 - 30 minutes per model year for redispatch optimisation.
-   - **Optimisation (x4 temporal resolution reduction, 4 cores)**: approximately 10 - 15 minutes for dispatch optimisation, 5 - 10 minutes per model year for redispatch optimisation.
+   - **Optimisation (full temporal resolution, 4 cores, gurobi solver)**: approximately 30 - 45 minutes per model year for dispatch optimisation, 20 - 30 minutes per model year for redispatch optimisation.
+   - - **Optimisation (full temporal resolution, 4 cores, HiGHS HiPO solver)**: approximately 2.5 - 3 hours per model year for dispatch optimisation, 1.5 - 2 hours per model year for redispatch optimisation.
+   - **Optimisation (x4 temporal resolution reduction, 4 cores, gurobi solver)**: approximately 10 - 15 minutes for dispatch optimisation, 5 - 10 minutes per model year for redispatch optimisation.
 
    Use ``pixi run model --configfile 'config/config.gb.time-segment.yaml'`` to optimise with x4 temporal resolution reduction.
+
+   When testing that the workflow runs as expected, you can also :ref:`limit your runs to a single FES scenario <faq_gb_single_scenario>` to reduce overall runtime.
 
 .. dropdown:: Q: What's the difference between "dispatch" and "redispatch"?
 
@@ -108,7 +111,7 @@ Running the Model
    - **Dispatch**: Initial optimisation with relaxed constraints, reflecting the GB day-ahead market.
    - **Redispatch**: Optimisation considering realistic physical network constraints, reflecting the GB balancing market.
 
-   Both are computed by when running the full model.
+   Both are computed when running the full model.
 
 .. dropdown:: Q: What effect does running each future year separately have?
 
@@ -170,6 +173,8 @@ Configuration & Scenarios
    By default, we support FES2024 and all its scenarios.
    To model a different FES year, you will need to create your own version of the configuration file with appropriate updates on input data (under the ``urls`` configuration option) and data table processing (e.g., all ``sheet-config`` entries).
    This is not trivial and we expect that it may require changes to be in the workflow scripts themselves.
+
+.. _faq_gb_single_scenario:
 
 .. dropdown:: Q: How do I run the workflow for just one FES scenario?
 

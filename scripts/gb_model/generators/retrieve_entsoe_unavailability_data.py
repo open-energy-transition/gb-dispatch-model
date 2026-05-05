@@ -135,7 +135,7 @@ if __name__ == "__main__":
     # Initialize API client
     api_client = ENTSOEUnavailabilityAPI(api_key)
 
-    zone = snakemake.wildcards.zone
+    zone = snakemake.wildcards.entsoe_country_code
 
     dfs = []
     for period_start, period_end in tqdm(

@@ -16,7 +16,7 @@ gb-dispatch-model is an extension of `PyPSA-Eur <../pypsa_eur.html>`_., used to 
 Quick start
 ===========
 
-First, follow our :ref:`installation steps <gb_installation>`.
+First, follow our :ref:`installation steps <installation_gb>`.
 
 You can then run the full workflow by calling:
 
@@ -68,6 +68,7 @@ The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windo
 
    introduction
    installation
+   run
    faq
 
 .. toctree::

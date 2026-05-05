@@ -150,7 +150,7 @@ The `low carbon register <https://www.lowcarboncontracts.uk/our-schemes/contract
 We use the average strike price data from all historical years before the first model run year to define the renewable generator offers.
 These are calculated relative to the GB wholesale market price as given by the solved unconstrained model output.
 
---------------------
+-------------------
 Elexon BMU Fuel Map
 -------------------
 The `Elexon BMU Fuel Map <https://www.elexon.co.uk/documents/data/operational-data/bmu-fuel-type/>` provides a mapping of the balancing mechanism units (BMU) to their respective fuel types.
