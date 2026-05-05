@@ -186,7 +186,7 @@ Bid/Offer Profile Calculation
 ------------------------------
 
 .. seealso::
-    For details on the different system components defined here, see: :ref:`system_overview_gb`.
+    For details on the different system components defined here, see: :ref:`system-overview_gb`.
 
 **Conventional Generators**
 

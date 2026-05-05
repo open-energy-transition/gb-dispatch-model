@@ -3,7 +3,7 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _transmission-system:
+.. _system-transmission:
 
 ##########################################
 Transmission System
@@ -312,7 +312,7 @@ Unavailability is averaged across all projects and report years to produce a sin
 
    - :doc:`system_dispatch_redispatch` - Network constraints and redispatch using transmission capacity
    - :doc:`system_generators` - Generation assets connected to the same AC buses
-   - :doc:`configuration` - Full configuration reference
+   - :ref:`model_config_gb` - Full configuration reference
 
    **External Resources**:
 

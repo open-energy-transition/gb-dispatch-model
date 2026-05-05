@@ -3,7 +3,7 @@
 ..
 .. SPDX-License-Identifier: CC-BY-4.0
 
-.. _system_overview_gb:
+.. _system-overview_gb:
 
 ##########################################
 System Overview

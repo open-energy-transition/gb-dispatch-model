@@ -216,7 +216,7 @@ The model assumes that storage can be charged and discharged without capacity co
 **Dispatch Constraints**:
 
 The storage level at the end of each modelled year is set equal to the level at the start of that year.
-This cyclic constraint prevents unrealistic depletion of storage within each year, but may create artificial constraints on storage use in the final timesteps of each year (see :doc:`faq`).
+This cyclic constraint prevents unrealistic depletion of storage within each year, but may create artificial constraints on storage use in the final timesteps of each year (see :ref:`faq_gb`).
 
 .. _hydrogen-conversion:
 

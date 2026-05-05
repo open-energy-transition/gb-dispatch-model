@@ -2,7 +2,7 @@
   SPDX-FileCopyrightText: gb-dispatch-model contributors
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _gb_faq:
+.. _faq_gb:
 
 ##########################
 Frequently Asked Questions
@@ -44,13 +44,13 @@ Installation & Setup
    - You are requesting a file that cannot be generated.
      If you are requesting that a specific intermediate file is generated, ensure you have the full filepath correctly defined, given your current configuration.
      E.g., ``pixi run -e gb-model snakemake resources/<run-name>/gb-model/<scenario>/resistive_heater_demand/<year>.csv`` includes three configurable items:
-       - ``<run-name>`` is defined in the configuration under ``run.name``;
-       - ``scenario`` is one of the scenarios defined in the configuration under ``fes.scenario_mapping``;
-       - ``year`` is one of the years defined in the configuration under ``redispatch.year_range_incl``.
+     - ``<run-name>`` is defined in the configuration under ``run.name``;
+     - ``scenario`` is one of the scenarios defined in the configuration under ``fes.scenario_mapping``;
+     - ``year`` is one of the years defined in the configuration under ``redispatch.year_range_incl``.
      The final filepath with the default configuration could be ``pixi run -e gb-model snakemake resources/GB/gb-model/HT/resistive_heater_demand/2040.csv``
    - Data retrieval from a remote resource failed.
      This is usually resolved by running the workflow again.
-     If it persists, you can find options for limiting request rates within the :ref:`configuration <gb_model_config>`.
+     If it persists, you can find options for limiting request rates within the :ref:`configuration <model_config_gb>`.
 
 Running the Model
 =================

@@ -17,7 +17,7 @@ It is distributed over a collection of PyPSA networks representing different fut
 Each network is solved separately and then the results are aggregated to understand system impacts over the lifetime of energy assets.
 
 Here, we will briefly describe some of the core concepts of the workflow and practicalities of navigating the project directory.
-For more information on the methodology we follow see our :ref:`system representation pages <system_overview_gb>`.
+For more information on the methodology we follow see our :ref:`system representation pages <system-overview_gb>`.
 
 Run all
 =======
@@ -78,7 +78,7 @@ One can think of a wildcard as a parameter that shows up in the input/output fil
 Details are explained in :ref:`gb_wildcards`.
 
 The model also has several further configuration options collected in the ``config/config.default.gb.yaml`` file.
-Options are explained in :ref:`gb_model_config`.
+Options are explained in :ref:`model_config_gb`.
 
 Folder Structure
 ================
