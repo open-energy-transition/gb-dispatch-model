@@ -6,7 +6,7 @@
 .. _system-transmission:
 
 ##########################################
-Transmission System
+Transmission Components
 ##########################################
 
 This page describes how the electricity transmission network is represented in the model, including AC lines, DC interconnectors, offshore bus mapping, and transmission availability.

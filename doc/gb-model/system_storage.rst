@@ -6,7 +6,7 @@
 .. _system-storage:
 
 ##########################################
-Storage System
+Storage Components
 ##########################################
 
 This page describes how electrical storage assets are represented in the model, including their data sources, capacity assignment, parameterisation, and implementation.
