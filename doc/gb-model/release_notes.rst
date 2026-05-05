@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Add documentation for Demand and DSR implementation in the GB dispatch model (#295)
 * Share bid/offer multipliers between like carriers (e.g. fuel cost of future hydrogen turbines will use the current CCGT multiplier).
 * Update European future electrolysis-derived hydrogen demand to be based on the TYNDP model outputs.
   This decreases overall electrolysis electricity demand in Europe but also redistributes the demand between countries, with some increasing compared to previously.

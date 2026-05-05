@@ -319,11 +319,11 @@ The generator system is built through a pipeline implemented in ``rules/gb-model
       pixi run filtered_rulegraph \
       "resources/GB/gb-model/HT/fes_powerplants_inc_tech_data.csv
       resources/GB/gb-model/GB_generator_monthly_availability_fraction.csv
-      resources/GB/gb-model/chp_p_min_pu.csv" \
-      "doc/gb-model/img/generators_workflow.svg" \
-      "-w fes_scenario -w year" \
-      "-s 10,8" \
-      "-f rules/gb-model/generators.smk"
+      resources/GB/gb-model/chp_p_min_pu.csv
+      -w fes_scenario -w year
+      -f rules/gb-model/generators.smk
+      -s 10,8" \
+      "doc/gb-model/img/generators_workflow.svg"
 
    The ``filtered_rulegraph`` task allows us to trim the full DAG to generator-related rules only.
 

@@ -201,11 +201,11 @@ The storage system is built through a pipeline implemented in ``rules/gb-model/s
       pixi run filtered_rulegraph \
       "resources/GB/gb-model/HT/regional_battery_storage_capacity_inc_eur.csv
       resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv
-      resources/GB/gb-model/HT/fes_powerplants_inc_tech_data.csv" \
-      "doc/gb-model/img/storage_workflow.svg" \
-      "-w fes_scenario -w year" \
-      "-s 10,8" \
-      "-f rules/gb-model/storage.smk"
+      resources/GB/gb-model/HT/fes_powerplants_inc_tech_data.csv
+      -w fes_scenario -w year
+      -f rules/gb-model/storage.smk
+      -s 10,8" \
+      "doc/gb-model/img/storage_workflow.svg"
 
    The ``filtered_rulegraph`` task allows us to trim the full DAG to storage-related rules only.
 

@@ -297,11 +297,11 @@ The hydrogen system is built through a multi-stage data processing pipeline impl
       "resources/GB/gb-model/HT/regional_H2_demand_annual_inc_eur.csv
       resources/GB/gb-model/HT/regional_non_networked_electrolysis_demand_annual_inc_eur.csv
       resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv
-      resources/GB/gb-model/HT/regional_grid_electrolysis_capacities_inc_eur_inc_tech_data.csv" \
-      "doc/gb-model/img/hydrogen_workflow.svg" \
-      "-w fes_scenario -w year" \
-      "-s 10,8" \
-      "-f rules/gb-model/hydrogen.smk"
+      resources/GB/gb-model/HT/regional_grid_electrolysis_capacities_inc_eur_inc_tech_data.csv
+      -w fes_scenario -w year
+      -f rules/gb-model/hydrogen.smk
+      -s 10,8" \
+      "doc/gb-model/img/hydrogen_workflow.svg"
 
    The ``filtered_rulegraph`` task allows us to trim the full DAG to hydrogen-related rules only.
 

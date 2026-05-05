@@ -165,14 +165,15 @@ The rulegraph for the heat system is illustrated below, showing the key processi
    :align: center
 
 .. note::
-    The graph above was generated using::
+   The graph above was generated using::
 
       pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/residential_heat_demand/2030.csv \
-      resources/GB/gb-model/HT/iandc_heat_demand/2030.csv" \
-      "-w fes_scenario" \
-      "-w year -s 10,8" \
-      "-f rules/gb-model/heat.smk"
+      "resources/GB/gb-model/HT/residential_heat_demand/2030.csv
+      resources/GB/gb-model/HT/iandc_heat_demand/2030.csv
+      -w fes_scenario -w year
+      -f rules/gb-model/heat.smk
+      -s 10,8" \
+      "doc/gb-model/img/heat_workflow.svg"
 
 The ``filtered_rulegraph`` task allows us to trim the full DAG to heat system related rules only.
 

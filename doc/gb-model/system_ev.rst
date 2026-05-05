@@ -215,11 +215,12 @@ The EV system is built through a pipeline implemented across ``rules/gb-model/ev
       pixi run filtered_rulegraph \
       "resources/GB/gb-model/HT/regional_ev_v2g_storage_inc_eur.csv
       resources/GB/gb-model/HT/ev_demand/2035.csv
-      resources/GB/gb-model/HT/regional_ev_dsr_inc_eur.csv" \
-      "doc/gb-model/img/ev_workflow.svg" \
-      "-w fes_scenario -w year" \
-      "-s 10,8"
-      "-f rules/gb-model/ev.smk"
+      resources/GB/gb-model/HT/regional_ev_dsr_inc_eur.csv
+      -w fes_scenario -w year
+      -f rules/gb-model/ev.smk
+      -s 10,8" \
+      "doc/gb-model/img/ev_workflow.svg"
+
 
    The ``filtered_rulegraph`` task allows us to trim the full DAG to EV-related rules only.
 

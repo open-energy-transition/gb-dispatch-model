@@ -774,7 +774,7 @@ fes:
         Storage: Store
     # [doc:fes-gb-set-mapping-end]
 
-
+    # [doc:demand-start]
     demand:
       Technology Detail:
         baseline_electricity: ["baseline demand"]
@@ -806,10 +806,12 @@ fes:
       losses_data_item:
       - "GBFES System Losses: Distribution"
       - "GBFES System Losses: Transmission"
+    # [doc:demand-end]
+
+    # [doc:flexibility-start]
     # [doc:storage-battery-flx1-config-start]
     flexibility:
       carrier_mapping:
-        # [doc:storage-battery-flx1-config-start]
         battery:
           Data item: "Electricity storage energy storage potential"
           Detail: "Battery"
@@ -845,7 +847,7 @@ fes:
         residential_heat: " Residential Heat DSR"
         iandc_heat: " I&C Heat DSR"
       v2g_storage_to_capacity_ratio: 7.14 # based on ratio in FES 2021. Same value will be applied to all future years.
-
+    # [doc:flexibility-end]
     regional_distribution_reference:
       ev_dsr:
         source: "v2g"

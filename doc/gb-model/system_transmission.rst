@@ -250,11 +250,11 @@ The transmission system is built through a pipeline implemented in ``rules/gb-mo
       "resources/GB/gb-model/HT/interconnectors_p_nom.csv
       resources/GB/gb-model/intra_gb_transmission_availability.csv
       resources/GB/gb-model/inter_gb_transmission_availability.csv
-      resources/GB/gb-model/custom_busmap.csv" \
-      "doc/gb-model/img/transmission_workflow.svg" \
-      "-w fes_scenario" \
-      "-s 10,8" \
-      "-f rules/gb-model/transmission.smk"
+      resources/GB/gb-model/custom_busmap.csv
+      -w fes_scenario -w year
+      -f rules/gb-model/transmission.smk
+      -s 10,8" \
+      "doc/gb-model/img/transmission_workflow.svg"
 
    The ``filtered_rulegraph`` task allows us to trim the full DAG to transmission-related rules only.
 
