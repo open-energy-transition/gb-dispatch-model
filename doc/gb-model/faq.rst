@@ -216,7 +216,7 @@ Data & Input Files
 
 .. dropdown:: Q: Where does the model get its input data from?
 
-   See :ref:`data sources documentation <gb_data_sources>`. Key sources include:
+   See :ref:`data sources documentation <data_sources_gb>`. Key sources include:
 
    - **Weather/resource data**: ERA5 and SARAH-3 via atlite.
    - **Electricity demand profiles**: ENTSO-E Transparency Platform.

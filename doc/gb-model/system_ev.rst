@@ -245,7 +245,7 @@ The EV system is built through a pipeline implemented across ``rules/gb-model/ev
    **Related Documentation**:
 
    - :ref:`system-ev-summary` - EVs in the broader system representation
-   - :ref:`gb_data_sources` - FES and other data sources
+   - :ref:`data_sources_gb` - FES and other data sources
    - :ref:`model_config_gb` - Full configuration reference
 
    **External Resources**:

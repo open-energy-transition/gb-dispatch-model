@@ -24,8 +24,6 @@ Various heating technologies such as district heating, hybrid systems (ASHP with
 This approach allows the model to capture the essential electrification pathways.
 The technology splits are sourced from the Future Energy Scenario (FES) workbook and their mapping is detailed in the :ref:`configuration <system-heat_config>`.
 
-
-
 Heat System Structure
 ---------------------
 
@@ -66,6 +64,7 @@ The AC bus represents the electrical grid connection for the heat system, while 
 
 Data Sources
 =============
+
 Great Britain Data
 ------------------
 
@@ -128,7 +127,6 @@ The store is modelled using the PyPSA component type `Store`.
 Finally, the **Sector heat Load** represents the total heat demand for the sector (residential or I&C) that must be met by the electricity supplied through the AC bus and managed through the Sector heat bus and Sector heat DSR bus. This load is modelled using the PyPSA component type `Load`.
 
 Detailed descriptions of these components and their interactions are provided in the :ref:`system-demand_and_dsr` section.
-
 
 .. _system-heat_config:
 
@@ -193,3 +191,11 @@ Assumptions
 - District heating electricity demand is assumed to be auxiliary demand from district system, not the electricity required for heating.
 - the ``ASHP + resistive heating hybrid`` technology is categorised as ASHP since that is what is required to match the regionalised heat pump electricity demand in sheet ``BB1`` to the per-technology total demand in sheet ``ED3``.
 
+
+.. seealso::
+
+   **Related Documentation**:
+
+   - :doc:`system_demand_and_dsr` - Demand-side response (DSR) workflow details
+   - :ref:`data_sources_gb` - FES and other data sources
+   - :ref:`model_config_gb` - Full configuration reference

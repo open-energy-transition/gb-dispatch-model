@@ -27,10 +27,10 @@ The model includes the following demand sectors with DSR capabilities:
 6. **Additional Demand** - Other electricity demand not captured in the above categories (e.g., direct transmission demand, T&D losses)
 
 
+.. _model_representation:
+
 Model Representation
 --------------------
-
-.. _model_representation:
 
 The DSR implementation for each demand type (residential, I&C, EV and heat) follows this structure:
 
@@ -55,7 +55,7 @@ The DSR implementation for each demand type (residential, I&C, EV and heat) foll
   }
 
 "Sector" refers to the specific demand sector being modeled (e.g., residential, I&C, EV, heat or hydrogen).
-Whilst the general structure is consistent across demand types, some extra components are added for specific sectors which can be found in the corresponding documentation sections (see :doc:`ev`, :doc:`heat_system`, :doc:`hydrogen_overview`).
+Whilst the general structure is consistent across demand types, some extra components are added for specific sectors which can be found in the corresponding documentation sections (see :doc:`system_ev`, :doc:`system_heat`, :doc:`system_hydrogen`).
 
 Data Sources
 ============
@@ -96,7 +96,7 @@ European data
 ---------------
 
 For European neighbour countries included in the model, the demand data is sourced from the PyPSA-Eur workflow (via ``energy_totals.csv``).
-Specific data requirements are explained in detail in the corresponding sections of the documentation (e.g., :ref:`heat_system` uses ES2 from the FES workbook for European demand assumptions).
+Specific data requirements are explained in detail in the corresponding sections of the documentation (e.g., :ref:`system-heat` uses ES2 from the FES workbook for European demand assumptions).
 
 Configuration
 =============
@@ -126,20 +126,20 @@ DSR is implemented using PyPSA's Bus, Store, Link and Load components to model e
 - **Store Component** - Represents the energy storage capacity with time-dependent constraints
 - **Load Component** - Represents the total demand that must be met, including both the baseline demand and any additional demand from DSR.
 
-The representation of each demand sector is illustrated in the :ref:`_model_representation` section of the documentation, which provides detailed descriptions of the components and their interactions.
+The representation of each demand sector is illustrated in the :ref:`model_representation` section, which provides detailed descriptions of the components and their interactions.
 
 Implementation Notes
 ====================
 
 Baseline electricity demand generation
--------------------------------------
+--------------------------------------
 
 Baseline electricity demand is built from a combination of historic demand shapes obtained from the PyPSA-Eur workflow and annual demand totals from the FES workbook:
 
-- Historic hourly demand shapes are derived from the PyPSA-Eur default baseline electricity demand timeseries (via `electricity_demand_base_s.nc`) and clustered to the gb-model bus layout using `cluster_baseline_electricity_demand_timeseries.py`.
+- Historic hourly demand shapes are derived from the PyPSA-Eur default baseline electricity demand timeseries (via ``electricity_demand_base_s.nc``) and clustered to the gb-model bus layout using ``cluster_baseline_electricity_demand_timeseries.py``.
 - The resulting clustered profile has estimated historical resistive heater demand removed so that resistive heating is not double counted with dedicated heat demand processing.
-- Normalized demand shapes are then created by region and year using `process_baseline_demand_shape.py`.
-- The normalized shapes are scaled to annual baseline electricity demand totals from FES and European neighbour demand totals in `scaled_demand_profile.py`.
+- Normalized demand shapes are then created by region and year using ``process_baseline_demand_shape.py``.
+- The normalized shapes are scaled to annual baseline electricity demand totals from FES and European neighbour demand totals in ``scaled_demand_profile.py``.
 - Lastly, extra demand from the FES workbook is added as a static load (extra I&C load) and T&D losses are included as a profile proportional to the base electricity demand profile without losses.
 
 DSR Parameters
@@ -161,7 +161,7 @@ DSR operation is controlled by several key parameters:
 The appropriate time zone conversions are accounted for when modelling DSR time windows for European countries.
 
 **Storage Capacity**
-  Calculated as DSR power capacity × duration hours.
+  Calculated as DSR power capacity * duration hours.
   Represents the maximum energy that can be shifted.
 
 **Availability Profiles**
@@ -183,7 +183,7 @@ The demand and DSR implementation follows a multi-step workflow:
 Data Processing Pipeline
 =========================
 
-The demand and DSR workflow is implemented through Snakemake rules in `rules/gb-model/demand_and_dsr.smk` and Python scripts in the folder `scripts/gb_model/demand_and_dsr`.
+The demand and DSR workflow is implemented through Snakemake rules in ``rules/gb-model/demand_and_dsr.smk`` and Python scripts in the folder ``scripts/gb_model/demand_and_dsr``.
 
 The rulegraph for the demand and DSR workflow is illustrated below:
 
@@ -203,7 +203,7 @@ The rulegraph for the demand and DSR workflow is illustrated below:
       -s 10,12" \
       "doc/gb-model/img/demand_and_dsr_workflow.svg"
 
-  The ``filtered_rulegraph`` task allows us to trim the full DAG to `demand and DSR`` rules only.
+  The ``filtered_rulegraph`` task allows us to trim the full DAG to ``demand and DSR`` rules only.
 
 The demand and DSR workflow was built based on several key processing steps as follows:
 
@@ -222,3 +222,13 @@ Assumptions:
 
 - DSR links operate at 100% efficiency (no losses in shifting energy).
 - DSR links and stores do not have any capital or operational costs associated with them, as the model focuses on the technical potential of DSR rather than economic optimization.
+
+.. seealso::
+
+   **Related Documentation**:
+
+   - :doc:`system_heat` - Heat demand details
+   - :doc:`system_hydrogen` - Hydrogen demand details
+   - :doc:`system_ev` - EV demand details
+   - :ref:`data_sources_gb` - FES and other data sources
+   - :ref:`model_config_gb` - Full configuration reference

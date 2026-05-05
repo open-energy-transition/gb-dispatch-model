@@ -319,7 +319,7 @@ The hydrogen system is built through a multi-stage data processing pipeline impl
    **Related Documentation**:
 
    - :ref:`system-hydrogen-summary` - Hydrogen in the broader system representation
-   - :ref:`gb_data_sources` - FES and other data sources
+   - :ref:`data_sources_gb` - FES and other data sources
    - :ref:`model_config_gb` - Full configuration reference
 
    **External Resources**:

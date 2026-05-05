@@ -4,7 +4,7 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _gb_data_sources:
+.. _data_sources_gb:
 
 #############
 Data Sources
