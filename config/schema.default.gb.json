@@ -2800,6 +2800,11 @@
           },
           "description": "Carrier mapping from ENTSO-E to model carriers",
           "type": "object"
+        },
+        "extend_to_eur_regions": {
+          "default": false,
+          "description": "Whether to extend the unavailability data to European regions. This is done by applying the GB availability fraction to all generators in European regions, which is a simplification in lieu of actually processing European unavailability data.",
+          "type": "boolean"
         }
       }
     },
@@ -3205,6 +3210,11 @@
                   "type": "object"
                 }
               }
+            },
+            "enable_eur_h2_bus": {
+              "default": false,
+              "description": "Whether to enable the H2 bus (incl. electrolysis to generate H2, H2 demand, and storage) for European countries. This is optional as the necessary data is not available in the FES and it is unclear whether modelled generation capacity is designed to meet electrolysis demands or not.",
+              "type": "boolean"
             }
           }
         }
@@ -3644,6 +3654,11 @@
               "type": "object"
             }
           }
+        },
+        "enable_eur_h2_bus": {
+          "default": false,
+          "description": "Whether to enable the H2 bus (incl. electrolysis to generate H2, H2 demand, and storage) for European countries. This is optional as the necessary data is not available in the FES and it is unclear whether modelled generation capacity is designed to meet electrolysis demands or not.",
+          "type": "boolean"
         }
       }
     },
@@ -4521,6 +4536,12 @@
           "description": "Monthly scaling factors for boundary capabilities, by month number (1-12). This allows us to capture the impact of thermal constraints on boundary capabilities.",
           "type": "object"
         },
+        "redispatch_profit_mitigation_penalty": {
+          "default": 0,
+          "description": "penalty (per MWh) applied to redispatch actions in order to mitigate against unrealistic levels of redispatch profit that can occur due to favourable differences in bid/offer costs of different technologies.",
+          "minimum": 0,
+          "type": "number"
+        },
         "elexon": {
           "additionalProperties": false,
           "description": "Elexon API configuration.",
@@ -4563,6 +4584,13 @@
           "description": "Buffer distance in meters to apply to mainland GB when identifying flow directions for boundary crossings. This ensures we correctly identify flows on island boundaries (e.g. Anglesey).",
           "minimum": 0,
           "type": "number"
+        },
+        "bid_offer_multiplier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from carriers that have received a bid/offer multipliers from processing the Elexon API to other carriers in the model. Keys are other carriers, values are carriers with Elexon bid/offer multipliers.",
+          "type": "object"
         }
       }
     },
@@ -16210,6 +16238,11 @@
           },
           "description": "Carrier mapping from ENTSO-E to model carriers",
           "type": "object"
+        },
+        "extend_to_eur_regions": {
+          "default": false,
+          "description": "Whether to extend the unavailability data to European regions. This is done by applying the GB availability fraction to all generators in European regions, which is a simplification in lieu of actually processing European unavailability data.",
+          "type": "boolean"
         }
       }
     },
@@ -16732,6 +16765,11 @@
                   "type": "object"
                 }
               }
+            },
+            "enable_eur_h2_bus": {
+              "default": false,
+              "description": "Whether to enable the H2 bus (incl. electrolysis to generate H2, H2 demand, and storage) for European countries. This is optional as the necessary data is not available in the FES and it is unclear whether modelled generation capacity is designed to meet electrolysis demands or not.",
+              "type": "boolean"
             }
           }
         }
@@ -16904,6 +16942,12 @@
           "description": "Monthly scaling factors for boundary capabilities, by month number (1-12). This allows us to capture the impact of thermal constraints on boundary capabilities.",
           "type": "object"
         },
+        "redispatch_profit_mitigation_penalty": {
+          "default": 0,
+          "description": "penalty (per MWh) applied to redispatch actions in order to mitigate against unrealistic levels of redispatch profit that can occur due to favourable differences in bid/offer costs of different technologies.",
+          "minimum": 0,
+          "type": "number"
+        },
         "elexon": {
           "additionalProperties": false,
           "description": "Elexon API configuration.",
@@ -16946,6 +16990,13 @@
           "description": "Buffer distance in meters to apply to mainland GB when identifying flow directions for boundary crossings. This ensures we correctly identify flows on island boundaries (e.g. Anglesey).",
           "minimum": 0,
           "type": "number"
+        },
+        "bid_offer_multiplier_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from carriers that have received a bid/offer multipliers from processing the Elexon API to other carriers in the model. Keys are other carriers, values are carriers with Elexon bid/offer multipliers.",
+          "type": "object"
         }
       }
     },

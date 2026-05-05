@@ -158,6 +158,32 @@ def update_storage_balance(n: pypsa.Network) -> None:
     )
 
 
+def add_redispatch_penalty(n: pypsa.Network, snakemake: Snakemake) -> None:
+    """
+    Add a penalty to the objective function for redispatching generation.
+
+    Args:
+        n (pypsa.Network): The PyPSA network to update.
+        snakemake (snakemake.Snakemake): The snakemake object for parameters and config.
+    """
+    penalty = snakemake.params.redispatch_profit_mitigation_penalty
+    if penalty == 0:
+        logger.info("No redispatch penalty applied to the objective function.")
+        return
+
+    idx = n.generators.filter(regex="ramp (up|down)", axis=0).index
+    is_neg = n.get_switchable_as_dense("Generator", "p_min_pu")[idx] < 0
+    obj_cost = is_neg.replace({True: -penalty, False: penalty}).stack().to_xarray()
+    gen_p = n.model["Generator-p"].sel(**obj_cost.coords)
+    penalty_expr = obj_cost * gen_p * n.snapshot_weightings.objective
+    n.model.objective += penalty_expr.sum()
+    logger.info(
+        f"Added redispatch penalty of {penalty} per MWh to the following number of "
+        "redispatch generators in the objective function to mitigate profit manipulation:\n"
+        f"{n.generators.loc[idx].carrier.value_counts()}"
+    )
+
+
 def custom_constraints(
     n: pypsa.Network,
     snapshots: pd.Index,
@@ -176,3 +202,4 @@ def custom_constraints(
     remove_KVL_constraints(n, snapshots, snakemake)
     update_storage_p_bounds(n)
     update_storage_balance(n)
+    add_redispatch_penalty(n, snakemake)

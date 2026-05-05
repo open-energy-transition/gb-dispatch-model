@@ -12,6 +12,12 @@ Release Notes
 Unreleased
 ==========
 
+* Share bid/offer multipliers between like carriers (e.g. fuel cost of future hydrogen turbines will use the current CCGT multiplier).
+* Update European future electrolysis-derived hydrogen demand to be based on the TYNDP model outputs.
+  This decreases overall electrolysis electricity demand in Europe but also redistributes the demand between countries, with some increasing compared to previously.
+* Add blue hydrogen as a costed source of supply for hydrogen turbines/fuel cells (#301).
+* Make hydrogen subsystem & generator unavailability profiles optional for non-GB regions (#306).
+* Add redispatch objective function penalty to mitigate unrealistic system revenue within redispatch, in which components with a favourable bid/offer spread can be offset against each other (#304).
 * Add line/link components documentation (#316).
 * Add storage components documentation (#315).
 * Add generation components documentation (#308).
