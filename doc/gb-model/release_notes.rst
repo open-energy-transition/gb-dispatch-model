@@ -13,6 +13,10 @@ Unreleased
 ==========
 
 * Add redispatch objective function penalty to mitigate unrealistic system revenue within redispatch, in which components with a favourable bid/offer spread can be offset against each other (#304).
+* Add line/link components documentation (#316).
+* Add storage components documentation (#315).
+* Add generation components documentation (#308).
+* Documentation related to the heat system (#293)
 * Add ``pixi`` task to generate filtered snakemake DAGs for use in documenting gb-dispatch-model subsystems.
 * Add EV subsystem documentation (#279).
 * Add hydrogen subsystem documentation (#280).
