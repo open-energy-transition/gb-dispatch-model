@@ -1530,6 +1530,7 @@ entsoe_unavailability:
   max_request_days: 365
   max_unavailable_days: 365
   carrier_mapping: {}
+  extend_to_eur_regions: false
 
 # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#transmission_availability
 transmission_availability:
@@ -1593,6 +1594,7 @@ fes:
       networked_electricity_demand: {}
       non_networked_electricity_demand: {}
       storage: {}
+    enable_eur_h2_bus: false
 
 # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#ev
 ev:
@@ -1627,6 +1629,7 @@ redispatch:
     10: 1.0
     11: 1.0
     12: 1.0
+  redispatch_profit_mitigation_penalty: 0
   elexon:
     technology_mapping: {}
     years: []
@@ -1634,6 +1637,7 @@ redispatch:
     max_concurrent_requests: 4
   no_redispatch_carriers: []
   boundary_flow_mainland_buffer_m: 1000
+  bid_offer_multiplier_mapping: {}
 
 # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#time_aggregation
 time_aggregation: []

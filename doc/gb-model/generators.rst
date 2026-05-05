@@ -18,14 +18,20 @@ The generation system covers all electricity-producing assets connected to the m
 Generators are split into two broad groups:
 
 - **Conventional generators**: Thermal and nuclear plant (CCGT, OCGT, gas engine, coal, nuclear, oil, waste, biomass, geothermal) that can be dispatched by the model within physical and contractual limits
-- **Renewable generators**: Solar, onshore wind, offshore wind, run-of-river hydro, and pumped hydro storage (PHS) whose output is constrained by weather-derived capacity-factor time series
+- **Renewable generators**: Solar, onshore wind, and offshore wind, whose output is constrained by weather-derived capacity-factor time series
 - **Hydrogen-to-electricity generators**: Fuel cells and hydrogen turbines — documented in :doc:`hydrogen_overview`
 
 Additionally, a subset of conventional generators with heat-driven cogeneration duties are subject to simplified *combined heat and power (CHP)* constraints that enforce minimum loading when heat demand is present.
 
 All generators are modelled as *fixed-capacity*, non-extendable assets — the model dispatches within the capacities supplied and cannot invest in new plant.
 
-The figure below gives a high-level view of the generator pipeline:
+
+.. _generators-data-sources:
+
+Data Sources
+============
+
+The figure below gives a high-level view of the generator data pipeline:
 
 .. graphviz::
 
@@ -54,11 +60,6 @@ The figure below gives a high-level view of the generator pipeline:
       entsoe -> avail -> network;
    }
 
-
-.. _generators-data-sources:
-
-Data Sources
-============
 
 FES BB1 — Future Capacity Projections
 --------------------------------------
