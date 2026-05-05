@@ -3749,8 +3749,6 @@ environments:
     - url: https://conda.anaconda.org/bioconda/
     - url: https://conda.anaconda.org/gurobi/
     - url: https://conda.anaconda.org/conda-forge/label/dev/
-    indexes:
-    - https://pypi.org/simple
     options:
       pypi-prerelease-mode: if-necessary-or-explicit
     packages:
@@ -4152,6 +4150,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/partd-1.4.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/patsy-1.0.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pcre2-10.47-haa7fec5_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pdfminer.six-20251107-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pdfplumber-0.11.9-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pexpect-4.9.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pillow-12.2.0-py312h50c33e8_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pixman-0.46.4-h54a6638_1.conda
@@ -4194,6 +4194,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyomo-6.10.0-py312h1289d80_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyopenssl-26.0.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyparsing-3.3.2-pyhcf101f3_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/pypdfium2-5.8.0-py312h5253ce2_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyproj-3.7.2-py312he675c61_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pypsa-1.2.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyscipopt-6.1.0-np2py312h0f77346_0.conda
@@ -4363,9 +4364,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zlib-ng-2.3.3-hceb46e0_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.25.0-py312h5253ce2_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_6.conda
-      - pypi: https://files.pythonhosted.org/packages/46/68/b3fb5f073bcd3df9143a3520289c147351bfa3c1b096d44081f38fd1c247/pdfminer.six-20221105-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/7b/76/f856998de5632b3e9af11475ec8054680a17c074b265778b9e64635e2f27/pdfplumber-0.9.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/29/6c/51fe13d260d9e910d8f010494cc513420ab79852662fefdebdecfeaeebd5/wand-0.7.0-py3-none-any.whl
       osx-64:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/_openmp_mutex-4.5-7_kmp_llvm.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
@@ -4728,6 +4726,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/partd-1.4.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/patsy-1.0.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pcre2-10.47-h13923f0_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pdfminer.six-20251107-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pdfplumber-0.11.9-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pexpect-4.9.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pillow-12.2.0-py313h23d381d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pixman-0.46.4-ha059160_1.conda
@@ -4772,6 +4772,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pyomo-6.10.0-py313hbc4457e_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyopenssl-26.0.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyparsing-3.3.2-pyhcf101f3_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/pypdfium2-5.8.0-py313h22ab4a2_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pyproj-3.7.2-py313hb57fe85_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pypsa-1.2.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pyscipopt-6.1.0-np2py313h1160f3e_0.conda
@@ -4911,9 +4912,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zlib-ng-2.3.3-h8bce59a_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstandard-0.25.0-py313hcb05632_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.7-h3eecb57_6.conda
-      - pypi: https://files.pythonhosted.org/packages/46/68/b3fb5f073bcd3df9143a3520289c147351bfa3c1b096d44081f38fd1c247/pdfminer.six-20221105-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/7b/76/f856998de5632b3e9af11475ec8054680a17c074b265778b9e64635e2f27/pdfplumber-0.9.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/29/6c/51fe13d260d9e910d8f010494cc513420ab79852662fefdebdecfeaeebd5/wand-0.7.0-py3-none-any.whl
       osx-arm64:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/_openmp_mutex-4.5-7_kmp_llvm.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
@@ -5276,6 +5274,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/partd-1.4.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/patsy-1.0.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pcre2-10.47-h30297fc_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pdfminer.six-20251107-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pdfplumber-0.11.9-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pexpect-4.9.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pillow-12.2.0-py313h45e5a15_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pixman-0.46.4-h81086ad_1.conda
@@ -5320,6 +5320,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pyomo-6.10.0-py313h6deaedc_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyopenssl-26.0.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyparsing-3.3.2-pyhcf101f3_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pypdfium2-5.8.0-py313h12dd151_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pyproj-3.7.2-py313h6de5794_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pypsa-1.2.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pyscipopt-6.1.0-np2py313hdc65ad0_0.conda
@@ -5459,9 +5460,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-ng-2.3.3-hed4e4f5_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstandard-0.25.0-py313h9734d34_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
-      - pypi: https://files.pythonhosted.org/packages/46/68/b3fb5f073bcd3df9143a3520289c147351bfa3c1b096d44081f38fd1c247/pdfminer.six-20221105-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/7b/76/f856998de5632b3e9af11475ec8054680a17c074b265778b9e64635e2f27/pdfplumber-0.9.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/29/6c/51fe13d260d9e910d8f010494cc513420ab79852662fefdebdecfeaeebd5/wand-0.7.0-py3-none-any.whl
       win-64:
       - conda: https://conda.anaconda.org/conda-forge/win-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
@@ -5806,6 +5804,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/partd-1.4.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/patsy-1.0.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pcre2-10.47-hd2b5f0e_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pdfminer.six-20251107-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pdfplumber-0.11.9-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pillow-12.2.0-py313h38f99e1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pixman-0.46.4-h5112557_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.9.6-pyhcf101f3_0.conda
@@ -5845,6 +5845,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/pyomo-6.10.0-py313hfe59770_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyopenssl-26.0.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyparsing-3.3.2-pyhcf101f3_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/pypdfium2-5.8.0-py313h5fd188c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pyproj-3.7.2-py313hbf73894_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pypsa-1.2.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pyreadline3-3.5.4-py313hfa70ccb_2.conda
@@ -6001,9 +6002,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zlib-ng-2.3.3-h0261ad2_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstandard-0.25.0-py313h5fd188c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
-      - pypi: https://files.pythonhosted.org/packages/46/68/b3fb5f073bcd3df9143a3520289c147351bfa3c1b096d44081f38fd1c247/pdfminer.six-20221105-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/7b/76/f856998de5632b3e9af11475ec8054680a17c074b265778b9e64635e2f27/pdfplumber-0.9.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/29/6c/51fe13d260d9e910d8f010494cc513420ab79852662fefdebdecfeaeebd5/wand-0.7.0-py3-none-any.whl
   test:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -28185,31 +28183,29 @@ packages:
   purls: []
   size: 995992
   timestamp: 1763655708300
-- pypi: https://files.pythonhosted.org/packages/46/68/b3fb5f073bcd3df9143a3520289c147351bfa3c1b096d44081f38fd1c247/pdfminer.six-20221105-py3-none-any.whl
-  name: pdfminer-six
-  version: '20221105'
-  sha256: 1eaddd712d5b2732f8ac8486824533514f8ba12a0787b3d5fe1e686cd826532d
-  requires_dist:
-  - charset-normalizer>=2.0.0
-  - cryptography>=36.0.0
-  - typing-extensions ; python_full_version < '3.8'
-  - black ; extra == 'dev'
-  - mypy==0.931 ; extra == 'dev'
-  - nox ; extra == 'dev'
-  - pytest ; extra == 'dev'
-  - sphinx ; extra == 'docs'
-  - sphinx-argparse ; extra == 'docs'
-  - pillow ; extra == 'image'
-  requires_python: '>=3.6'
-- pypi: https://files.pythonhosted.org/packages/7b/76/f856998de5632b3e9af11475ec8054680a17c074b265778b9e64635e2f27/pdfplumber-0.9.0-py3-none-any.whl
-  name: pdfplumber
-  version: 0.9.0
-  sha256: b396f2919670eb863124f649a907dc846c8653bbb6ba8024fe274952de121077
-  requires_dist:
-  - pdfminer-six==20221105
-  - pillow>=9.1
-  - wand>=0.6.10
-  requires_python: '>=3.7'
+- conda: https://conda.anaconda.org/conda-forge/noarch/pdfminer.six-20251107-pyhd8ed1ab_1.conda
+  sha256: 583e58452926ba5c96f50c047198ec7242567866da348e0d99f8c78a6ee0aaf5
+  md5: f6f42d3a2a83b6dc68eff345b277e655
+  depends:
+  - charset-normalizer >=2.0.0
+  - cryptography >=36.0.0
+  - python >=3.10
+  license: MIT
+  license_family: MIT
+  size: 4556224
+  timestamp: 1765730859464
+- conda: https://conda.anaconda.org/conda-forge/noarch/pdfplumber-0.11.9-pyhd8ed1ab_0.conda
+  sha256: 0c930a434998fa9c5c54b95d8c2a1de95c924b5944a6746fd16870b9a2d108fd
+  md5: 972062f463023a3e080b86e14911d156
+  depends:
+  - pdfminer.six 20251107
+  - pillow >=9.1
+  - pypdfium2 >=4.18.0
+  - python >=3.10
+  license: MIT
+  license_family: MIT
+  size: 56291
+  timestamp: 1767611761232
 - conda: https://conda.anaconda.org/conda-forge/noarch/pexpect-4.9.0-pyhd8ed1ab_1.conda
   sha256: 202af1de83b585d36445dc1fda94266697341994d1a3328fabde4989e1b3d07a
   md5: d0d408b1f18883a944376da5cf8101ea
@@ -30234,6 +30230,49 @@ packages:
   - pkg:pypi/pyparsing?source=hash-mapping
   size: 110893
   timestamp: 1769003998136
+- conda: https://conda.anaconda.org/conda-forge/linux-64/pypdfium2-5.8.0-py312h5253ce2_0.conda
+  sha256: a2b94592c8b4821b6cdd75e1793c6c781af8a4a7f52bc72ce531aa786d38671b
+  md5: 66825f0745f118e5877307221087eb8c
+  depends:
+  - python
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=14
+  - python_abi 3.12.* *_cp312
+  license: Apache-2.0
+  size: 3817325
+  timestamp: 1777923818307
+- conda: https://conda.anaconda.org/conda-forge/osx-64/pypdfium2-5.8.0-py313h22ab4a2_0.conda
+  sha256: 56c3291b91bf005536dddb826c7eb5465ecd96a89143ad8c7a1e4be78b231fd6
+  md5: 72f105aca72b19c3d4ef0828141e97f2
+  depends:
+  - python
+  - __osx >=11.0
+  - python_abi 3.13.* *_cp313
+  license: Apache-2.0
+  size: 3747290
+  timestamp: 1777923915755
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/pypdfium2-5.8.0-py313h12dd151_0.conda
+  sha256: a1cb4bdf2566125bd058ed6a61376a930f87aa5b151373ebef8a9e7e4676fefe
+  md5: a5bdc9e0108a50afb03a022cbe59bfc9
+  depends:
+  - python
+  - __osx >=11.0
+  - python_abi 3.13.* *_cp313
+  license: Apache-2.0
+  size: 3607975
+  timestamp: 1777923847885
+- conda: https://conda.anaconda.org/conda-forge/win-64/pypdfium2-5.8.0-py313h5fd188c_0.conda
+  sha256: 38d6f9314f69539b6dc6dfaa8d29a7c387b2348bdf847d865195568a7d0c8dbc
+  md5: 5e0f8e7cfdaac20911479bef5bccbe22
+  depends:
+  - python
+  - vc >=14.3,<15
+  - vc14_runtime >=14.44.35208
+  - ucrt >=10.0.20348.0
+  - python_abi 3.13.* *_cp313
+  license: Apache-2.0
+  size: 3397982
+  timestamp: 1777923852701
 - conda: https://conda.anaconda.org/conda-forge/linux-64/pyproj-3.7.2-py312h1c88c49_1.conda
   sha256: e0ca1d99228f96ba872d6a4085dfd337513dd24ee3a25f0997d985ae97d7d632
   md5: df6837caa76c161b682c27042a851cfb
@@ -34993,14 +35032,6 @@ packages:
   purls: []
   size: 19347
   timestamp: 1767320221943
-- pypi: https://files.pythonhosted.org/packages/29/6c/51fe13d260d9e910d8f010494cc513420ab79852662fefdebdecfeaeebd5/wand-0.7.0-py3-none-any.whl
-  name: wand
-  version: 0.7.0
-  sha256: 197a5011891a68fc14558cac58db5f5aafb66ef1dd28bfb4a2c62c156c41712e
-  requires_dist:
-  - pytest>=7.2.0 ; extra == 'test'
-  - sphinx>=7.2.6 ; extra == 'doc'
-  requires_python: '>=3.8'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/wayland-1.24.0-h3e06ad9_0.conda
   sha256: ba673427dcd480cfa9bbc262fd04a9b1ad2ed59a159bd8f7e750d4c52282f34c
   md5: 0f2ca7906bf166247d1d760c3422cb8a
