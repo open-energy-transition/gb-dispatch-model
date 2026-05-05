@@ -259,6 +259,7 @@ def assign_technical_and_costs_defaults(
     fes_scenario: str,
     data_file: str,
     max_hours_path: str,
+    gb_config: dict[str, dict],
 ) -> pd.DataFrame:
     """
     Enrich powerplants dataframe with cost and technical parameters.
@@ -272,6 +273,7 @@ def assign_technical_and_costs_defaults(
         fes_scenario: FES scenario name (e.g., "leading the way")
         data_file: Data file identifier
         max_hours_path: Path to max hours CSV file
+        gb_config: Configuration dict of GB carrier mapping
 
     Returns:
         Enriched powerplants DataFrame with efficiency, marginal_cost, VOM, fuel,
@@ -334,6 +336,13 @@ def assign_technical_and_costs_defaults(
     # PyPSA-Eur expects 'capital_cost' column name even though source technology data uses 'investment'
     df = df.rename(columns={"investment": "capital_cost"})
 
+    cross_sheet_mapping = gb_config["BB2_to_ES1_mapping"]
+    bbid_mapping = gb_config["carrier_mapping"]["Building Block ID Number"]
+    for key in cross_sheet_mapping:
+        if key in bbid_mapping:
+            df.loc[df["carrier"].isin(cross_sheet_mapping[key]), "carrier"] = (
+                bbid_mapping[key]
+            )
     return df
 
 
@@ -365,6 +374,7 @@ if __name__ == "__main__":
         fes_scenario=fes_scenario,
         data_file=snakemake.wildcards.data_file,
         max_hours_path=snakemake.input.max_hours,
+        gb_config=snakemake.params.gb_config,
     )
     logger.info("Enriched powerplants with cost and technical parameters")
 

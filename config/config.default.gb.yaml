@@ -1568,6 +1568,7 @@ fes:
   "sheet-config": {}
   gb:
     carrier_mapping: {}
+    SubType_map: {}
     set_mapping: {}
     BB2_to_ES1_mapping: {}
     BB1_ES1_mismatch_percentage: 0.0

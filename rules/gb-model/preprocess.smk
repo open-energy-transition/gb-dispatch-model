@@ -171,7 +171,7 @@ rule fetch_storage_max_hours:
     params:
         tech_max_hours=config["fes"]["gb"]["tech_max_hours"],
         year_range=config["redispatch"]["year_range_incl"],
-        tech_mapping=config["fes"]["gb"]["carrier_mapping"]["Technology Detail"],
+        tech_mapping=config["fes"]["gb"]["SubType_map"],
     input:
         es1_sheet=resources(f"gb-model/fes/ES1.csv"),
     output:

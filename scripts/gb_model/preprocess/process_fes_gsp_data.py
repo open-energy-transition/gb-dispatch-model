@@ -243,7 +243,7 @@ def split_technologies(
             )
 
         df_es1_tech = pd.DataFrame(
-            df_es1_reqd.query("SubType in @tech", local_dict={"tech": mapped_tech})
+            df_es1_reqd.query("SubType in @techs", local_dict={"techs": mapped_tech})
             .groupby(["SubType", "year"])["data"]
             .sum()
         )
@@ -283,11 +283,10 @@ def split_technologies(
 
         df_with_regions_updated = pd.concat(
             [
-                df_with_regions_updated.query("Technology != @tech"),
+                df_with_regions_updated.query("`Building Block ID Number` != @tech"),
                 df_tech[df_with_regions_updated.columns],
             ]
         )
-
     return df_with_regions_updated
 
 

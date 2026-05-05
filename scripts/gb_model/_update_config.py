@@ -425,6 +425,10 @@ class FESGBConfig(GBBaseConfig):
         description="Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
         default_factory=dict,
     )
+    SubType_map: dict[str, str] = Field(
+        description="Carrier mappings based on values in SubType column in ES1 sheet. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
+        default_factory=dict,
+    )
     set_mapping: dict[str, dict[str, Literal["CHP", "PP", "Store"]]] = Field(
         description="Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
         default_factory=dict,

@@ -239,7 +239,7 @@ fes_costs:
     PHS Store: Storage-Pumped Hydro
     solar PP: Solar-Solar PV
     waste PP: Waste-Waste
-    waste CHP CHP: Waste-Waste CHP
+    Waste CHP CHP: Waste-Waste CHP
     CCS Gas PP: CCS-CCS Gas
     Compressed Air Store: Storage-Compressed Air
     Liquid Air Store: Storage-Liquid Air
@@ -261,7 +261,7 @@ fes_costs:
     hydrogen turbine CHP CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
     oil PP: Gasoil-Steam Oil
     waste PP: WoodPellets-Waste
-    waste CHP CHP: Gas-Waste CHP
+    Waste CHP CHP: Gas-Waste CHP
     CCS Gas PP: CCSGas-CCS Gas
 
   voll: 6000 #£/MWh - based on `value_of_lost_load` from (https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf)
@@ -755,30 +755,39 @@ fes:
 
   gb:
     carrier_mapping:
+      Building Block ID Number:
+        Gen_BB001: CCGT
+        Gen_BB002: CCGT
+        Gen_BB004: biomass
+        Gen_BB005: engine
+        Gen_BB006: engine
+        Gen_BB007: hydrogen fuel cell
+        Gen_BB008: OCGT
+        Gen_BB009: CCGT
+        Gen_BB010: biomass
+        Gen_BB011: waste
+        Gen_BB012: solar
+        Gen_BB013: solar
+        Gen_BB014: offwind-dc
+        Gen_BB015: onwind
+        Gen_BB016: onwind
+        Gen_BB017: marine
+        Gen_BB018: hydro
+        Gen_BB019: geothermal
+        Gen_BB020: nuclear
+        Gen_BB021: coal
+        Gen_BB023: hydrogen turbine
+        Gen_BB024: offwind-dc
+        Srg_BB001: battery
+        Srg_BB002: battery
+        Srg_BB003: PHS
       # Mapping undertaken in different columns for different carriers
       Technology:
-        Biomass & Energy Crops (including CHP): biomass
-        CCGTs (non CHP): CCGT
-        Coal: coal
-        Geothermal: geothermal
-        Hydro: hydro # FIXME: should this be just "hydro?"
-        Hydrogen fuelled generation: hydrogen turbine  # FIXME: something else here?
-        Fuel Cells: hydrogen fuel cell
-        Marine: marine
-        Non-renewable Engines (Diesel) (non CHP): engine
-        Non-renewable Engines (Gas) (non CHP): engine
-        Non-renewable CHP: CCGT
-        Nuclear: nuclear
-        OCGTs (non CHP): OCGT
-        Offshore-Wind (off-Grid): offwind-dc
-        Renewable Engines (Landfill Gas, Sewage Gas, Biogas): biomass
-        Solar Generation: solar
-        Waste Incineration (including CHP): waste
         CCGT: CCGT
-        CCS Gas: CCGT
+        CCS Gas: CCS Gas
         Biomass: biomass
-        Biomass CHP: biomass
-        CCS Biomass: biomass
+        Biomass CHP: Biomass CHP
+        CCS Biomass: CCS Biomass
         Nuclear - Large: nuclear
         Nuclear - SMR: nuclear
         Compressed Air: Compressed Air
@@ -786,15 +795,10 @@ fes:
         Hydrogen: hydrogen turbine
         Hydrogen CHP: hydrogen turbine
         Waste: waste
-        Waste CHP: waste
-      Technology Detail:
-        Domestic Batteries (G98): battery
-        Batteries: battery
-        Battery: battery
-        Pumped Hydro: PHS # FIXME: should this be just "hydro?"
-        Offshore Wind: offwind-dc
-        Onshore Wind <1MW: onwind
-        Onshore Wind >=1MW: onwind
+        Waste CHP: Waste CHP
+    SubType_map:
+      Battery: battery
+      Pumped Hydro: PHS
 
     # [doc:fes-gb-set-mapping-start]
     set_mapping:

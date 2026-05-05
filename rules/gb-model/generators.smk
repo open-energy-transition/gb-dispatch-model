@@ -68,6 +68,7 @@ rule assign_costs:
         "Prepares costs file from technology-data of PyPSA-Eur and FES and assigns to {wildcards.data_file}"
     params:
         costs_config=config["fes_costs"],
+        gb_config=config["fes"]["gb"],
     input:
         tech_costs=Path(COSTS_DATASET["folder"])
         / f"costs_{config['scenario']['planning_horizons'][0]}.csv",
