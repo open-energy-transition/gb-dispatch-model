@@ -199,6 +199,7 @@ libabseil = "<20260107" # revert once https://github.com/grpc/grpc/issues/41672 
 highspy = { version = ">=1.13.2.dev0", channel = "conda-forge/label/dev" }
 atlite = "<0.5.0"
 pdfplumber = ">=0.11.0"
+pandas = "<3"
 
 [environments]
 doc = { features = ["doc"], no-default-feature = true }
