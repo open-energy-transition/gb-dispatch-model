@@ -13,6 +13,8 @@ import logging
 
 import pandas as pd
 
+import numpy as np
+
 from scripts._helpers import configure_logging, set_scenario_config
 
 logger = logging.getLogger(__name__)
@@ -46,6 +48,7 @@ def capacity_table(
     """
     df_cleaned = df.where(df.data > 0).dropna(subset=["data"])
     df_cleaned["carrier"] = _map_names(df_cleaned, mapping_config["carrier_mapping"])
+    df_cleaned.loc[(df_cleaned['carrier'].str.contains('CHP')) & (df_cleaned['carrier'].notna()),"set"] = 'CHP'
     df_cleaned["set"] = _map_names(
         df_cleaned, mapping_config["set_mapping"], default_set
     )

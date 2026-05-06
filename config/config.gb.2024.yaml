@@ -6,7 +6,7 @@
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#run
 run:
-  name: "GB-test"
+  name: "GB"
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#foresight
 foresight: overnight
@@ -803,15 +803,9 @@ fes:
     # [doc:fes-gb-set-mapping-start]
     set_mapping:
       Technology:
-        Biomass & Energy Crops (including CHP): CHP
-        Waste Incineration (including CHP): CHP
-        Non-renewable CHP: CHP
         Storage: Store
-        Biomass CHP: CHP
-        Hydrogen CHP: CHP
         Compressed Air: Store
         Liquid Air: Store
-        Waste CHP: CHP
     # [doc:fes-gb-set-mapping-end]
 
     BB2_to_ES1_mapping:
