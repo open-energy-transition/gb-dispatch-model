@@ -165,14 +165,11 @@ def _integrate_fes_power_costs(
     Returns:
         pd.DataFrame: Updated powerplants DataFrame with integrated FES power costs.
     """
-    # Create a carrier_set column for mapping
-    if "set" in df.columns:
-        carrier_set = df["carrier"] + " " + df["set"]
-    else:
-        carrier_set = df["carrier"]
+    carrier_set = df["carrier"]
 
     for col in ["VOM", "fuel"]:
         techs = carrier_set.map(costs_config[f"fes_{col}_carrier_mapping"])
+
         assert not (
             missing := set(techs.dropna()).difference(
                 fes_power_costs.index.get_level_values("technology")
@@ -180,6 +177,7 @@ def _integrate_fes_power_costs(
         ), (
             f"Some mapped FES technologies for {col} costs are missing in FES power costs data: {missing}"
         )
+
         df[col] = fes_power_costs[[col]].reindex([techs, df.year]).values
 
     return df
@@ -215,7 +213,7 @@ def calculate_marginal_costs(
             )
         elif "set" in df.columns:
             df[param] = df[param].fillna(
-                (df["carrier"] + " " + df["set"])
+                (df["carrier"])
                 .map(costs_config["carrier_gap_filling"]["default"])
                 .map(costs[param])
             )

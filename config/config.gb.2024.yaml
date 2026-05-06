@@ -6,7 +6,7 @@
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#run
 run:
-  name: "GB"
+  name: "GB-test"
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#foresight
 foresight: overnight
@@ -182,87 +182,87 @@ fes_costs:
       biomass: biomass
       waste: biomass
     default:
-      CCGT PP: CCGT
-      CCS Gas PP: CCS Gas
-      OCGT PP: OCGT
+      CCGT: CCGT
+      CCS Gas: CCS Gas
+      OCGT: OCGT
+      PHS: PHS
+      biomass: biomass
+      Biomass CHP: Biomass CHP
+      CCS Biomass: CCS Biomass
+      coal: coal
       CCGT CHP: central gas CHP
       OCGT CHP: central gas CHP
-      PHS Store: PHS
-      battery Store: battery storage
-      biomass PP: biomass
-      Biomass CHP CHP: Biomass CHP
-      CCS Biomass PP: CCS Biomass
-      coal PP: coal
+      battery: battery storage
       coal CHP: central coal CHP
-      engine PP: central gas CHP # `direct firing gas` is a better fit but the data is spurious
+      engine: central gas CHP # `direct firing gas` is a better fit but the data is spurious
       engine CHP: central gas CHP
-      geothermal PP: geothermal
-      hydrogen turbine PP: CCGT
-      hydrogen turbine CHP CHP: central hydrogen CHP
-      hydrogen fuel cell PP: fuel cell
-      nuclear PP: nuclear
-      offwind PP: offwind
-      oil PP: oil
+      geothermal: geothermal
+      hydrogen turbine: CCGT
+      hydrogen turbine CHP: central hydrogen CHP
+      hydrogen fuel cell: fuel cell
+      nuclear: nuclear
+      offwind: offwind
+      oil: oil
       oil CHP: oil
-      onwind PP: onwind
-      ror PP: hydro
-      solar PP: solar
-      waste PP: biomass
-      waste CHP: waste CHP
-      hydro PP: hydro
+      onwind: onwind
+      ror: hydro
+      solar: solar
+      waste: biomass
+      Waste CHP: waste CHP
+      hydro: hydro
       hydrogen Store: hydrogen storage tank type 1 including compressor
       electrolysis Other: electrolysis
 
   # [doc:fes-vom-config-start]
   fes_VOM_carrier_mapping:
-    battery Store: Storage-Battery
-    biomass PP: Biomass-Biomass
-    Biomass CHP CHP: Biomass-Biomass CHP
-    CCS Biomass PP: CCS-CCS Biomass
-    CCGT PP: Gas-CCGT
+    battery: Storage-Battery
+    biomass: Biomass-Biomass
+    Biomass CHP: Biomass-Biomass CHP
+    CCS Biomass: CCS-CCS Biomass
+    CCGT: Gas-CCGT
     CCGT CHP: Gas-Gas CHP
-    coal PP: Coal-Coal
+    coal: Coal-Coal
     coal CHP: Coal-Coal CHP
     engine CHP: Gas-Gas CHP
-    engine PP: Gas-Gas Reciprocating Engines
-    hydro PP: Hydro-Hydro
-    hydrogen turbine PP: Low Carbon-Hydrogen
-    hydrogen fuel cell PP: Storage-Fuel Cells
-    hydrogen turbine CHP CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
-    marine PP: Marine-Marine
-    OCGT PP: Gas-OCGT
+    engine: Gas-Gas Reciprocating Engines
+    hydro: Hydro-Hydro
+    hydrogen turbine: Low Carbon-Hydrogen
+    hydrogen fuel cell: Storage-Fuel Cells
+    hydrogen turbine CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
+    marine: Marine-Marine
+    OCGT: Gas-OCGT
     OCGT CHP: Gas-Gas CHP
-    offwind-dc PP: Offshore Wind-Offshore Wind
-    oil PP: Other Thermal-Fuel Oil
-    onwind PP: Onshore Wind-Onshore Wind
-    nuclear PP: Nuclear-Nuclear
-    PHS Store: Storage-Pumped Hydro
-    solar PP: Solar-Solar PV
-    waste PP: Waste-Waste
-    Waste CHP CHP: Waste-Waste CHP
-    CCS Gas PP: CCS-CCS Gas
-    Compressed Air Store: Storage-Compressed Air
-    Liquid Air Store: Storage-Liquid Air
+    offwind-dc: Offshore Wind-Offshore Wind
+    oil: Other Thermal-Fuel Oil
+    onwind: Onshore Wind-Onshore Wind
+    nuclear: Nuclear-Nuclear
+    PHS: Storage-Pumped Hydro
+    solar: Solar-Solar PV
+    waste: Waste-Waste
+    Waste CHP: Waste-Waste CHP
+    CCS Gas: CCS-CCS Gas
+    Compressed Air: Storage-Compressed Air
+    Liquid Air: Storage-Liquid Air
   # [doc:fes-vom-config-end]
   fes_fuel_carrier_mapping:
-    biomass PP: Biomass-Biomass
-    Biomass CHP CHP: Biomass-Biomass CHP
-    CCS Biomass PP: CCSBiomass-Biomass
-    CCGT PP: Gas-CCGT
+    biomass: Biomass-Biomass
+    Biomass CHP: Biomass-Biomass CHP
+    CCS Biomass: CCSBiomass-Biomass
+    CCGT: Gas-CCGT
     CCGT CHP: Gas-CCGT CHP
-    coal PP: Coal-Coal
+    coal: Coal-Coal
     coal CHP: Coal-Coal CHP
-    engine PP: Gas-Gas Reciprocating Engines
+    engine: Gas-Gas Reciprocating Engines
     engine CHP: Gas-Engine CHP
-    OCGT PP: Gas-OCGT
+    OCGT: Gas-OCGT
     OCGT CHP: Gas-GT CHP
-    hydrogen turbine PP: Low Carbon-Hydrogen
-    hydrogen fuel cell PP: Storage-Fuel Cells
-    hydrogen turbine CHP CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
-    oil PP: Gasoil-Steam Oil
-    waste PP: WoodPellets-Waste
-    Waste CHP CHP: Gas-Waste CHP
-    CCS Gas PP: CCSGas-CCS Gas
+    hydrogen turbine: Low Carbon-Hydrogen
+    hydrogen fuel cell: Storage-Fuel Cells
+    hydrogen turbine CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
+    oil: Gasoil-Steam Oil
+    waste: WoodPellets-Waste
+    Waste CHP: Gas-Waste CHP
+    CCS Gas: CCSGas-CCS Gas
 
   voll: 6000 #£/MWh - based on `value_of_lost_load` from (https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf)
 
@@ -755,9 +755,24 @@ fes:
 
   gb:
     carrier_mapping:
+      # Mapping undertaken in different columns for different carriers
+      Technology:
+        CCGT: CCGT
+        CCS Gas: CCS Gas
+        Biomass: biomass
+        Biomass CHP: Biomass CHP
+        CCS Biomass: CCS Biomass
+        Nuclear - Large: nuclear
+        Nuclear - SMR: nuclear
+        Compressed Air: Compressed Air
+        Liquid Air: Liquid Air
+        Hydrogen: hydrogen turbine
+        Hydrogen CHP: hydrogen turbine CHP
+        Waste: waste
+        Waste CHP: Waste CHP
       Building Block ID Number:
-        Gen_BB001: CCGT
-        Gen_BB002: CCGT
+        Gen_BB001: CCGT CHP
+        Gen_BB002: CCGT CHP
         Gen_BB004: biomass
         Gen_BB005: engine
         Gen_BB006: engine
@@ -781,21 +796,6 @@ fes:
         Srg_BB001: battery
         Srg_BB002: battery
         Srg_BB003: PHS
-      # Mapping undertaken in different columns for different carriers
-      Technology:
-        CCGT: CCGT
-        CCS Gas: CCS Gas
-        Biomass: biomass
-        Biomass CHP: Biomass CHP
-        CCS Biomass: CCS Biomass
-        Nuclear - Large: nuclear
-        Nuclear - SMR: nuclear
-        Compressed Air: Compressed Air
-        Liquid Air: Liquid Air
-        Hydrogen: hydrogen turbine
-        Hydrogen CHP: hydrogen turbine
-        Waste: waste
-        Waste CHP: Waste CHP
     SubType_map:
       Battery: battery
       Pumped Hydro: PHS
