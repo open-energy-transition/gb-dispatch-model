@@ -257,6 +257,11 @@ class EntsoeUnavailabilityConfig(GBBaseConfig):
         description="Carrier mapping from ENTSO-E to model carriers",
         default_factory=dict,
     )
+    extend_to_eur_regions: bool = Field(
+        default=False,
+        description="Whether to extend the unavailability data to European regions. "
+        "This is done by applying the GB availability fraction to all generators in European regions, which is a simplification in lieu of actually processing European unavailability data.",
+    )
 
 
 class TransmissionAvailabilityZoneConfig(GBBaseConfig):
@@ -516,6 +521,11 @@ class FESHydrogenConfig(GBBaseConfig):
         description="FES workbook data aggregation filters for hydrogen",
         default_factory=FESHydrogenDataSelection,
     )
+    enable_eur_h2_bus: bool = Field(
+        default=False,
+        description="Whether to enable the H2 bus (incl. electrolysis to generate H2, H2 demand, and storage) for European countries. "
+        "This is optional as the necessary data is not available in the FES and it is unclear whether modelled generation capacity is designed to meet electrolysis demands or not.",
+    )
 
 
 class FESConfig(GBBaseConfig):
@@ -693,7 +703,11 @@ class RedispatchConfig(GBBaseConfig):
         "This allows us to capture the impact of thermal constraints on boundary capabilities.",
         default_factory=lambda x: {month: 1.0 for month in range(1, 13)},
     )
-
+    redispatch_profit_mitigation_penalty: float = Field(
+        default=0,
+        ge=0,
+        description="penalty (per MWh) applied to redispatch actions in order to mitigate against unrealistic levels of redispatch profit that can occur due to favourable differences in bid/offer costs of different technologies.",
+    )
     elexon: ElexonConfig = Field(
         description="Elexon API configuration", default_factory=ElexonConfig
     )
@@ -706,6 +720,11 @@ class RedispatchConfig(GBBaseConfig):
         ge=0,
         description="Buffer distance in meters to apply to mainland GB when identifying flow directions for boundary crossings. "
         "This ensures we correctly identify flows on island boundaries (e.g. Anglesey).",
+    )
+    bid_offer_multiplier_mapping: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping from carriers that have received a bid/offer multipliers from processing the Elexon API to other carriers in the model. "
+        "Keys are other carriers, values are carriers with Elexon bid/offer multipliers.",
     )
 
     @field_validator("year_range_incl")
@@ -726,6 +745,33 @@ class RedispatchConfig(GBBaseConfig):
         if any(factor < 0 or factor > 1 for factor in v.values()):
             raise ValueError("Monthly scaling factors must be between 0 and 1")
         return v
+
+    @model_validator(mode="after")
+    def validate_bid_offer_multiplier_mapping(self) -> Self:
+        """
+        Validate that keys in bid_offer_multiplier_mapping are not:
+        (a) already in the Elexon API mapping and
+        (b) in the `no_redispatch_carriers` list.
+
+        Also validate that the values in bid_offer_multiplier_mapping are carriers that are in the Elexon API mapping.
+        """
+        elexon_mapping = self.elexon.technology_mapping
+        elexon_mapped_carriers = set(elexon_mapping.values())
+        no_redispatch_carriers = set(self.no_redispatch_carriers)
+        for carrier, mapped_carrier in self.bid_offer_multiplier_mapping.items():
+            if carrier in elexon_mapped_carriers:
+                raise ValueError(
+                    f"Carrier '{carrier}' in bid_offer_multiplier_mapping cannot be a carrier that already has Elexon API bid/offer multipliers."
+                )
+            if carrier in no_redispatch_carriers:
+                raise ValueError(
+                    f"Carrier '{carrier}' in bid_offer_multiplier_mapping cannot be a carrier that is in the no_redispatch_carriers list."
+                )
+            if mapped_carrier not in elexon_mapped_carriers:
+                raise ValueError(
+                    f"Mapped carrier '{mapped_carrier}' for carrier '{carrier}' in bid_offer_multiplier_mapping must be a carrier that has Elexon API bid/offer multipliers."
+                )
+        return self
 
 
 class TimeAggregationConfig(GBBaseConfig):

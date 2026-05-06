@@ -28,6 +28,10 @@ rule compose_network:
         renewable=config["renewable"],
         voll=config["fes_costs"]["voll"],
         enable_chp=config["chp"]["enable"],
+        enable_eur_h2_bus=config["fes"]["hydrogen"]["enable_eur_h2_bus"],
+        enable_eur_generator_unavailability=config["entsoe_unavailability"][
+            "extend_to_eur_regions"
+        ],
         dsr_hours_dict=config["fes"]["gb"]["flexibility"]["dsr_hours"],
         load_bus_suffixes=config["fes"]["gb"]["demand"]["bus_suffix"],
         flex_carrier_suffixes=config["fes"]["gb"]["flexibility"]["carrier_suffix"],

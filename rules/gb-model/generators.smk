@@ -26,7 +26,7 @@ rule generator_monthly_availability_fraction:
     message:
         "Combine outage data with DUKES current technology capacities to get monthly outage fractions per carrier"
     input:
-        outages=resources("gb-model/{zone}_generator_unavailability.csv"),
+        outages=resources("gb-model/GB_generator_unavailability.csv"),
         dukes_data=resources("gb-model/dukes-current-capacity.csv"),
     params:
         entsoe_carrier_mapping=config["entsoe_unavailability"]["carrier_mapping"],
@@ -36,9 +36,9 @@ rule generator_monthly_availability_fraction:
         dukes_config=config["dukes-5.11"],
         default_set=config["fes"]["default_set"],
     output:
-        csv=resources("gb-model/{zone}_generator_monthly_availability_fraction.csv"),
+        csv=resources("gb-model/GB_generator_monthly_availability_fraction.csv"),
     log:
-        logs("{zone}_generator_monthly_availability_fraction.log"),
+        logs("GB_generator_monthly_availability_fraction.log"),
     script:
         scripts("gb_model/generators/generator_monthly_availability_fraction.py")
 

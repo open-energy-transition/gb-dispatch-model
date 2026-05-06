@@ -104,7 +104,7 @@ renewable:
 
 conventional:
   nuclear:
-    max_annual_capacity_factor: 1
+    max_annual_capacity_factor: 0.87
     min_annual_capacity_factor: 0.50
 
 fes_costs:
@@ -256,13 +256,10 @@ fes_costs:
     engine CHP: Gas-Engine CHP
     OCGT: Gas-OCGT
     OCGT CHP: Gas-GT CHP
-    hydrogen turbine: Low Carbon-Hydrogen
-    hydrogen fuel cell: Storage-Fuel Cells
-    hydrogen turbine CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
     oil: Gasoil-Steam Oil
-    waste: WoodPellets-Waste
-    Waste CHP: Gas-Waste CHP
-    CCS Gas: CCSGas-CCS Gas
+    hydrogen turbine: Hydrogen-CCGT
+    hydrogen turbine CHP: Hydrogen-CCGT
+    hydrogen fuel cell: Hydrogen-CCGT
 
   voll: 6000 #£/MWh - based on `value_of_lost_load` from (https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf)
 
@@ -525,7 +522,7 @@ entsoe_unavailability:
     Hydro Run-of-river and poundage: hydro
     Nuclear: nuclear
     Waste: waste
-# [doc:entsoe-unavailability-config-end]
+  extend_to_eur_regions: false
 
 # [doc:transmission-availability-config-start]
 transmission_availability:
@@ -817,6 +814,7 @@ fes:
       Gen_BB011: ["Waste", "Waste CHP"]
     BB1_ES1_mismatch_percentage: 5
 
+    # [doc:demand-start]
     demand:
       Technology Detail:
         baseline_electricity: ["baseline demand"]
@@ -848,10 +846,12 @@ fes:
       losses_data_item:
       - "GBFES System Losses: Distribution"
       - "GBFES System Losses: Transmission"
+    # [doc:demand-end]
+
+    # [doc:flexibility-start]
     # [doc:storage-battery-flx1-config-start]
     flexibility:
       carrier_mapping:
-        # [doc:storage-battery-flx1-config-start]
         battery:
           Data item: "Electricity storage energy storage potential"
           Detail: "Battery"
@@ -889,6 +889,7 @@ fes:
       v2g_storage_to_capacity_ratio: 7.14 # based on ratio in FES 2021. Same value will be applied to all future years.
     tech_max_hours: ['Compressed Air', 'Liquid Air', "Battery", "Pumped Hydro"]
 
+    # [doc:flexibility-end]
     regional_distribution_reference:
       ev_dsr:
         source: "v2g"
@@ -998,6 +999,7 @@ fes:
         - Non Networked Electricity
       storage:
         Category: storage
+    enable_eur_h2_bus: false
 # [doc:hydrogen-config-end]
 
 # [doc:ev-config-start]
@@ -1328,6 +1330,7 @@ redispatch:
     10: 0.85
     11: 0.85
     12: 1.0
+  redispatch_profit_mitigation_penalty: 250
   elexon: # Elexon API data
     technology_mapping: # ignoring renewables in mapping as they come from CfD data
       coal: coal
@@ -1341,3 +1344,7 @@ redispatch:
     years: [2020, 2021, 2022, 2023, 2024]
     api_bmu_fuel_map: false # Boolean to decide source of Elexon BMU unit - fuel map, If True - data is fetched using API else uses data uploaded to the repo
     max_concurrent_requests: 4
+  bid_offer_multiplier_mapping:
+    purchased H2: CCGT
+    PHS: battery storage
+    hydro: battery storage

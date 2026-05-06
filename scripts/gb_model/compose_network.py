@@ -164,6 +164,7 @@ def _add_timeseries_data_to_network(
 def _load_powerplants(
     powerplants_path: str,
     year: int,
+    filter_idx: str | None = None,
 ) -> pd.DataFrame:
     """
     Load powerplant data.
@@ -174,6 +175,8 @@ def _load_powerplants(
         Path to powerplants CSV file
     year : int
         Year to filter powerplants
+    filter_idx : str or None
+        Optional regex to filter powerplants by name
 
     Returns
     -------
@@ -184,7 +187,8 @@ def _load_powerplants(
     ppl = ppl[ppl.build_year == year]
     ppl["max_hours"] = ppl.get("max_hours", 0)  # Initialize max_hours column
     ppl["efficiency"] = ppl.get("efficiency", 1.0)  # Initialize efficiency column
-
+    if filter_idx is not None:
+        ppl = ppl.filter(regex=filter_idx, axis=0)
     return ppl
 
 
@@ -425,12 +429,31 @@ def _add_load_bus(n: pypsa.Network, load: pd.DataFrame, suffix: str):
     )
 
 
-def _load_regional_data(path: str, year: int) -> pd.DataFrame:
+def _load_regional_data(
+    path: str, year: int, filter_idx: str | None = None
+) -> pd.DataFrame:
     """
     Load regional data from CSV file and filter by year.
+
+    Parameters
+    ----------
+    path : str
+        Path to the CSV file containing regional data
+    year : int
+        Year to filter the data by
+    filter_idx : str or None
+        Optional regex to filter the data by index (e.g., bus name)
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the filtered regional data
+
     """
     df = pd.read_csv(path, index_col=["bus", "year"])
     df_year = df.xs(year, level="year")
+    if filter_idx is not None:
+        df_year = df_year.filter(regex=filter_idx, axis=0)
     return df_year
 
 
@@ -1036,42 +1059,49 @@ def add_H2(
     n: pypsa.Network,
     ppl: pd.DataFrame,
     year: int,
+    enable_eur_h2_bus: bool,
     regional_H2_demand_annual_inc_eur: str,
     regional_non_networked_electrolysis_demand_annual_inc_eur: str,
     regional_H2_storage_capacity_inc_eur_inc_tech_data: str,
     regional_grid_electrolysis_capacities_inc_eur_inc_tech_data: str,
     electrolysis_efficiency: str,
 ) -> None:
-    demand = _load_regional_data(regional_H2_demand_annual_inc_eur, year)
+    if enable_eur_h2_bus:
+        filter = None
+        add_query = ""
+    else:
+        filter = "^GB .*"
+        add_query = " and country == 'GB'"
+    demand = _load_regional_data(regional_H2_demand_annual_inc_eur, year, filter)
     demand_fixed = _load_regional_data(
-        regional_non_networked_electrolysis_demand_annual_inc_eur, year
+        regional_non_networked_electrolysis_demand_annual_inc_eur, year, filter
     )
     storage_caps = _load_powerplants(
-        regional_H2_storage_capacity_inc_eur_inc_tech_data, year
+        regional_H2_storage_capacity_inc_eur_inc_tech_data, year, filter
     )
     electrolysis_caps = _load_powerplants(
-        regional_grid_electrolysis_capacities_inc_eur_inc_tech_data, year
+        regional_grid_electrolysis_capacities_inc_eur_inc_tech_data, year, filter
     )
     electrolysis_efficiency_float = (
         pd.read_csv(electrolysis_efficiency, index_col="year").squeeze().loc[year]
     )
 
     n.add("Carrier", "H2")
-    all_nodes = n.buses[n.buses.carrier == "AC"].index
+    all_h2_nodes = n.buses.query("carrier == 'AC'" + add_query).index
     n.add(
         "Bus",
-        all_nodes,
-        suffix=" H2",
+        all_h2_nodes,
+        suffix=" Grid H2",
         carrier="H2",
         unit="MWh_LHV",
-        country=n.buses.loc[all_nodes].country,
+        country=n.buses.loc[all_h2_nodes].country,
     )
 
     n.add(
         "Load",
         demand.index,
-        suffix=" H2 demand",
-        bus=demand.index + " H2",
+        suffix=" Grid H2 demand",
+        bus=demand.index + " Grid H2",
         carrier="H2",
         p_set=demand.p_set / n.snapshot_weightings.objective.sum(),
     )
@@ -1079,7 +1109,7 @@ def add_H2(
         "Load",
         demand_fixed.index,
         suffix=" Electricity for off-grid electrolysis",
-        bus=demand_fixed.index,
+        bus=demand_fixed.index + " Grid H2",
         carrier="AC",
         p_set=demand_fixed.p_set / n.snapshot_weightings.objective.sum(),
     )
@@ -1088,7 +1118,7 @@ def add_H2(
     n.add(
         "Link",
         electrolysis_caps.index,
-        bus1=electrolysis_caps.bus + " H2",
+        bus1=electrolysis_caps.bus + " Grid H2",
         bus0=electrolysis_caps.bus,
         p_nom=electrolysis_caps.p_nom,
         carrier="H2 Electrolysis",
@@ -1097,40 +1127,12 @@ def add_H2(
         capital_cost=0,
         lifetime=electrolysis_caps.lifetime,
     )
-    if not (fuel_cells := ppl[ppl.carrier == "hydrogen fuel cell"]).empty:
-        n.add("Carrier", "H2 fuel cell")
-        n.add(
-            "Link",
-            fuel_cells.index,
-            bus0=fuel_cells.bus + " H2",
-            bus1=fuel_cells.bus,
-            p_nom=fuel_cells.p_nom,
-            carrier="H2 Fuel Cell",
-            marginal_cost=fuel_cells.marginal_cost,
-            efficiency=fuel_cells.efficiency,
-            # NB: fixed cost is per MWel
-            capital_cost=0,
-            lifetime=fuel_cells.lifetime,
-        )
-    if not (turbines := ppl[ppl.carrier == "hydrogen turbine"]).empty:
-        n.add("Carrier", "H2 Turbine")
-        n.add(
-            "Link",
-            turbines.index,
-            bus0=turbines.bus + " H2",
-            bus1=turbines.bus,
-            carrier="H2 Turbine",
-            p_nom=turbines.p_nom,
-            marginal_cost=turbines.marginal_cost,
-            efficiency=turbines.efficiency,
-            capital_cost=0,
-            lifetime=turbines.lifetime,
-        )
+
     n.add("Carrier", "H2 Store")
     n.add(
         "Store",
         storage_caps.index,
-        bus=storage_caps.bus + " H2",
+        bus=storage_caps.bus + " Grid H2",
         e_nom=storage_caps.e_nom,
         e_cyclic=True,
         carrier="H2 Store",
@@ -1138,6 +1140,68 @@ def add_H2(
         capital_cost=0,
         lifetime=storage_caps.lifetime,
     )
+
+    if not (
+        h2_gen := ppl.query("carrier in ['hydrogen turbine', 'hydrogen fuel cell']")
+    ).empty:
+        h2_gen_buses = h2_gen.bus.unique()
+        n.add(
+            "Bus",
+            h2_gen_buses,
+            suffix=" blended H2",
+            carrier="H2",
+            country=n.buses.loc[h2_gen_buses].country,
+        )
+        h2_gen_linked_buses = all_h2_nodes.intersection(h2_gen_buses)
+        n.add(
+            "Link",
+            h2_gen_linked_buses,
+            suffix=" H2 turbine feed",
+            bus0=h2_gen_linked_buses + " Grid H2",
+            bus1=h2_gen_linked_buses + " blended H2",
+            carrier="H2",
+            p_nom=np.inf,
+        )
+        n.add("Carrier", "purchased H2")
+        n.add(
+            "Generator",
+            h2_gen_buses,
+            suffix=" purchased H2",
+            bus=h2_gen_buses + " blended H2",
+            carrier="purchased H2",
+            marginal_cost=h2_gen.groupby("bus").fuel.mean().loc[h2_gen_buses],
+            p_nom=np.inf,
+        )
+
+    if not (fuel_cells := ppl.query("carrier == 'hydrogen fuel cell'")).empty:
+        n.add("Carrier", "H2 fuel cell")
+        n.add(
+            "Link",
+            fuel_cells.index,
+            bus0=fuel_cells.bus + " blended H2",
+            bus1=fuel_cells.bus,
+            p_nom=fuel_cells.p_nom,
+            carrier="H2 Fuel Cell",
+            marginal_cost=fuel_cells.VOM,
+            efficiency=fuel_cells.efficiency,
+            capital_cost=0,
+            lifetime=fuel_cells.lifetime,
+        )
+
+    if not (turbines := ppl.query("carrier == 'hydrogen turbine'")).empty:
+        n.add("Carrier", "H2 Turbine")
+        n.add(
+            "Link",
+            turbines.index,
+            bus0=turbines.bus + " blended H2",
+            bus1=turbines.bus,
+            carrier="H2 Turbine",
+            p_nom=turbines.p_nom,
+            marginal_cost=turbines.VOM,
+            efficiency=turbines.efficiency,
+            capital_cost=0,
+            lifetime=turbines.lifetime,
+        )
 
 
 def _prepare_costs(
@@ -1184,8 +1248,9 @@ def _monthly_to_hourly_profile(
     return hourly_profile
 
 
-def _add_generator_availability(
+def add_generator_availability(
     n: pypsa.Network,
+    enable_eur_generator_unavailability: bool,
     generator_availability_path: str,
 ) -> None:
     """
@@ -1193,14 +1258,20 @@ def _add_generator_availability(
 
     Args:
         n (pypsa.Network): The PyPSA network to modify.
+        enable_eur_generator_unavailability (bool): Whether to extend unavailability data to European regions.
         generator_availability_path (str): Path to generator availability CSV file.
     """
     carrier_availability = pd.read_csv(
         generator_availability_path, index_col=["carrier", "month"]
     ).squeeze()
+    add_query = "" if enable_eur_generator_unavailability else " and country == 'GB'"
+    relevant_buses = n.buses.query("carrier == 'AC'" + add_query).index
     gen_availability = (
         carrier_availability.reset_index()
-        .merge(n.generators.reset_index(), on="carrier")
+        .merge(
+            n.generators[n.generators.bus.isin(relevant_buses)].reset_index(),
+            on="carrier",
+        )
         .pivot(index="month", columns="name", values="availability_fraction")
     )
     p_max_pu = gen_availability.apply(
@@ -1290,6 +1361,8 @@ def compose_network(
     dsr: dict[str, str],
     H2_data: dict[str, Any],
     enable_chp: bool,
+    enable_eur_h2_bus: bool,
+    enable_eur_generator_unavailability: bool,
     dsr_hours_dict: dict[str, list],
     load_bus_suffixes: dict[str, str],
     flex_carrier_suffixes: dict[str, str],
@@ -1346,6 +1419,8 @@ def compose_network(
         Suffixes to append to flexibility carriers for each demand type
     enable_chp : bool
         Whether to enable CHP constraints
+    enable_eur_h2_bus : bool
+        Whether to enable the H2 bus (incl. electrolysis to generate H2, H2 demand, and storage) for European countries.
     year: int
         Modelling year
     storage_list: list[str]
@@ -1421,7 +1496,7 @@ def compose_network(
         ev_availability_profile,
     )
 
-    add_H2(network, ppl, year, **H2_data)
+    add_H2(network, ppl, year, enable_eur_h2_bus, **H2_data)
 
     attach_dc_interconnectors(
         network, interconnectors_path, year, interconnectors_availability_path
@@ -1430,7 +1505,9 @@ def compose_network(
     add_battery_storage(network, ppl, battery_e_nom_path, year)
     add_other_storage(network, ppl, storage_list)
 
-    _add_generator_availability(network, generator_availability_path)
+    add_generator_availability(
+        network, enable_eur_generator_unavailability, generator_availability_path
+    )
     add_load_shedding(network, voll)
 
     finalise_composed_network(network, context)
@@ -1477,6 +1554,8 @@ if __name__ == "__main__":
         dsr=_input_list_to_dict(snakemake.input.dsr),
         H2_data=_input_list_to_dict(snakemake.input.H2_data),
         enable_chp=snakemake.params.enable_chp,
+        enable_eur_h2_bus=snakemake.params.enable_eur_h2_bus,
+        enable_eur_generator_unavailability=snakemake.params.enable_eur_generator_unavailability,
         dsr_hours_dict=snakemake.params.dsr_hours_dict,
         load_bus_suffixes=snakemake.params.load_bus_suffixes,
         flex_carrier_suffixes=snakemake.params.flex_carrier_suffixes,

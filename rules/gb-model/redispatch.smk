@@ -152,6 +152,9 @@ rule prepare_constrained_network:
             "redispatch", "unconstrain_lines_and_links"
         ),
         no_redispatch_carriers=config_provider("redispatch", "no_redispatch_carriers"),
+        bid_offer_multiplier_mapping=config_provider(
+            "redispatch", "bid_offer_multiplier_mapping"
+        ),
     input:
         network=resources("networks/{fes_scenario}/composed_clustered/{year}.nc"),
         unconstrained_result=RESULTS
@@ -185,6 +188,9 @@ rule solve_constrained:
         ),
         monthly_boundary_capability_scaling=config_provider(
             "redispatch", "monthly_boundary_capability_scaling"
+        ),
+        redispatch_profit_mitigation_penalty=config_provider(
+            "redispatch", "redispatch_profit_mitigation_penalty"
         ),
     input:
         network=resources("networks/{fes_scenario}/constrained_clustered/{year}.nc"),
