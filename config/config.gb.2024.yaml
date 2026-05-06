@@ -770,6 +770,7 @@ fes:
         Hydrogen CHP: hydrogen turbine CHP
         Waste: waste
         Waste CHP: Waste CHP
+        I&C Flexibility: I&C Flexibility
       Building Block ID Number:
         Gen_BB001: CCGT CHP
         Gen_BB002: CCGT CHP
