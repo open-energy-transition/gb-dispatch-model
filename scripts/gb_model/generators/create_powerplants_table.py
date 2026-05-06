@@ -13,8 +13,6 @@ import logging
 
 import pandas as pd
 
-import numpy as np
-
 from scripts._helpers import configure_logging, set_scenario_config
 
 logger = logging.getLogger(__name__)
