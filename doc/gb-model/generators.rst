@@ -182,8 +182,9 @@ Combined Heat and Power (CHP)
 **PyPSA Component**: ``Generator`` with a time-varying ``p_min_pu`` profile
 
 Many conventional carriers (CCGT, biomass, waste, etc.) exist in two variants: pure power plants and CHP units.
-FES BB1 reports some technologies (e.g. "Biomass & Energy Crops (including CHP)", "Waste Incineration (including CHP)", "Non-renewable CHP") as inherently cogeneration.
-These are assigned ``set = "CHP"`` via the ``fes.gb.set_mapping`` configuration, while the remaining capacity of the same carrier is assigned ``set = "PP"``.
+FES BB1 reports some technologies (e.g. "Biomass & Energy Crops (including CHP)", "Waste Incineration (including CHP)", "Non-renewable CHP") as including cogeneration.
+FES ES1 reports the share of the CHP units and pure powerplants for each year for some of these technologies. 
+Based on the SubType of the technologies in ES1, which contain `CHP` as part of the naming, the mapping for the powerplants as `CHP` or `PP` is determined.
 The resulting ``set`` column in the powerplants table therefore determines which fraction of each carrier is subject to CHP constraints — not the carrier itself.
 
 From ``config/config.gb.2024.yaml``:
