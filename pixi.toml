@@ -204,6 +204,7 @@ pdfplumber = ">=0.11.0"
 pandas = "<3"
 python = ">=3.13"
 cpython = ">=3.13"
+setuptools = "<81"
 
 [environments]
 doc = { features = ["doc"], no-default-feature = true }
