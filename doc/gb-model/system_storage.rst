@@ -3,10 +3,10 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _storage-system:
+.. _system-storage:
 
 ##########################################
-Storage System
+Storage Components
 ##########################################
 
 This page describes how electrical storage assets are represented in the model, including their data sources, capacity assignment, parameterisation, and implementation.
@@ -19,7 +19,7 @@ The model includes four types of storage assets:
 - **Battery storage**: Grid-scale battery storage, sized by future FES scenarios
 - **Pumped hydro storage (PHS)**: Gravity-based hydro reservoirs that can pump water uphill to store energy and generate on demand
 - **Reservoir hydro**: Run-of-river and reservoir hydro modelled as storage units with ERA5-derived inflow time series
-- **Hydrogen storage**: Storage capacity that buffers the hydrogen system — documented in :doc:`hydrogen_overview`
+- **Hydrogen storage**: Storage capacity that buffers the hydrogen system — documented in :doc:`system_hydrogen`
 
 All storage assets are modelled as *fixed-capacity*, non-extendable units — the model dispatches within the capacities provided and does not invest in new storage.
 
@@ -72,7 +72,7 @@ Values are provided per scenario and year and are converted from GWh to MWh (×1
 FES BB1 — Battery Power Capacity and PHS Capacity
 ---------------------------------------------------
 
-Battery *power* capacity (in GW) and PHS installed capacity (in GW) for Great Britain come from the **FES BB1 (Building Blocks)** sheet and the powerplants pipeline (see :doc:`generators`).
+Battery *power* capacity (in GW) and PHS installed capacity (in GW) for Great Britain come from the **FES BB1 (Building Blocks)** sheet and the powerplants pipeline (see :doc:`system_generators`).
 
 - ``carrier = "battery"``, ``set = "Store"`` entries in the powerplants table carry battery ``p_nom`` (MW).
 - ``carrier = "PHS"``, ``set = "Store"`` entries carry PHS ``p_nom`` (MW).
@@ -111,7 +111,7 @@ System Components
 =================
 
 All three active storage types are modelled as PyPSA ``StorageUnit`` components.
-Hydrogen storage is documented separately in :doc:`hydrogen_overview`.
+Hydrogen storage is documented separately in :doc:`system_hydrogen`.
 
 .. list-table::
    :header-rows: 1
@@ -227,10 +227,10 @@ The storage system is built through a pipeline implemented in ``rules/gb-model/s
 
    **Related Documentation**:
 
-   - :doc:`generators` - Powerplants pipeline that provides ``p_nom`` for battery and PHS
-   - :doc:`hydrogen_overview` - Hydrogen storage (documented separately)
-   - :doc:`configuration` - Full configuration reference
-   - :doc:`dispatch_redispatch` - Storage dispatch in the optimisation
+   - :doc:`system_generators` - Powerplants pipeline that provides ``p_nom`` for battery and PHS
+   - :doc:`system_hydrogen` - Hydrogen storage (documented separately)
+   - :ref:`model_config_gb` - Full configuration reference
+   - :doc:`system_dispatch_redispatch` - Storage dispatch in the optimisation
 
    **External Resources**:
 

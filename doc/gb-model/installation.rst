@@ -4,7 +4,7 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _gb_installation:
+.. _installation_gb:
 
 ##########################################
 Installation
@@ -22,23 +22,20 @@ First of all, clone the `gb-dispatch-model repository <https://github.com/open-e
 
     $ git clone https://github.com/open-energy-transition/gb-dispatch-model.git
 
-
-.. _deps:
-
 Create working environment
 ==========================
 
 gb-dispatch-model relies on a set of other Python packages to function.
 We manage these using `pixi <https://pixi.sh/latest/>`_.
-Once pixi is installed, you can activate the project environment (``gb-model``) for your operating system and have access to all the PyPSA-Eur dependencies from the command line:
+To install ``pixi``, follow their `installation instructions <https://pixi.prefix.dev/latest/installation/>`_.
+You can also install ``pixi`` into a ``conda`` environment using the command line:
 
 .. code:: console
 
-    $ pixi -e gb-model shell
+    conda install pixi
 
-.. tip::
-    You can also set up automatic shell activation in several popular editors (e.g. in `VSCode <https://pixi.sh/dev/integration/editor/vscode/>`_ or `Zed <https://pixi.sh/dev/integration/editor/zed/>`_).
-    Refer to the ``pixi`` documentation for the most up-to-date options.
+Once pixi is installed, you can run various tasks in the command line.
+See our ``Running`` page for more information.
 
 .. note::
     We don't currently support linux operating systems using ARM processors since certain packages, such as ``PySCIPOpt``, require being built from source.

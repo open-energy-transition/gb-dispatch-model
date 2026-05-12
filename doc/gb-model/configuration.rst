@@ -4,7 +4,7 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _gb_model_config:
+.. _model_config_gb:
 
 ##########################################
 Configuration

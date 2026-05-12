@@ -523,6 +523,7 @@ entsoe_unavailability:
     Nuclear: nuclear
     Waste: waste
   extend_to_eur_regions: false
+# [doc:entsoe-unavailability-config-end]
 
 # [doc:transmission-availability-config-start]
 transmission_availability:

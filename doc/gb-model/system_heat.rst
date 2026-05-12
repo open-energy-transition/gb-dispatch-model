@@ -3,7 +3,7 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _heating_overview:
+.. _system-heat:
 
 ############
 Heat System
@@ -22,9 +22,7 @@ The electrified heating system in the model is represented with three primary te
 
 Various heating technologies such as district heating, hybrid systems (ASHP with hydrogen boiler, biofuel boiler or resistive heater), and storage heating are consolidated and mapped to one of these three primary technologies for model representation.
 This approach allows the model to capture the essential electrification pathways.
-The technology splits are sourced from the Future Energy Scenario (FES) workbook and are detailed in the :ref:`electrified_heating_technologies` section.
-
-
+The technology splits are sourced from the Future Energy Scenario (FES) workbook and their mapping is detailed in the :ref:`configuration <system-heat_config>`.
 
 Heat System Structure
 ---------------------
@@ -66,6 +64,7 @@ The AC bus represents the electrical grid connection for the heat system, while 
 
 Data Sources
 =============
+
 Great Britain Data
 ------------------
 
@@ -127,15 +126,14 @@ The store is modelled using the PyPSA component type `Store`.
 
 Finally, the **Sector heat Load** represents the total heat demand for the sector (residential or I&C) that must be met by the electricity supplied through the AC bus and managed through the Sector heat bus and Sector heat DSR bus. This load is modelled using the PyPSA component type `Load`.
 
-Detailed descriptions of these components and their interactions are provided in the :ref:`demand_and_dsr` section.
+Detailed descriptions of these components and their interactions are provided in the :ref:`system-demand_and_dsr` section.
 
+.. _system-heat_config:
 
 Configuration
 =============
 
 The configuration maps FES heating technology categories to model representations in the config file `config.gb.2024.yaml`:
-
-.. _electrified_heating_technologies:
 
 .. literalinclude:: ../../config/config.gb.2024.yaml
    :language: yaml
@@ -193,3 +191,11 @@ Assumptions
 - District heating electricity demand is assumed to be auxiliary demand from district system, not the electricity required for heating.
 - the ``ASHP + resistive heating hybrid`` technology is categorised as ASHP since that is what is required to match the regionalised heat pump electricity demand in sheet ``BB1`` to the per-technology total demand in sheet ``ED3``.
 
+
+.. seealso::
+
+   **Related Documentation**:
+
+   - :doc:`system_demand_and_dsr` - Demand-side response (DSR) workflow details
+   - :ref:`data_sources_gb` - FES and other data sources
+   - :ref:`model_config_gb` - Full configuration reference

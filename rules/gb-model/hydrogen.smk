@@ -64,17 +64,17 @@ rule add_eur_H2_demand:
 
 rule synthesise_eur_H2_data:
     message:
-        "Synthesise European H2 {wildcards.dataset} data using GB data"
+        "Synthesise European H2 {wildcards.h2_dataset} data using GB data"
     input:
         h2_demand=resources(
             "gb-model/{fes_scenario}/regional_H2_demand_annual_inc_eur.csv"
         ),
-        gb_only_dataset=resources("gb-model/{fes_scenario}/regional_{dataset}.csv"),
+        gb_only_dataset=resources("gb-model/{fes_scenario}/regional_{h2_dataset}.csv"),
     output:
-        csv=resources("gb-model/{fes_scenario}/regional_{dataset}_inc_eur.csv"),
+        csv=resources("gb-model/{fes_scenario}/regional_{h2_dataset}_inc_eur.csv"),
     log:
-        logs("synthesise_eur_H2_data_{fes_scenario}_{dataset}.log"),
+        logs("synthesise_eur_H2_data_{fes_scenario}_{h2_dataset}.log"),
     wildcard_constraints:
-        dataset="non_networked_electrolysis_demand_annual|H2_storage_capacity|grid_electrolysis_capacities",
+        h2_dataset="non_networked_electrolysis_demand_annual|H2_storage_capacity|grid_electrolysis_capacities",
     script:
         scripts("gb_model/hydrogen/synthesise_eur_H2_data.py")
