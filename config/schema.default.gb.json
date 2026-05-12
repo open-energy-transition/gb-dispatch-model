@@ -890,22 +890,6 @@
           "exclusiveMinimum": 0,
           "type": "number"
         },
-        "relevant_cost_columns": {
-          "description": "List of relevant cost columns",
-          "items": {
-            "type": "string"
-          },
-          "minItems": 1,
-          "type": "array"
-        },
-        "marginal_cost_columns": {
-          "description": "List of marginal cost columns",
-          "items": {
-            "type": "string"
-          },
-          "minItems": 1,
-          "type": "array"
-        },
         "add_cols": {
           "additionalProperties": {
             "additionalProperties": true,
@@ -914,45 +898,47 @@
           "description": "Additional cost columns configuration",
           "type": "object"
         },
-        "default_characteristics": {
-          "additionalProperties": {
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "number"
-                }
-              ]
-            },
-            "type": "object"
-          },
-          "description": "Default characteristics for cost data",
-          "type": "object"
-        },
-        "carrier_gap_filling": {
-          "additionalProperties": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object"
-          },
-          "description": "Carrier gap filling mappings",
-          "type": "object"
-        },
-        "fes_VOM_carrier_mapping": {
+        "carrier_fossil_fuel_type": {
           "additionalProperties": {
             "type": "string"
           },
-          "description": "FES variable O&M carrier mapping",
+          "description": "Mapping from carrier names to fossil fuel types",
           "type": "object"
         },
-        "fes_fuel_carrier_mapping": {
+        "pypsa_eur_tech_data_columns": {
+          "description": "List of columns from PyPSA-Eur technology data to pass onto GB dispatch model tech data",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 0,
+          "type": "array"
+        },
+        "pypsa_eur_tech_data_defaults": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Default values for columns in PyPSA-Eur technology data",
+          "type": "object"
+        },
+        "pypsa_eur_tech_data_carrier_set_mapping": {
           "additionalProperties": {
             "type": "string"
           },
-          "description": "FES fuel carrier mapping",
+          "description": "Mapping from <carrier>(-<set>) to PyPSA-Eur technology data index names, for filling missing technology data. set names will be added for non-default sets (PP for generators, Store for stores)",
+          "type": "object"
+        },
+        "fes_VOM_carrier_set_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from <carrier>(-<set>) to FES costing table <Type>-<Sub Type> column name concatenations, for selecting variable O&M (VOM) data.",
+          "type": "object"
+        },
+        "fes_fuel_carrier_set_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from <carrier>(-<set>) to FES costing table <Type>-<Sub Type> column name concatenations, for selecting fuel cost data.",
           "type": "object"
         },
         "voll": {
@@ -2898,58 +2884,47 @@
           "additionalProperties": false,
           "description": "FES GB-specific configuration.",
           "properties": {
-            "carrier_mapping": {
-              "additionalProperties": {
-                "additionalProperties": {
-                  "type": "string"
+            "generators_and_storage": {
+              "additionalProperties": false,
+              "properties": {
+                "carrier_mapping": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "description": "Carrier mappings based on values in SubType column. Maps from FES European data SubType column values to PyPSA carrier names.",
+                  "type": "object"
                 },
-                "type": "object"
-              },
-              "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
-            },
-            "SubType_map": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "description": "Carrier mappings based on values in SubType column in ES1 sheet. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
-            },
-            "set_mapping": {
-              "additionalProperties": {
-                "additionalProperties": {
-                  "enum": [
-                    "CHP",
-                    "PP",
-                    "Store"
-                  ],
-                  "type": "string"
+                "set_mapping": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "description": "Set mapping configuration. Top level keys are column names, second level maps from column values to set names. A regular expression can be used.",
+                  "type": "object"
                 },
-                "type": "object"
-              },
-              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
-            },
-            "BB2_to_ES1_mapping": {
-              "additionalProperties": {
-                "items": {
-                  "type": "string"
+                "building_block_mapping": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "description": "Mapping FES building block IDs (see sheet BB2 'Building Block ID' column) to FES technology names (see sheet ES1 `SubType`). Where multiple building block IDs map to the same technology, the total capacity of the technology will be split proportionally across the building blocks. Where multiple technology names map to the same building block ID, the regional capacity of the building block will be split proportionally across those technologies.",
+                  "type": "object"
                 },
-                "type": "array"
+                "building_block_mapping_tolerance": {
+                  "description": "Allowed mismatch between regional building block capacity (sheet BB1) and total national technology capacity (sheet ES1). Value given as a fraction and is reciprocal, so `sum(technologies) * (1 - tolerance) <= sum(building blocks) <= sum(technologies) * (1 + tolerance)` and`sum(building blocks) * (1 - tolerance) <= sum(technology) <= sum(building blocks) * (1 + tolerance)`",
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                }
               },
-              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
-            },
-            "BB1_ES1_mismatch_percentage": {
-              "description": "Mismatch percentage allowed between total capacity of a technology in BB1 and ES1 sheet",
-              "type": "number"
-            },
-            "tech_max_hours": {
-              "description": "Technology list for which to compute max storage hours",
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
+              "description": "FES generator and storage configuration"
             },
             "demand": {
               "additionalProperties": false,
@@ -3105,30 +3080,31 @@
           "additionalProperties": false,
           "description": "FES European configuration.",
           "properties": {
-            "carrier_mapping": {
-              "additionalProperties": {
-                "additionalProperties": {
-                  "type": "string"
+            "generators_and_storage": {
+              "additionalProperties": false,
+              "description": "FES carrier mapping configuration.",
+              "properties": {
+                "carrier_mapping": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "description": "Carrier mappings based on values in SubType column. Maps from FES European data SubType column values to PyPSA carrier names.",
+                  "type": "object"
                 },
-                "type": "object"
-              },
-              "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
-            },
-            "set_mapping": {
-              "additionalProperties": {
-                "additionalProperties": {
-                  "enum": [
-                    "CHP",
-                    "PP",
-                    "Store"
-                  ],
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
+                "set_mapping": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "description": "Set mapping configuration. Top level keys are column names, second level maps from column values to set names. A regular expression can be used.",
+                  "type": "object"
+                }
+              }
             },
             "totals_to_demand_groups": {
               "additionalProperties": {
@@ -3319,30 +3295,31 @@
       "additionalProperties": false,
       "description": "FES European configuration.",
       "properties": {
-        "carrier_mapping": {
-          "additionalProperties": {
-            "additionalProperties": {
-              "type": "string"
+        "generators_and_storage": {
+          "additionalProperties": false,
+          "description": "FES carrier mapping configuration.",
+          "properties": {
+            "carrier_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Carrier mappings based on values in SubType column. Maps from FES European data SubType column values to PyPSA carrier names.",
+              "type": "object"
             },
-            "type": "object"
-          },
-          "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-          "type": "object"
-        },
-        "set_mapping": {
-          "additionalProperties": {
-            "additionalProperties": {
-              "enum": [
-                "CHP",
-                "PP",
-                "Store"
-              ],
-              "type": "string"
-            },
-            "type": "object"
-          },
-          "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-          "type": "object"
+            "set_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Set mapping configuration. Top level keys are column names, second level maps from column values to set names. A regular expression can be used.",
+              "type": "object"
+            }
+          }
         },
         "totals_to_demand_groups": {
           "additionalProperties": {
@@ -3430,58 +3407,47 @@
       "additionalProperties": false,
       "description": "FES GB-specific configuration.",
       "properties": {
-        "carrier_mapping": {
-          "additionalProperties": {
-            "additionalProperties": {
-              "type": "string"
+        "generators_and_storage": {
+          "additionalProperties": false,
+          "properties": {
+            "carrier_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Carrier mappings based on values in SubType column. Maps from FES European data SubType column values to PyPSA carrier names.",
+              "type": "object"
             },
-            "type": "object"
-          },
-          "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-          "type": "object"
-        },
-        "SubType_map": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "description": "Carrier mappings based on values in SubType column in ES1 sheet. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-          "type": "object"
-        },
-        "set_mapping": {
-          "additionalProperties": {
-            "additionalProperties": {
-              "enum": [
-                "CHP",
-                "PP",
-                "Store"
-              ],
-              "type": "string"
+            "set_mapping": {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "description": "Set mapping configuration. Top level keys are column names, second level maps from column values to set names. A regular expression can be used.",
+              "type": "object"
             },
-            "type": "object"
-          },
-          "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-          "type": "object"
-        },
-        "BB2_to_ES1_mapping": {
-          "additionalProperties": {
-            "items": {
-              "type": "string"
+            "building_block_mapping": {
+              "additionalProperties": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "description": "Mapping FES building block IDs (see sheet BB2 'Building Block ID' column) to FES technology names (see sheet ES1 `SubType`). Where multiple building block IDs map to the same technology, the total capacity of the technology will be split proportionally across the building blocks. Where multiple technology names map to the same building block ID, the regional capacity of the building block will be split proportionally across those technologies.",
+              "type": "object"
             },
-            "type": "array"
+            "building_block_mapping_tolerance": {
+              "description": "Allowed mismatch between regional building block capacity (sheet BB1) and total national technology capacity (sheet ES1). Value given as a fraction and is reciprocal, so `sum(technologies) * (1 - tolerance) <= sum(building blocks) <= sum(technologies) * (1 + tolerance)` and`sum(building blocks) * (1 - tolerance) <= sum(technology) <= sum(building blocks) * (1 + tolerance)`",
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            }
           },
-          "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-          "type": "object"
-        },
-        "BB1_ES1_mismatch_percentage": {
-          "description": "Mismatch percentage allowed between total capacity of a technology in BB1 and ES1 sheet",
-          "type": "number"
-        },
-        "tech_max_hours": {
-          "description": "Technology list for which to compute max storage hours",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+          "description": "FES generator and storage configuration"
         },
         "demand": {
           "additionalProperties": false,
@@ -3629,6 +3595,73 @@
             }
           },
           "description": "Regional distribution reference configuration",
+          "type": "object"
+        }
+      }
+    },
+    "FESGBGeneratorStorageConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "carrier_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Carrier mappings based on values in SubType column. Maps from FES European data SubType column values to PyPSA carrier names.",
+          "type": "object"
+        },
+        "set_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Set mapping configuration. Top level keys are column names, second level maps from column values to set names. A regular expression can be used.",
+          "type": "object"
+        },
+        "building_block_mapping": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": "Mapping FES building block IDs (see sheet BB2 'Building Block ID' column) to FES technology names (see sheet ES1 `SubType`). Where multiple building block IDs map to the same technology, the total capacity of the technology will be split proportionally across the building blocks. Where multiple technology names map to the same building block ID, the regional capacity of the building block will be split proportionally across those technologies.",
+          "type": "object"
+        },
+        "building_block_mapping_tolerance": {
+          "description": "Allowed mismatch between regional building block capacity (sheet BB1) and total national technology capacity (sheet ES1). Value given as a fraction and is reciprocal, so `sum(technologies) * (1 - tolerance) <= sum(building blocks) <= sum(technologies) * (1 + tolerance)` and`sum(building blocks) * (1 - tolerance) <= sum(technology) <= sum(building blocks) * (1 + tolerance)`",
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        }
+      }
+    },
+    "FESGeneratorStorageConfig": {
+      "additionalProperties": false,
+      "description": "FES carrier mapping configuration.",
+      "properties": {
+        "carrier_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Carrier mappings based on values in SubType column. Maps from FES European data SubType column values to PyPSA carrier names.",
+          "type": "object"
+        },
+        "set_mapping": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Set mapping configuration. Top level keys are column names, second level maps from column values to set names. A regular expression can be used.",
           "type": "object"
         }
       }
@@ -15850,22 +15883,6 @@
           "exclusiveMinimum": 0,
           "type": "number"
         },
-        "relevant_cost_columns": {
-          "description": "List of relevant cost columns",
-          "items": {
-            "type": "string"
-          },
-          "minItems": 1,
-          "type": "array"
-        },
-        "marginal_cost_columns": {
-          "description": "List of marginal cost columns",
-          "items": {
-            "type": "string"
-          },
-          "minItems": 1,
-          "type": "array"
-        },
         "add_cols": {
           "additionalProperties": {
             "additionalProperties": true,
@@ -15874,45 +15891,47 @@
           "description": "Additional cost columns configuration",
           "type": "object"
         },
-        "default_characteristics": {
-          "additionalProperties": {
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "number"
-                }
-              ]
-            },
-            "type": "object"
-          },
-          "description": "Default characteristics for cost data",
-          "type": "object"
-        },
-        "carrier_gap_filling": {
-          "additionalProperties": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object"
-          },
-          "description": "Carrier gap filling mappings",
-          "type": "object"
-        },
-        "fes_VOM_carrier_mapping": {
+        "carrier_fossil_fuel_type": {
           "additionalProperties": {
             "type": "string"
           },
-          "description": "FES variable O&M carrier mapping",
+          "description": "Mapping from carrier names to fossil fuel types",
           "type": "object"
         },
-        "fes_fuel_carrier_mapping": {
+        "pypsa_eur_tech_data_columns": {
+          "description": "List of columns from PyPSA-Eur technology data to pass onto GB dispatch model tech data",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 0,
+          "type": "array"
+        },
+        "pypsa_eur_tech_data_defaults": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Default values for columns in PyPSA-Eur technology data",
+          "type": "object"
+        },
+        "pypsa_eur_tech_data_carrier_set_mapping": {
           "additionalProperties": {
             "type": "string"
           },
-          "description": "FES fuel carrier mapping",
+          "description": "Mapping from <carrier>(-<set>) to PyPSA-Eur technology data index names, for filling missing technology data. set names will be added for non-default sets (PP for generators, Store for stores)",
+          "type": "object"
+        },
+        "fes_VOM_carrier_set_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from <carrier>(-<set>) to FES costing table <Type>-<Sub Type> column name concatenations, for selecting variable O&M (VOM) data.",
+          "type": "object"
+        },
+        "fes_fuel_carrier_set_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Mapping from <carrier>(-<set>) to FES costing table <Type>-<Sub Type> column name concatenations, for selecting fuel cost data.",
           "type": "object"
         },
         "voll": {
@@ -16509,58 +16528,47 @@
           "additionalProperties": false,
           "description": "FES GB-specific configuration.",
           "properties": {
-            "carrier_mapping": {
-              "additionalProperties": {
-                "additionalProperties": {
-                  "type": "string"
+            "generators_and_storage": {
+              "additionalProperties": false,
+              "properties": {
+                "carrier_mapping": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "description": "Carrier mappings based on values in SubType column. Maps from FES European data SubType column values to PyPSA carrier names.",
+                  "type": "object"
                 },
-                "type": "object"
-              },
-              "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
-            },
-            "SubType_map": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "description": "Carrier mappings based on values in SubType column in ES1 sheet. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
-            },
-            "set_mapping": {
-              "additionalProperties": {
-                "additionalProperties": {
-                  "enum": [
-                    "CHP",
-                    "PP",
-                    "Store"
-                  ],
-                  "type": "string"
+                "set_mapping": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "description": "Set mapping configuration. Top level keys are column names, second level maps from column values to set names. A regular expression can be used.",
+                  "type": "object"
                 },
-                "type": "object"
-              },
-              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
-            },
-            "BB2_to_ES1_mapping": {
-              "additionalProperties": {
-                "items": {
-                  "type": "string"
+                "building_block_mapping": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "description": "Mapping FES building block IDs (see sheet BB2 'Building Block ID' column) to FES technology names (see sheet ES1 `SubType`). Where multiple building block IDs map to the same technology, the total capacity of the technology will be split proportionally across the building blocks. Where multiple technology names map to the same building block ID, the regional capacity of the building block will be split proportionally across those technologies.",
+                  "type": "object"
                 },
-                "type": "array"
+                "building_block_mapping_tolerance": {
+                  "description": "Allowed mismatch between regional building block capacity (sheet BB1) and total national technology capacity (sheet ES1). Value given as a fraction and is reciprocal, so `sum(technologies) * (1 - tolerance) <= sum(building blocks) <= sum(technologies) * (1 + tolerance)` and`sum(building blocks) * (1 - tolerance) <= sum(technology) <= sum(building blocks) * (1 + tolerance)`",
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                }
               },
-              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
-            },
-            "BB1_ES1_mismatch_percentage": {
-              "description": "Mismatch percentage allowed between total capacity of a technology in BB1 and ES1 sheet",
-              "type": "number"
-            },
-            "tech_max_hours": {
-              "description": "Technology list for which to compute max storage hours",
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
+              "description": "FES generator and storage configuration"
             },
             "demand": {
               "additionalProperties": false,
@@ -16716,30 +16724,31 @@
           "additionalProperties": false,
           "description": "FES European configuration.",
           "properties": {
-            "carrier_mapping": {
-              "additionalProperties": {
-                "additionalProperties": {
-                  "type": "string"
+            "generators_and_storage": {
+              "additionalProperties": false,
+              "description": "FES carrier mapping configuration.",
+              "properties": {
+                "carrier_mapping": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "description": "Carrier mappings based on values in SubType column. Maps from FES European data SubType column values to PyPSA carrier names.",
+                  "type": "object"
                 },
-                "type": "object"
-              },
-              "description": "Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
-            },
-            "set_mapping": {
-              "additionalProperties": {
-                "additionalProperties": {
-                  "enum": [
-                    "CHP",
-                    "PP",
-                    "Store"
-                  ],
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              "description": "Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-              "type": "object"
+                "set_mapping": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "description": "Set mapping configuration. Top level keys are column names, second level maps from column values to set names. A regular expression can be used.",
+                  "type": "object"
+                }
+              }
             },
             "totals_to_demand_groups": {
               "additionalProperties": {

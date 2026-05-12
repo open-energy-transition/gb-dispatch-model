@@ -49,8 +49,8 @@ rule create_powerplants_table:
     message:
         "Tabulate powerplant data GSP-wise from FES workbook sheet BB1 and EU supply data"
     params:
-        gb_config=config["fes"]["gb"],
-        eur_config=config["fes"]["eur"],
+        gb_config=config["fes"]["gb"]["generators_and_storage"],
+        eur_config=config["fes"]["eur"]["generators_and_storage"],
         dukes_config=config["dukes-5.11"],
         default_set=config["fes"]["default_set"],
     input:

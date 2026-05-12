@@ -95,12 +95,10 @@ clustering:
 # see https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal for options
 time_aggregation: []
 
-# [doc:renewable-hydro-config-start]
 renewable:
   hydro:
     cutout: default
-    carriers: [PHS, hydro]
-# [doc:renewable-hydro-config-end]
+    carriers: [PHS, ror]
 
 conventional:
   nuclear:
@@ -127,139 +125,109 @@ fes_costs:
 
   GBP_to_EUR: 1.1632 # average in 2021: https://www.exchangerates.org.uk/GBP-EUR-spot-exchange-rates-history-2021.html#:~:text=This%20is%20the%20British%20Pound,rate%20in%202021%3A%201.1632%20EUR.
   GBP_to_USD: 1.3757 # average in 2021: https://www.exchangerates.org.uk/GBP-USD-spot-exchange-rates-history-2021.html#:~:text=Average%20exchange%20rate%20in%202021,USD%20on%2008%20Dec%202021.
-  relevant_cost_columns: ["CO2 intensity", "VOM", "FOM", "investment", "efficiency", "lifetime", "discount rate", "fuel"]
-  marginal_cost_columns: ["CO2 intensity", "VOM", "efficiency", "fuel"]
   add_cols:
     fes_powerplants: {}
     regional_H2_storage_capacity_inc_eur:
       set: Store
       carrier: hydrogen
     regional_grid_electrolysis_capacities_inc_eur:
-      set: Other
+      set: .nan
       carrier: electrolysis
-  default_characteristics:
-    # Ensure all required columns exist with defaults
-    efficiency:
-      data: 1
-      unit: ""
-    lifetime:
-      data: 25.0
-      unit: "years"
-    marginal_cost:
-      data: 0.0
-      unit: "GBP/MWh"
-    FOM:
-      data: 0.0
-      unit: "GBP/MW"
-    VOM:
-      data: 0.0
-      unit: "GBP/MWh"
-    fuel:
-      data: 0.0
-      unit: "GBP/MWh"
-    CO2 intensity:
-      data: 0.0
-      unit: "tCO2/MWh_th"
-    investment:
-      data: 0.0
-      unit: "GBP/MW"
-    discount rate:
-      data: 0.07
-      unit: ""
-  carrier_gap_filling:
-    "CO2 intensity":
-      CCGT: gas
-      OCGT: gas
-      engine: gas
-      coal: coal
-      oil: oil
-    fuel:
-      CCGT: gas
-      OCGT: gas
-      engine: gas
-      coal: coal
-      oil: oil
-      biomass: biomass
-      waste: biomass
-    default:
-      CCGT: CCGT
-      CCS Gas: CCS Gas
-      OCGT: OCGT
-      PHS: PHS
-      biomass: biomass
-      Biomass CHP: Biomass CHP
-      CCS Biomass: CCS Biomass
-      coal: coal
-      CCGT CHP: central gas CHP
-      OCGT CHP: central gas CHP
-      battery: battery storage
-      coal CHP: central coal CHP
-      engine: central gas CHP # `direct firing gas` is a better fit but the data is spurious
-      engine CHP: central gas CHP
-      geothermal: geothermal
-      hydrogen turbine: CCGT
-      hydrogen turbine CHP: central hydrogen CHP
-      hydrogen fuel cell: fuel cell
-      nuclear: nuclear
-      offwind: offwind
-      oil: oil
-      oil CHP: oil
-      onwind: onwind
-      ror: hydro
-      solar: solar
-      waste: biomass
-      Waste CHP: waste CHP
-      hydro: hydro
-      hydrogen Store: hydrogen storage tank type 1 including compressor
-      electrolysis Other: electrolysis
-
+  carrier_fossil_fuel_type:
+    CCGT: gas
+    coal: coal
+    engine: gas
+    OCGT: gas
+    oil: oil
+  pypsa_eur_tech_data_columns: ["CO2 intensity", "efficiency"]
+  pypsa_eur_tech_data_defaults:
+    CO2 intensity: 0
+    efficiency: 1
+  # [doc:tech-data-mapping-start]
+  pypsa_eur_tech_data_carrier_set_mapping:
+    battery: battery storage
+    biomass-CCS: biomass
+    biomass-CHP: biomass CHP
+    biomass: biomass
+    CCGT-CCS: CCGT
+    CCGT-CHP: central gas CHP
+    CCGT: CCGT
+    coal-CHP: central coal CHP
+    coal: coal
+    compressed-air: Compressed-Air-Adiabatic-bicharger
+    electrolysis: electrolysis
+    engine-CHP: central gas CHP
+    engine: central gas CHP # `direct firing gas` is a better fit but the data is spurious
+    geothermal: geothermal
+    hydro: ror
+    hydrogen-fuel-cell: fuel cell
+    hydrogen-turbine-CHP: central hydrogen CHP
+    hydrogen-turbine: CCGT
+    hydrogen: hydrogen storage tank type 1 including compressor
+    liquid-air: Liquid-Air-discharger # discharge efficiency closer to the round-trip efficiency
+    nuclear: nuclear
+    OCGT-CHP: central gas CHP
+    OCGT: OCGT
+    offwind: offwind
+    oil-CHP: oil
+    oil: oil
+    onwind: onwind
+    PHS: PHS
+    ror: ror
+    solar: solar
+    waste-CHP: waste CHP
+    waste: biomass
+  # [doc:tech-data-mapping-end]
   # [doc:fes-vom-config-start]
-  fes_VOM_carrier_mapping:
+  fes_VOM_carrier_set_mapping:
     battery: Storage-Battery
+    biomass-CCS: CCS-CCS Biomass
+    biomass-CHP: Biomass-Biomass CHP
     biomass: Biomass-Biomass
-    Biomass CHP: Biomass-Biomass CHP
-    CCS Biomass: CCS-CCS Biomass
+    CCGT-CCS: CCS-CCS Gas
+    CCGT-CHP: Gas-Gas CHP
     CCGT: Gas-CCGT
-    CCGT CHP: Gas-Gas CHP
+    coal-CHP: Coal-Coal CHP
     coal: Coal-Coal
-    coal CHP: Coal-Coal CHP
-    engine CHP: Gas-Gas CHP
+    compressed-air: Storage-Compressed Air
+    engine-CHP: Gas-Gas CHP
     engine: Gas-Gas Reciprocating Engines
-    hydro: Hydro-Hydro
-    hydrogen turbine: Low Carbon-Hydrogen
-    hydrogen fuel cell: Storage-Fuel Cells
-    hydrogen turbine CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
+    geothermal: Other Renewables-Other Renewables
+    hydrogen-fuel-cell: Storage-Fuel Cells
+    hydrogen-turbine-CHP: Gas-Gas CHP # there is no hydrogen CHP costs in FES
+    hydrogen-turbine: Low Carbon-Hydrogen
+    liquid-air: Storage-Liquid Air
     marine: Marine-Marine
+    nuclear: Nuclear-Nuclear
+    OCGT-CHP: Gas-Gas CHP
     OCGT: Gas-OCGT
-    OCGT CHP: Gas-Gas CHP
     offwind-dc: Offshore Wind-Offshore Wind
     oil: Other Thermal-Fuel Oil
     onwind: Onshore Wind-Onshore Wind
-    nuclear: Nuclear-Nuclear
     PHS: Storage-Pumped Hydro
+    ror: Hydro-Hydro
     solar: Solar-Solar PV
+    waste-CHP: Waste-Waste CHP
     waste: Waste-Waste
-    Waste CHP: Waste-Waste CHP
-    CCS Gas: CCS-CCS Gas
-    Compressed Air: Storage-Compressed Air
-    Liquid Air: Storage-Liquid Air
   # [doc:fes-vom-config-end]
-  fes_fuel_carrier_mapping:
+  fes_fuel_carrier_set_mapping:
+    biomass-CCS: CCSBiomass-Biomass
+    biomass-CHP: Biomass-Biomass CHP
     biomass: Biomass-Biomass
-    Biomass CHP: Biomass-Biomass CHP
-    CCS Biomass: CCSBiomass-Biomass
+    CCGT-CCS: CCSGas-CCS Gas
+    CCGT-CHP: Gas-CCGT CHP
     CCGT: Gas-CCGT
-    CCGT CHP: Gas-CCGT CHP
+    coal-CHP: Coal-Coal CHP
     coal: Coal-Coal
-    coal CHP: Coal-Coal CHP
+    engine-CHP: Gas-Engine CHP
     engine: Gas-Gas Reciprocating Engines
-    engine CHP: Gas-Engine CHP
+    hydrogen-fuel-cell: Hydrogen-CCGT
+    hydrogen-turbine-CHP: Hydrogen-CCGT
+    hydrogen-turbine: Hydrogen-CCGT
+    OCGT-CHP: Gas-GT CHP
     OCGT: Gas-OCGT
-    OCGT CHP: Gas-GT CHP
+    oil-CHP: Gasoil-Steam Oil
     oil: Gasoil-Steam Oil
-    hydrogen turbine: Hydrogen-CCGT
-    hydrogen turbine CHP: Hydrogen-CCGT
-    hydrogen fuel cell: Hydrogen-CCGT
 
   voll: 6000 #£/MWh - based on `value_of_lost_load` from (https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf)
 
@@ -519,7 +487,7 @@ entsoe_unavailability:
     Fossil Oil: oil
     Geothermal: geothermal
     Hydro Pumped Storage: PHS
-    Hydro Run-of-river and poundage: hydro
+    Hydro Run-of-river and poundage: ror
     Nuclear: nuclear
     Waste: waste
   extend_to_eur_regions: false
@@ -562,19 +530,19 @@ dukes-5.11:
       Nuclear: nuclear
       Pumped Hydro: PHS
       Pumped hydro: PHS
-      Hydro: hydro
+      Hydro: ror
     Type:
       Onshore: onwind
       onshore: onwind
       Offshore: offwind-dc
       CCGT: CCGT
     Primary Fuel:
-      Natural Gas: gas
+      Natural Gas: CCGT
       Diesel/Gas Oil: oil
       Coal: coal
   set_mapping:
     CHP:
-      Yes: CHP
+      "Yes": CHP
     Technology:
       Pumped Hydro: Store
       Pumped hydro: Store
@@ -752,68 +720,74 @@ fes:
         columns: year
 
   gb:
-    carrier_mapping:
-      # Mapping undertaken in different columns for different carriers
-      Technology:
-        CCGT: CCGT
-        CCS Gas: CCS Gas
-        Biomass: biomass
-        Biomass CHP: Biomass CHP
-        CCS Biomass: CCS Biomass
-        Nuclear - Large: nuclear
-        Nuclear - SMR: nuclear
-        Compressed Air: Compressed Air
-        Liquid Air: Liquid Air
-        Hydrogen: hydrogen turbine
-        Hydrogen CHP: hydrogen turbine CHP
-        Waste: waste
-        Waste CHP: Waste CHP
-      Building Block ID Number:
-        Gen_BB001: CCGT CHP
-        Gen_BB002: CCGT CHP
-        Gen_BB004: biomass
-        Gen_BB005: engine
-        Gen_BB006: engine
-        Gen_BB007: hydrogen fuel cell
-        Gen_BB008: OCGT
-        Gen_BB009: CCGT
-        Gen_BB010: biomass
-        Gen_BB011: waste
-        Gen_BB012: solar
-        Gen_BB013: solar
-        Gen_BB014: offwind-dc
-        Gen_BB015: onwind
-        Gen_BB016: onwind
-        Gen_BB017: marine
-        Gen_BB018: hydro
-        Gen_BB019: geothermal
-        Gen_BB020: nuclear
-        Gen_BB021: coal
-        Gen_BB023: hydrogen turbine
-        Gen_BB024: offwind-dc
-        Srg_BB001: battery
-        Srg_BB002: battery
-        Srg_BB003: PHS
-    SubType_map:
-      Battery: battery
-      Pumped Hydro: PHS
-
-    # [doc:fes-gb-set-mapping-start]
-    set_mapping:
-      Technology:
-        Storage: Store
-        Compressed Air: Store
-        Liquid Air: Store
-    # [doc:fes-gb-set-mapping-end]
-
-    BB2_to_ES1_mapping:
-      Gen_BB009: ["CCGT", "CCS Gas"]
-      Gen_BB010: ["Biomass", "CCS Biomass", "Biomass CHP"]
-      Gen_BB020: ["Nuclear - Large", "Nuclear - SMR"]
-      Srg_BB004: ["Liquid Air", "Compressed Air"]
-      Gen_BB023: ["Hydrogen", "Hydrogen CHP"]
-      Gen_BB011: ["Waste", "Waste CHP"]
-    BB1_ES1_mismatch_percentage: 5
+    # [doc:gb-generator-storage-start]
+    generators_and_storage:
+      carrier_mapping:
+        SubType:
+          Battery: battery
+          Biomass CHP: biomass
+          Biomass: biomass
+          CCGT: CCGT
+          CCS Biomass: biomass
+          CCS Gas: CCGT
+          Coal: coal
+          Compressed Air: compressed-air
+          Diesel: oil
+          Fuel Oil: oil
+          Gas CHP: CCGT
+          Gas Reciprocating Engines: engine
+          Hydro: ror
+          Hydrogen CHP: hydrogen-turbine
+          Hydrogen: hydrogen-turbine
+          Liquid Air: liquid-air
+          Marine: marine
+          Nuclear - Large: nuclear
+          Nuclear - SMR: nuclear
+          OCGT: OCGT
+          Offshore Wind: offwind-dc
+          Onshore Wind: onwind
+          Other Renewables: geothermal
+          Pumped Hydro: PHS
+          Solar PV: solar
+          Waste CHP: waste
+          Waste: waste
+      set_mapping:
+        SubType:
+          "^CCS .+": CCS
+          ".+ CHP$": CHP
+        Technology:
+          Storage: Store
+      building_block_mapping:
+        Gen_BB001: [Gas CHP, CCGT, CCS Gas]
+        Gen_BB002: [Gas CHP]
+        Gen_BB003: [Gas CHP]
+        Gen_BB004: [Other Renewables]
+        Gen_BB005: [Diesel, Fuel Oil]
+        Gen_BB006: [Gas Reciprocating Engines]
+        Gen_BB007: [] # Hydrogen fuel cells
+        Gen_BB008: [OCGT]
+        Gen_BB009: [CCGT, CCS Gas]
+        Gen_BB010: [Biomass, CCS Biomass, Biomass CHP]
+        Gen_BB011: [Waste, Waste CHP]
+        Gen_BB012: [Solar PV]
+        Gen_BB013: [Solar PV]
+        Gen_BB014: [Offshore Wind]
+        Gen_BB015: [Onshore Wind]
+        Gen_BB016: [Onshore Wind]
+        Gen_BB017: [Marine]
+        Gen_BB018: [Hydro]
+        Gen_BB019: [Other Renewables]
+        Gen_BB020: [Nuclear - Large, Nuclear - SMR]
+        Gen_BB021: [Coal]
+        Gen_BB022: [] # interconnectors
+        Gen_BB023: [Hydrogen, Hydrogen CHP]
+        Gen_BB024: [Offshore Wind]
+        Srg_BB001: [Battery]
+        Srg_BB002: [Battery]
+        Srg_BB003: [Pumped Hydro]
+        Srg_BB004: [Liquid Air, Compressed Air]
+      building_block_mapping_tolerance: 0.005
+    # [doc:gb-generator-storage-end]
 
     # [doc:demand-start]
     demand:
@@ -850,13 +824,8 @@ fes:
     # [doc:demand-end]
 
     # [doc:flexibility-start]
-    # [doc:storage-battery-flx1-config-start]
     flexibility:
       carrier_mapping:
-        battery:
-          Data item: "Electricity storage energy storage potential"
-          Detail: "Battery"
-        # [doc:storage-battery-flx1-config-end]
         ev_v2g:
           Detail: "V2G maximum potential"
         ev_dsr:
@@ -888,7 +857,6 @@ fes:
         residential_heat: " Residential Heat DSR"
         iandc_heat: " I&C Heat DSR"
       v2g_storage_to_capacity_ratio: 7.14 # based on ratio in FES 2021. Same value will be applied to all future years.
-    tech_max_hours: ['Compressed Air', 'Liquid Air', "Battery", "Pumped Hydro"]
 
     # [doc:flexibility-end]
     regional_distribution_reference:
@@ -930,37 +898,34 @@ fes:
         name: e_nom
 
   eur:
-    carrier_mapping:
-      # Mapping undertaken in different columns for different carriers
-      SubType:
-        Battery: battery
-        Biomass: biomass
-        Biomass CCS: biomass
-        Fossil Gas: CCGT
-        Fossil Oil: oil
-        GT Hydrogen: hydrogen turbine
-        # Other RES:
-        Pumped Hydro: PHS
-        Run-of-river Hydro: hydro
-        Solar PV: solar
-        Wind Onshore: onwind
-        Nuclear: nuclear
-        Waste: waste
-        Wind Offshore: offwind-dc
-        Coal: coal
-        CCGT CHP: CCGT
-        Marine: marine
-        Geothermal: geothermal
-
-    set_mapping:
-      SubType:
-        CCGT CHP: CHP
-        Battery: Store
-        Pumped Hydro: Store
-        Biomass CHP: CHP
-        Gas CHP: CHP
-        Hydrogen CHP: CHP
-
+    # [doc:eur-generator-storage-start]
+    generators_and_storage:
+      carrier_mapping:
+        SubType:
+          Battery: battery
+          Biomass CCS: biomass
+          Biomass: biomass
+          CCGT CHP: CCGT
+          Coal: coal
+          Fossil Gas: CCGT
+          Fossil Oil: oil
+          Geothermal: geothermal
+          GT Hydrogen: hydrogen-turbine
+          Marine: marine
+          Nuclear: nuclear
+          Pumped Hydro: PHS
+          Run-of-river Hydro: ror
+          Solar PV: solar
+          Waste: waste
+          Wind Offshore: offwind-dc
+          Wind Onshore: onwind
+      set_mapping:
+        SubType:
+          ".+ CCS$": CCS
+          ".+ CHP$": CHP
+        Category:
+          Storage: Store
+    # [doc:eur-generator-storage-end]
 
     totals_to_demand_groups:
       ev: [total road]
@@ -1348,4 +1313,4 @@ redispatch:
   bid_offer_multiplier_mapping:
     purchased H2: CCGT
     PHS: battery storage
-    hydro: battery storage
+    ror: battery storage

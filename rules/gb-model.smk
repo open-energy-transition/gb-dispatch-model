@@ -36,7 +36,6 @@ rule compose_network:
         load_bus_suffixes=config["fes"]["gb"]["demand"]["bus_suffix"],
         flex_carrier_suffixes=config["fes"]["gb"]["flexibility"]["carrier_suffix"],
         time_aggregation=config["time_aggregation"],
-        storage_list=config["fes"]["gb"]["BB2_to_ES1_mapping"]["Srg_BB004"],
     input:
         unpack(input_profile_tech),
         demands=expand(
@@ -74,9 +73,6 @@ rule compose_network:
         ),
         generator_availability=resources(
             "gb-model/GB_generator_monthly_availability_fraction.csv"
-        ),
-        battery_e_nom=resources(
-            "gb-model/{fes_scenario}/regional_battery_storage_capacity_inc_eur.csv"
         ),
         H2_data=[
             resources("gb-model/{fes_scenario}/regional_H2_demand_annual_inc_eur.csv"),

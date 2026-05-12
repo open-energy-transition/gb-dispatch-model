@@ -15,10 +15,10 @@ import pandas as pd
 from scripts._helpers import configure_logging, set_scenario_config
 from scripts.gb_model._helpers import get_scenario_name
 from scripts.gb_model.generators.assign_costs import (
+    _calculate_marginal_costs,
     _load_costs,
     _load_fes_carbon_costs,
     _load_fes_power_costs,
-    calculate_marginal_costs,
 )
 
 logger = logging.getLogger(__name__)
@@ -107,7 +107,7 @@ def calculate_costs(
             .map(historical_fuel_cost[fuel].to_dict())
         )
 
-    df_tech = calculate_marginal_costs(
+    df_tech = _calculate_marginal_costs(
         df_tech,
         costs,
         costs_config,
