@@ -3,10 +3,10 @@
 ..
 .. SPDX-License-Identifier: CC-BY-4.0
 
-.. _system_repr:
+.. _system-overview_gb:
 
 ##########################################
-System Representation
+System Overview
 ##########################################
 
 We represent the GB model in PyPSA as follows:
@@ -165,10 +165,15 @@ The GB dispatch model only represents the power system.
 It is, however, a multi-sector model in that building heat, transport, and hydrogen loads are defined.
 We just concern ourselves with the electrical component of those sectors (heat pumps / resistive heating, electric vehicles, electrolysis).
 
-.. _system-generators:
+.. _system-generators-summary:
 
 Generators
 ----------
+
+Our system contains variable renewable, conventional dispatchable, and combined heat and power (CHP) generators.
+
+.. seealso::
+   :ref:`system-generators`
 
 Variable renewables
 ^^^^^^^^^^^^^^^^^^^
@@ -214,23 +219,29 @@ Some generators are combined heat and power (CHP) plants.
 This means their generation profile can be limited by meeting separate heating requirements (if heat-led).
 These generators are tagged separately based on input data and have an additional constraint applied to reflect their link to the heat system.
 
-.. _system-storage:
+.. _system-storage-summary:
 
 Storage
 -------
 
-There are three primary energy storage technologies defined in the model: pumped hydropower (``PHS``), utility-scale batteries (``battery``), and hydrogen storage (see :ref:`system-hydrogen` for more information).
+There are three primary energy storage technologies defined in the model: pumped hydropower (``PHS``), utility-scale batteries (``battery``), and hydrogen storage.
 Pumped hydropower and batteries have a maximum number of hours they can store energy for which, when combined with their discharge/charge capacity, defines their reservoir capacity.
 In general, we expect pumped hydro and batteries to cycle on short timescales and their max hours reflect this.
 
-.. _system-load:
+.. seealso::
+   :ref:`system-hydrogen`, :ref:`system-storage`
+
+.. _system-load-summary:
 
 Loads
 -----
 
 Although all loads are electricity loads, we have grouped them to allow us to apply different magnitudes of demand-side response.
 
-.. _system-load-baseline:
+.. seealso::
+   :ref:`system-demand_and_dsr`, :ref:`system-heat`
+
+.. _system-load-baseline-summary:
 
 Baseline electricity
 ^^^^^^^^^^^^^^^^^^^^
@@ -240,9 +251,9 @@ For instance, lighting, appliances, cooling.
 The profile for this load is the same as the profile for the load in the reference weather year, so that the impact of weather is represented (e.g. for cooling demand).
 
 By default, FES baseline electricity demand also includes resistive heating electricity demand.
-We extract this demand and include it instead in the :ref:`building heat electricity lead profile <system-load-heat>`.
+We extract this demand and include it instead in the :ref:`building heat electricity lead profile <system-load-heat-summary>`.
 
-.. _system-load-heat:
+.. _system-load-heat-summary:
 
 Building heat
 ^^^^^^^^^^^^^
@@ -251,11 +262,11 @@ Residential and Industry & Commercial (I&C) building heat demand is considered s
 Since we are only concerned with the electricity system, this load the electricity demand to operate technologies that generate heat.
 Importantly, this is building heat load met by heat pumps **and** direct (resistive) heaters.
 
-For countries which have been reliant on electrical for many years already (e.g. France, Norway and Sweden), the reference weather year :ref:`system-load-baseline` profile would include the seasonal effect of heat pumps already.
+For countries which have been reliant on electrical for many years already (e.g. France, Norway and Sweden), the reference weather year :ref:`system-load-baseline-summary` profile would include the seasonal effect of heat pumps already.
 To ensure we do not double-count this seasonal effect in both load profiles, we remove a simulated historical heat pump load from the historical baseline electricity load profile.
 This means that only this "building heat" load has that profile shape, whereas the baseline electricity profile should not reflect building heat seasonality at all.
 
-.. _system-load-additional:
+.. _system-load-additional-summary:
 
 Additional demand
 ^^^^^^^^^^^^^^^^^
@@ -268,7 +279,7 @@ We distribute it according to the relative magnitude of GSP-based demand in each
 Furthermore, there are transmission and distribution (T&D) losses in the FES  workbook that add to the effective system electricity demand.
 We distribute these losses to GB regions and to each hour of the year in proportion to the relative demand in that region and hour.
 
-.. _system-load-dsr:
+.. _system-load-dsr-summary:
 
 Demand-side response
 ^^^^^^^^^^^^^^^^^^^^
@@ -278,17 +289,17 @@ This is represented using a demand-side response (DSR) component which can shift
 The size of this DSR component is based on the peak shaving capability of flexibility (time-of-use tariffs, heat storage, etc.) according to the FES.
 The number of hours in the day in which it can shift load has been assumed and is user-configurable.
 
-.. _system-subsystem:
+.. _system-subsystem-summary:
 
 Subsystems
 ----------
 
-.. _system-evs:
+.. _system-ev-summary:
 
 Electric vehicles (EVs)
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Electric vehicles are represented in a similar fashion to other :ref:`system-load`.
+Electric vehicles are represented in a similar fashion to other :ref:`system-load-summary`.
 The DSR component of EVs is a virtual store that does not represent actual vehicles.
 Instead, we have an "unmanaged" component of EV load (a simulation of the load profile if EV owners charged at full capacity when they wanted) which can be buffered by a DSR component.
 The magnitude of DSR capacity varies in time depending on the number of vehicles that we simulate as being parked.
@@ -296,9 +307,12 @@ The magnitude of DSR capacity varies in time depending on the number of vehicles
 In addition to the standard load components, it is also possible for EVs to feed back to the grid using a vehicle-to-grid (V2G) component.
 This allows energy to be stored by EVs for later return to the grid.
 
-For detailed information about the EV system components, data sources, and implementation, see :doc:`ev`.
+For detailed information about the EV system components, data sources, and implementation, see :ref:`system-ev`.
 
-.. _system-hydrogen:
+.. seealso::
+   :ref:`system-ev`
+
+.. _system-hydrogen-summary:
 
 Hydrogen
 ^^^^^^^^
@@ -308,4 +322,5 @@ Within the hydrogen subsystem is a static load, required for non-power system us
 To create hydrogen from electricity, an electrolyser is used.
 To create electricity from hydrogen, a fuel cell or hydrogen gas turbine can be used.
 
-For detailed information about the hydrogen system components, data sources, and implementation, see :doc:`hydrogen_overview`.
+.. seealso::
+   :ref:`system-hydrogen`

@@ -3,10 +3,10 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _ev-system:
+.. _system-ev:
 
 ##########################################
-Electric Vehicle System
+Electric Vehicle Subsystem
 ##########################################
 
 This page describes the electric vehicle (EV) subsystem, its data sources, components, configuration, and implementation.
@@ -244,10 +244,9 @@ The EV system is built through a pipeline implemented across ``rules/gb-model/ev
 
    **Related Documentation**:
 
-   - :ref:`system-evs` - EVs in the broader system representation
-   - :doc:`hydrogen_overview` - Hydrogen system (similar modelling approach)
-   - :doc:`configuration` - Full configuration reference
-   - :doc:`dispatch_redispatch` - EV flexibility in dispatch optimisation
+   - :ref:`system-ev-summary` - EVs in the broader system representation
+   - :ref:`data_sources_gb` - FES and other data sources
+   - :ref:`model_config_gb` - Full configuration reference
 
    **External Resources**:
 

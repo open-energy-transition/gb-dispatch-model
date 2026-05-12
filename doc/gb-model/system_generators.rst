@@ -3,7 +3,7 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _generators:
+.. _system-generators:
 
 ##########################################
 Generation Components
@@ -19,7 +19,7 @@ Generators are split into two broad groups:
 
 - **Conventional generators**: Thermal and nuclear plant (CCGT, OCGT, gas engine, coal, nuclear, oil, waste, biomass, geothermal) that can be dispatched by the model within physical and contractual limits
 - **Renewable generators**: Solar, onshore wind, and offshore wind, whose output is constrained by weather-derived capacity-factor time series
-- **Hydrogen-to-electricity generators**: Fuel cells and hydrogen turbines — documented in :doc:`hydrogen_overview`
+- **Hydrogen-to-electricity generators**: Fuel cells and hydrogen turbines — documented in :doc:`system_hydrogen`
 
 Additionally, a subset of conventional generators with heat-driven cogeneration duties are subject to simplified *combined heat and power (CHP)* constraints that enforce minimum loading when heat demand is present.
 
@@ -162,17 +162,19 @@ Renewable generators are capacity-constrained to an hourly capacity-factor time 
 
 The renewable carriers are:
 
-+---------------------------+------------------------------------------+
-| Carrier                   | Notes                                    |
-+===========================+==========================================+
-| ``solar``                 | Utility-scale and rooftop PV             |
-+---------------------------+------------------------------------------+
-| ``onwind``                | Onshore wind                             |
-+---------------------------+------------------------------------------+
-| ``offwind-dc``            | Offshore wind (DC-connected)             |
-+---------------------------+------------------------------------------+
-| ``hydro``                 | Reservoir hydro                       |
-+---------------------------+------------------------------------------+
+.. list-table::
+    :header-rows: 1
+
+    * - Carrier
+      - Notes
+    * - ``solar``
+      - Utility-scale and rooftop PV
+    * - ``onwind``
+      - Onshore wind
+    * - ``offwind-dc``
+      - Offshore wind (DC-connected)
+    * - ``hydro``
+      - Reservoir hydro
 
 .. _generators-chp:
 
@@ -374,8 +376,8 @@ This hierarchy preserves known regional concentrations (e.g., offshore wind clus
    **Related Documentation**:
 
    - :ref:`hydrogen-conversion` - Hydrogen-to-electricity generators (fuel cells and turbines)
-   - :doc:`dispatch_redispatch` - How generators are dispatched in the optimisation
-   - :doc:`configuration` - Full configuration reference
+   - :doc:`system_dispatch_redispatch` - How generators are dispatched in the optimisation
+   - :ref:`model_config_gb` - Full configuration reference
 
    **External Resources**:
 

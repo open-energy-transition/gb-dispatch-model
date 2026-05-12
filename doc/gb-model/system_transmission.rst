@@ -3,10 +3,10 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _transmission-system:
+.. _system-transmission:
 
 ##########################################
-Transmission System
+Transmission Components
 ##########################################
 
 This page describes how the electricity transmission network is represented in the model, including AC lines, DC interconnectors, offshore bus mapping, and transmission availability.
@@ -310,9 +310,9 @@ Unavailability is averaged across all projects and report years to produce a sin
 
    **Related Documentation**:
 
-   - :doc:`dispatch_redispatch` - Network constraints and redispatch using transmission capacity
-   - :doc:`generators` - Generation assets connected to the same AC buses
-   - :doc:`configuration` - Full configuration reference
+   - :doc:`system_dispatch_redispatch` - Network constraints and redispatch using transmission capacity
+   - :doc:`system_generators` - Generation assets connected to the same AC buses
+   - :ref:`model_config_gb` - Full configuration reference
 
    **External Resources**:
 

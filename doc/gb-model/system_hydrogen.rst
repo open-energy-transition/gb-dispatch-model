@@ -3,10 +3,10 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _hydrogen-overview:
+.. _system-hydrogen:
 
 ##########################################
-Hydrogen System
+Hydrogen Subsystem
 ##########################################
 
 This page describes the hydrogen subsystem, its data sources, components, configuration, and implementation.
@@ -216,7 +216,7 @@ The model assumes that storage can be charged and discharged without capacity co
 **Dispatch Constraints**:
 
 The storage level at the end of each modelled year is set equal to the level at the start of that year.
-This cyclic constraint prevents unrealistic depletion of storage within each year, but may create artificial constraints on storage use in the final timesteps of each year (see :doc:`faq`).
+This cyclic constraint prevents unrealistic depletion of storage within each year, but may create artificial constraints on storage use in the final timesteps of each year (see :ref:`faq_gb`).
 
 .. _hydrogen-conversion:
 
@@ -318,10 +318,9 @@ The hydrogen system is built through a multi-stage data processing pipeline impl
 
    **Related Documentation**:
 
-   - :ref:`system-hydrogen` - Hydrogen in the broader system representation
-   - :ref:`gb_data_sources` - FES and other data sources
-   - :doc:`configuration` - Full configuration reference
-   - :doc:`dispatch_redispatch` - Hydrogen in dispatch optimization
+   - :ref:`system-hydrogen-summary` - Hydrogen in the broader system representation
+   - :ref:`data_sources_gb` - FES and other data sources
+   - :ref:`model_config_gb` - Full configuration reference
 
    **External Resources**:
 

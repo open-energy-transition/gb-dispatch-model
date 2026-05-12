@@ -16,7 +16,7 @@ gb-dispatch-model is an extension of `PyPSA-Eur <../pypsa_eur.html>`_., used to 
 Quick start
 ===========
 
-First, follow our :ref:`installation steps <gb_installation>`.
+First, follow our :ref:`installation steps <installation_gb>`.
 
 You can then run the full workflow by calling:
 
@@ -53,7 +53,7 @@ Open the image in a new tab/window to view it in more detail.
 
 .. note::
     The graph above was generated using
-    ``snakemake --rulegraph -F | sed -n "/digraph/,/}/p" | dot -Tsvg -o doc/gb-model/img/workflow.svg``
+    ``snakemake --rulegraph -F gb_all | sed -n "/digraph/,/}/p" | dot -Tsvg -o doc/gb-model/img/workflow.svg``
 
 Operating Systems
 =================
@@ -64,26 +64,41 @@ The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windo
 .. toctree::
    :hidden:
    :maxdepth: 2
+   :caption: Getting Started
+
+   introduction
+   installation
+   run
+   faq
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+   :caption: System representation
+
+   system_overview
+   system_dispatch_redispatch
+   system_generators
+   system_transmission
+   system_storage
+   system_demand_and_dsr
+   system_heat
+   system_hydrogen
+   system_ev
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
    :caption: Configuration
 
-   installation
+   wildcards
    configuration
-   faq
 
 .. toctree::
    :hidden:
    :maxdepth: 2
    :caption: Development
 
-   system
-   dispatch_redispatch
-   generators
-   demand_and_dsr
-   storage
-   hydrogen_overview
-   ev
-   heat_system
-   transmission
    implementation
    data_cleaning
 

@@ -2,7 +2,7 @@
   SPDX-FileCopyrightText: gb-dispatch-model contributors
   SPDX-License-Identifier: CC-BY-4.0
 
-.. _gb_faq:
+.. _faq_gb:
 
 ##########################
 Frequently Asked Questions
@@ -44,13 +44,13 @@ Installation & Setup
    - You are requesting a file that cannot be generated.
      If you are requesting that a specific intermediate file is generated, ensure you have the full filepath correctly defined, given your current configuration.
      E.g., ``pixi run -e gb-model snakemake resources/<run-name>/gb-model/<scenario>/resistive_heater_demand/<year>.csv`` includes three configurable items:
-       - ``<run-name>`` is defined in the configuration under ``run.name``;
-       - ``scenario`` is one of the scenarios defined in the configuration under ``fes.scenario_mapping``;
-       - ``year`` is one of the years defined in the configuration under ``redispatch.year_range_incl``.
+     - ``<run-name>`` is defined in the configuration under ``run.name``;
+     - ``scenario`` is one of the scenarios defined in the configuration under ``fes.scenario_mapping``;
+     - ``year`` is one of the years defined in the configuration under ``redispatch.year_range_incl``.
      The final filepath with the default configuration could be ``pixi run -e gb-model snakemake resources/GB/gb-model/HT/resistive_heater_demand/2040.csv``
    - Data retrieval from a remote resource failed.
      This is usually resolved by running the workflow again.
-     If it persists, you can find options for limiting request rates within the :ref:`configuration <gb_model_config>`.
+     If it persists, you can find options for limiting request rates within the :ref:`configuration <model_config_gb>`.
 
 Running the Model
 =================
@@ -92,23 +92,26 @@ Running the Model
 
 .. dropdown:: Q: How long does the workflow take to run?
 
-   This depends on configuration:
+   This depends on configuration and available solvers:
 
    - **Data processing only**: 3 - 4 hours with no parallelisation (approximately 1 hour with 4 parallel jobs).
-   - **Optimisation (full temporal resolution, 4 cores)**: approximately 30 - 45 minutes per model year for dispatch optimisation, 20 - 30 minutes per model year for redispatch optimisation.
-   - **Optimisation (x4 temporal resolution reduction, 4 cores)**: approximately 10 - 15 minutes for dispatch optimisation, 5 - 10 minutes per model year for redispatch optimisation.
+   - **Optimisation (full temporal resolution, 4 cores, gurobi solver)**: approximately 30 - 45 minutes per model year for dispatch optimisation, 20 - 30 minutes per model year for redispatch optimisation.
+   - - **Optimisation (full temporal resolution, 4 cores, HiGHS HiPO solver)**: approximately 2.5 - 3 hours per model year for dispatch optimisation, 1.5 - 2 hours per model year for redispatch optimisation.
+   - **Optimisation (x4 temporal resolution reduction, 4 cores, gurobi solver)**: approximately 10 - 15 minutes for dispatch optimisation, 5 - 10 minutes per model year for redispatch optimisation.
 
    Use ``pixi run model --configfile 'config/config.gb.time-segment.yaml'`` to optimise with x4 temporal resolution reduction.
 
+   When testing that the workflow runs as expected, you can also :ref:`limit your runs to a single FES scenario <faq_gb_single_scenario>` to reduce overall runtime.
+
 .. dropdown:: Q: What's the difference between "dispatch" and "redispatch"?
 
-   See the :ref:`detailed documentation <dispatch_redispatch>`.
+   See the :ref:`detailed documentation <system-dispatch_redispatch>`.
       Briefly:
 
    - **Dispatch**: Initial optimisation with relaxed constraints, reflecting the GB day-ahead market.
    - **Redispatch**: Optimisation considering realistic physical network constraints, reflecting the GB balancing market.
 
-   Both are computed by when running the full model.
+   Both are computed when running the full model.
 
 .. dropdown:: Q: What effect does running each future year separately have?
 
@@ -171,6 +174,8 @@ Configuration & Scenarios
    To model a different FES year, you will need to create your own version of the configuration file with appropriate updates on input data (under the ``urls`` configuration option) and data table processing (e.g., all ``sheet-config`` entries).
    This is not trivial and we expect that it may require changes to be in the workflow scripts themselves.
 
+.. _faq_gb_single_scenario:
+
 .. dropdown:: Q: How do I run the workflow for just one FES scenario?
 
    By default, the workflow runs over all scenarios.
@@ -211,7 +216,7 @@ Data & Input Files
 
 .. dropdown:: Q: Where does the model get its input data from?
 
-   See :ref:`data sources documentation <gb_data_sources>`. Key sources include:
+   See :ref:`data sources documentation <data_sources_gb>`. Key sources include:
 
    - **Weather/resource data**: ERA5 and SARAH-3 via atlite.
    - **Electricity demand profiles**: ENTSO-E Transparency Platform.
