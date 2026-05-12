@@ -172,12 +172,14 @@ all-tests = {depends-on = ["integration-tests", "clean-tests", "unit-tests"]}
 [feature.test.dependencies]
 pytest = ">=8.4.2"
 
-[feature.gb-model.tasks]
-gb-test = """
-	snakemake gb_all -n &&
-	snakemake gb_all -n --configfile config/config.gb.etys-subset.yaml &&
+[feature.gb-model.tasks.gb-test]
+cmd = """
+	snakemake gb_all -n {{ smk_config }} &&
+	snakemake gb_all -n --configfile config/config.gb.etys-subset.yaml {{ smk_config }} &&
 	echo "All GB tests completed successfully."
     """
+args = [{"arg" = "smk_config", "default" = "--forceall --rerun-incomplete"}]
+
 [feature.gb-model.tasks.model]
 cmd = "snakemake gb_all"
 
@@ -200,6 +202,8 @@ highspy = { version = ">=1.13.2.dev0", channel = "conda-forge/label/dev" }
 atlite = "<0.5.0"
 pdfplumber = ">=0.11.0"
 pandas = "<3"
+python = ">=3.13"
+cpython = ">=3.13"
 
 [environments]
 doc = { features = ["doc"], no-default-feature = true }
