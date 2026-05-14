@@ -347,6 +347,23 @@ class DukesConfig(GBBaseConfig):
     )
 
 
+class DukesFuelPriceConfig(GBBaseConfig):
+    sheet_config: DukesSheetConfig = Field(
+        alias="sheet-config",
+        description="Sheet configuration",
+        default_factory=DukesSheetConfig,
+    )
+    quarter_mapping: dict[str, Literal[1, 2, 3, 4]] = Field(
+        description="Mapping from DUKES quarter names to quarter numbers (1-4)",
+        default_factory=dict,
+    )
+    column_mapping: dict[str, list[str]] = Field(
+        description="Mapping from DUKES column names to FES costing table fuel cost <Type>-<Sub Type> column name concatenations."
+        "One DUKES column can map to multiple FES columns if the same fuel cost is used for multiple fuels in the FES costing table.",
+        default_factory=dict,
+    )
+
+
 class GridSupplyPointsConfig(GBBaseConfig):
     """Grid supply points configuration."""
 
@@ -911,6 +928,14 @@ class GBConfigUpdater(ConfigUpdater):
                     alias="dukes-5.11",
                     description="DUKES 5.11 data configuration",
                     default_factory=DukesConfig,
+                ),
+            ),
+            "dukes_fuel_prices": (
+                DukesFuelPriceConfig,
+                Field(
+                    alias="dukes-fuel-prices",
+                    description="DUKES fuel prices data configuration",
+                    default_factory=DukesFuelPriceConfig,
                 ),
             ),
             "grid_supply_points": GridSupplyPointsConfig,

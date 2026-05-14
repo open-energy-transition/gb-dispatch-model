@@ -2238,6 +2238,69 @@
         }
       }
     },
+    "DukesFuelPriceConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "sheet-config": {
+          "additionalProperties": false,
+          "description": "DUKES sheet configuration.",
+          "properties": {
+            "sheet_name": {
+              "default": "",
+              "description": "Name of the Excel sheet",
+              "type": "string"
+            },
+            "usecols": {
+              "default": "",
+              "description": "Columns to use",
+              "type": "string"
+            },
+            "skiprows": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "index_col": {
+              "description": "Index columns",
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "header": {
+              "default": 0,
+              "description": "Header row",
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        },
+        "quarter_mapping": {
+          "additionalProperties": {
+            "enum": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "type": "integer"
+          },
+          "description": "Mapping from DUKES quarter names to quarter numbers (1-4)",
+          "type": "object"
+        },
+        "column_mapping": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": "Mapping from DUKES column names to FES costing table fuel cost <Type>-<Sub Type> column name concatenations.One DUKES column can map to multiple FES columns if the same fuel cost is used for multiple fuels in the FES costing table.",
+          "type": "object"
+        }
+      }
+    },
     "DukesSheetConfig": {
       "additionalProperties": false,
       "description": "DUKES sheet configuration.",
@@ -10198,8 +10261,8 @@
     }
   },
   "additionalProperties": true,
-  "description": "Combined configuration schema for PyPSA-EUR.\n\n\nIncludes additional GB-specific configuration sections:\n- `fes_costs`: GB-specific cost configuration.\n- `low_carbon_register`: Low carbon register configuration.\n- `chp`: Simplified CHP configuration for GB model.\n- `urls`: URLs for GB data sources.\n- `target_crs`: Target coordinate reference system (e.g., EPSG:27700)\n- `region_operations`: Manual region merging and splitting configuration.\n- `etys`: Configuration for ETYS boundaries.\n- `entsoe_unavailability`: ENTSO-E unavailability data configuration.\n- `transmission_availability`: Transmission availability configuration.\n- `dukes_5_11`: DUKES 5.11 data configuration\n- `grid_supply_points`: Grid supply points configuration.\n- `fes`: Future Energy Scenarios (FES) configuration.\n- `ev`: Electric vehicle configuration.\n- `interconnectors`: Interconnectors configuration.\n- `redispatch`: Redispatch config.\n- `time_aggregation`: List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See `PyPSA documentation <https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal>`_ for details on the available time aggregation methods and their parameters.",
-  "markdownDescription": "Combined configuration schema for PyPSA-EUR.\n\n\nIncludes additional GB-specific configuration sections:\n- `fes_costs`: GB-specific cost configuration.\n- `low_carbon_register`: Low carbon register configuration.\n- `chp`: Simplified CHP configuration for GB model.\n- `urls`: URLs for GB data sources.\n- `target_crs`: Target coordinate reference system (e.g., EPSG:27700)\n- `region_operations`: Manual region merging and splitting configuration.\n- `etys`: Configuration for ETYS boundaries.\n- `entsoe_unavailability`: ENTSO-E unavailability data configuration.\n- `transmission_availability`: Transmission availability configuration.\n- `dukes_5_11`: DUKES 5.11 data configuration\n- `grid_supply_points`: Grid supply points configuration.\n- `fes`: Future Energy Scenarios (FES) configuration.\n- `ev`: Electric vehicle configuration.\n- `interconnectors`: Interconnectors configuration.\n- `redispatch`: Redispatch config.\n- `time_aggregation`: List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See [PyPSA documentation ](https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal) for details on the available time aggregation methods and their parameters.",
+  "description": "Combined configuration schema for PyPSA-EUR.\n\n\nIncludes additional GB-specific configuration sections:\n- `fes_costs`: GB-specific cost configuration.\n- `low_carbon_register`: Low carbon register configuration.\n- `chp`: Simplified CHP configuration for GB model.\n- `urls`: URLs for GB data sources.\n- `target_crs`: Target coordinate reference system (e.g., EPSG:27700)\n- `region_operations`: Manual region merging and splitting configuration.\n- `etys`: Configuration for ETYS boundaries.\n- `entsoe_unavailability`: ENTSO-E unavailability data configuration.\n- `transmission_availability`: Transmission availability configuration.\n- `dukes_5_11`: DUKES 5.11 data configuration\n- `dukes_fuel_prices`: DUKES fuel prices data configuration\n- `grid_supply_points`: Grid supply points configuration.\n- `fes`: Future Energy Scenarios (FES) configuration.\n- `ev`: Electric vehicle configuration.\n- `interconnectors`: Interconnectors configuration.\n- `redispatch`: Redispatch config.\n- `time_aggregation`: List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See `PyPSA documentation <https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal>`_ for details on the available time aggregation methods and their parameters.",
+  "markdownDescription": "Combined configuration schema for PyPSA-EUR.\n\n\nIncludes additional GB-specific configuration sections:\n- `fes_costs`: GB-specific cost configuration.\n- `low_carbon_register`: Low carbon register configuration.\n- `chp`: Simplified CHP configuration for GB model.\n- `urls`: URLs for GB data sources.\n- `target_crs`: Target coordinate reference system (e.g., EPSG:27700)\n- `region_operations`: Manual region merging and splitting configuration.\n- `etys`: Configuration for ETYS boundaries.\n- `entsoe_unavailability`: ENTSO-E unavailability data configuration.\n- `transmission_availability`: Transmission availability configuration.\n- `dukes_5_11`: DUKES 5.11 data configuration\n- `dukes_fuel_prices`: DUKES fuel prices data configuration\n- `grid_supply_points`: Grid supply points configuration.\n- `fes`: Future Energy Scenarios (FES) configuration.\n- `ev`: Electric vehicle configuration.\n- `interconnectors`: Interconnectors configuration.\n- `redispatch`: Redispatch config.\n- `time_aggregation`: List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See [PyPSA documentation ](https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal) for details on the available time aggregation methods and their parameters.",
   "properties": {
     "version": {
       "default": "v2026.02.0",
@@ -16440,6 +16503,70 @@
           "type": "object"
         }
       }
+    },
+    "dukes-fuel-prices": {
+      "additionalProperties": false,
+      "properties": {
+        "sheet-config": {
+          "additionalProperties": false,
+          "description": "DUKES sheet configuration.",
+          "properties": {
+            "sheet_name": {
+              "default": "",
+              "description": "Name of the Excel sheet",
+              "type": "string"
+            },
+            "usecols": {
+              "default": "",
+              "description": "Columns to use",
+              "type": "string"
+            },
+            "skiprows": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "index_col": {
+              "description": "Index columns",
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "header": {
+              "default": 0,
+              "description": "Header row",
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        },
+        "quarter_mapping": {
+          "additionalProperties": {
+            "enum": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "type": "integer"
+          },
+          "description": "Mapping from DUKES quarter names to quarter numbers (1-4)",
+          "type": "object"
+        },
+        "column_mapping": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": "Mapping from DUKES column names to FES costing table fuel cost <Type>-<Sub Type> column name concatenations.One DUKES column can map to multiple FES columns if the same fuel cost is used for multiple fuels in the FES costing table.",
+          "type": "object"
+        }
+      },
+      "description": "DUKES fuel prices data configuration"
     },
     "grid_supply_points": {
       "additionalProperties": false,

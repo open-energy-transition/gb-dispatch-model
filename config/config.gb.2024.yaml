@@ -560,11 +560,11 @@ dukes-fuel-prices:
     "Oct to Dec": 4
   column_mapping:
     ? "Major power producers: Natural gas (pence per kWh)\n[Note 4]"
-    : "gas"
+    : [CCSGas-CCS Gas, Gas-CCGT CHP, Gas-CCGT, Gas-Engine CHP, Gas-Gas Reciprocating Engines, Gas-GT CHP, Gas-OCGT]
     ? "Major power producers: Oil (pence per kWh)\n[Note 2, 3]"
-    : "oil"
+    : [Gasoil-Steam Oil, Gasoil-Steam Oil]
     ? "Major power producers: Coal (pence per kWh)\n[Note 1]"
-    : "coal"
+    : [Coal-Coal CHP, Coal-Coal]
 
 grid_supply_points:
   manual_mapping:

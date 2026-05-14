@@ -1554,6 +1554,17 @@ transmission_availability:
   carrier_mapping: {}
   set_mapping: {}
 
+# docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#dukes_fuel_prices
+"dukes-fuel-prices":
+  "sheet-config":
+    sheet_name: ""
+    usecols: ""
+    skiprows: 0
+    index_col: []
+    header: 0
+  quarter_mapping: {}
+  column_mapping: {}
+
 # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#grid_supply_points
 grid_supply_points:
   manual_mapping: {}
