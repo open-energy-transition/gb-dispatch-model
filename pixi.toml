@@ -9,7 +9,7 @@ channels = ["conda-forge", "bioconda", "gurobi", "conda-forge/label/dev"]
 name = "gb-dispatch-model"
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
 version = "0.2.2"
-
+exclude-newer = "7d"
 [tasks]
 
 reset = """bash -c '
