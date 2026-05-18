@@ -53,7 +53,7 @@ def extract_transmission_availability(pdf_path: str) -> pd.DataFrame:
                         .drop("", errors="ignore")
                         .astype(float)
                     )
-                    geography = page.extract_text_lines(layout=True)[0]["text"]
+                    geography = page.extract_text_simple().splitlines()[0].strip()
                     df.index = pd.to_datetime(df.index, format="%b").month
                     transmission_data[geography] = df
                     logger.info(
