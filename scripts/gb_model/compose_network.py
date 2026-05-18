@@ -44,7 +44,6 @@ class CompositionContext:
     countries: tuple[str, ...]
     costs_path: Path
     costs_config: dict[str, Any]
-    max_hours: dict[str, Any] | None
 
 
 def create_context(
@@ -52,7 +51,6 @@ def create_context(
     costs_path: str,
     countries: list[str],
     costs_config: dict[str, Any],
-    max_hours: dict[str, Any] | None,
 ) -> CompositionContext:
     """
     Create composition context from network path and configuration.
@@ -67,8 +65,6 @@ def create_context(
         List of country codes to include
     costs_config : dict
         Costs configuration dictionary
-    max_hours : dict or None
-        Maximum hours configuration
 
     Returns
     -------
@@ -82,7 +78,6 @@ def create_context(
         countries=tuple(countries),
         costs_path=Path(costs_path),
         costs_config=copy.deepcopy(costs_config),
-        max_hours=max_hours,
     )
 
 
@@ -185,10 +180,20 @@ def _load_powerplants(
     """
     ppl = pd.read_csv(powerplants_path, index_col="name", dtype={"bus": "str"})
     ppl = ppl[ppl.build_year == year]
-    ppl["max_hours"] = ppl.get("max_hours", 0)  # Initialize max_hours column
-    ppl["efficiency"] = ppl.get("efficiency", 1.0)  # Initialize efficiency column
     if filter_idx is not None:
         ppl = ppl.filter(regex=filter_idx, axis=0)
+
+    # Add empty columns that might be needed by PyPSA-Eur methods
+    for col in [
+        "capital_cost",
+        "lifetime",
+        "marginal_cost",
+        "efficiency",
+        "CO2 intensity",
+    ]:
+        if col not in ppl.columns:
+            ppl[col] = np.nan
+
     return ppl
 
 
@@ -199,7 +204,7 @@ def _integrate_renewables(
     costs: pd.DataFrame,
     renewable_profiles: dict[str, str],
     ppl: pd.DataFrame,
-    hydro_capacities_path: str | None,
+    hydro_capacities_path: str,
 ) -> None:
     """
     Integrate renewable generators into the network.
@@ -222,7 +227,7 @@ def _integrate_renewables(
         Mapping of carrier names to profile file paths
     powerplants_path : str
         Path to powerplants CSV file
-    hydro_capacities_path : str or None
+    hydro_capacities_path : str
         Path to hydro capacities CSV file
     """
     renewable_carriers = list(electricity_config["renewable_carriers"])
@@ -249,13 +254,16 @@ def _integrate_renewables(
             ppl,
             non_hydro_profiles,
             non_hydro_carriers,
-            extendable_carriers,
+            extendable_carriers["Generator"],
         )
 
     if "hydro" in renewable_carriers:
         hydro_cfg = copy.deepcopy(renewable_config["hydro"])
         carriers = hydro_cfg.pop("carriers")
-
+        if "hydro" in carriers:
+            raise ValueError(
+                "Cannot represent the reservoir hydro ('hydro') carrier in GB model"
+            )
         attach_hydro(
             n,
             costs,
@@ -936,8 +944,6 @@ def attach_wind_and_solar(
 
             ds = ds.stack(bus_bin=["bus", "bin"])
 
-            capital_cost = costs.at[car, "capital_cost"]
-
             buses = ds.indexes["bus_bin"].get_level_values("bus")
             bus_bins = ds.indexes["bus_bin"].map(flatten)
 
@@ -950,7 +956,6 @@ def attach_wind_and_solar(
                 caps = pd.Series(data=caps.values, index=bus_bins)
             else:
                 caps = pd.Series(index=bus_bins).fillna(0)
-
             n.add(
                 "Generator",
                 bus_bins,
@@ -959,69 +964,19 @@ def attach_wind_and_solar(
                 carrier=car,
                 p_nom=caps,
                 p_nom_min=0,
-                p_nom_extendable=car in extendable_carriers["Generator"],
+                p_nom_extendable=car in extendable_carriers,
                 p_nom_max=np.inf,
-                marginal_cost=costs.at[car, "marginal_cost"],
-                capital_cost=capital_cost,
-                efficiency=costs.at[car, "efficiency"],
+                marginal_cost=costs.loc[car, "marginal_cost"],
+                capital_cost=costs.loc[car, "capital_cost"],
+                efficiency=costs.loc[car, "efficiency"],
                 p_max_pu=p_max_pu,
-                lifetime=costs.at[car, "lifetime"],
+                lifetime=costs.loc[car, "lifetime"],
             )
 
 
-def add_battery_storage(
-    n: pypsa.Network,
-    ppl: pd.DataFrame,
-    battery_e_nom_path: str,
-    year: int,
-) -> None:
+def add_storage(n: pypsa.Network, ppl: pd.DataFrame) -> None:
     """
-    Add battery storage to the network.
-
-    Parameters
-    ----------
-    n : pypsa.Network
-        The PyPSA network to attach the battery storage to.
-    battery_e_nom_path : str
-        Path to the battery storage capacity CSV file.
-    ppl : pd.DataFrame
-        DataFrame containing the power plant data.
-    year : int
-        Year for which to load battery storage capacities.
-    """
-    battery_e_nom = pd.read_csv(battery_e_nom_path, index_col="year").xs(
-        year,
-    )
-    ppl_battery = ppl[ppl.carrier == "battery"]
-    all_data_battery = (
-        ppl_battery.reset_index().merge(battery_e_nom, on="bus").set_index("name")
-    )
-    if all_data_battery.empty:
-        logger.info(f"No battery storage data found for year {year}")
-        return
-
-    max_hours = ppl_battery["max_hours"]
-    n.add("Carrier", "Battery Storage")
-    n.add(
-        "StorageUnit",
-        all_data_battery.index,
-        bus=all_data_battery.bus,
-        carrier="Battery Storage",
-        p_nom=all_data_battery.p_nom,
-        p_nom_extendable=False,
-        marginal_cost=all_data_battery.marginal_cost,
-        capital_cost=0,
-        lifetime=all_data_battery.lifetime,
-        efficiency_store=all_data_battery.efficiency**0.5,
-        efficiency_dispatch=all_data_battery.efficiency**0.5,
-        max_hours=max_hours,
-        cyclic_state_of_charge=True,
-    )
-
-
-def add_other_storage(n: pypsa.Network, ppl: pd.DataFrame, storage_list: dict) -> None:
-    """
-    Add other storage (Compressed and Liquid Air) to the network.
+    Add non-PHS storage to the network.
 
     Parameters
     ----------
@@ -1029,14 +984,11 @@ def add_other_storage(n: pypsa.Network, ppl: pd.DataFrame, storage_list: dict) -
         The PyPSA network to attach the battery storage to.
     ppl : pd.DataFrame
         DataFrame containing the power plant data.
-    storage_list: list
-        List of technologies to be added as storage units
     """
 
-    for carr in list(storage_list):
+    for carr in ppl.query("set == 'Store' and carrier != 'PHS'").carrier.unique():
         ppl_storage = ppl[ppl.carrier == carr]
 
-        max_hours = ppl_storage["max_hours"]
         n.add("Carrier", carr)
         n.add(
             "StorageUnit",
@@ -1046,11 +998,11 @@ def add_other_storage(n: pypsa.Network, ppl: pd.DataFrame, storage_list: dict) -
             p_nom=ppl_storage.p_nom,
             p_nom_extendable=False,
             marginal_cost=ppl_storage.marginal_cost,
-            capital_cost=0,
+            capital_cost=ppl_storage.capital_cost,
             lifetime=ppl_storage.lifetime,
             efficiency_store=ppl_storage.efficiency**0.5,
             efficiency_dispatch=ppl_storage.efficiency**0.5,
-            max_hours=max_hours,
+            max_hours=ppl_storage.max_hours,
             cyclic_state_of_charge=True,
         )
 
@@ -1124,7 +1076,7 @@ def add_H2(
         carrier="H2 Electrolysis",
         efficiency=electrolysis_efficiency_float,
         marginal_cost=electrolysis_caps.marginal_cost,
-        capital_cost=0,
+        capital_cost=electrolysis_caps.capital_cost,
         lifetime=electrolysis_caps.lifetime,
     )
 
@@ -1137,7 +1089,7 @@ def add_H2(
         e_cyclic=True,
         carrier="H2 Store",
         marginal_cost=storage_caps.marginal_cost,
-        capital_cost=0,
+        capital_cost=storage_caps.capital_cost,
         lifetime=storage_caps.lifetime,
     )
 
@@ -1184,7 +1136,7 @@ def add_H2(
             carrier="H2 Fuel Cell",
             marginal_cost=fuel_cells.VOM,
             efficiency=fuel_cells.efficiency,
-            capital_cost=0,
+            capital_cost=fuel_cells.capital_cost,
             lifetime=fuel_cells.lifetime,
         )
 
@@ -1199,33 +1151,9 @@ def add_H2(
             p_nom=turbines.p_nom,
             marginal_cost=turbines.VOM,
             efficiency=turbines.efficiency,
-            capital_cost=0,
+            capital_cost=turbines.capital_cost,
             lifetime=turbines.lifetime,
         )
-
-
-def _prepare_costs(
-    ppl: pd.DataFrame,
-    year: int,
-) -> pd.DataFrame:
-    """
-    Prepare costs DataFrame from powerplant data.
-    """
-    costs = ppl[ppl.build_year == year]
-    costs = costs[~costs.set_index("carrier").index.duplicated(keep="first")].set_index(
-        "carrier"
-    )
-    costs = costs[
-        [
-            "set",
-            "capital_cost",
-            "marginal_cost",
-            "lifetime",
-            "efficiency",
-            "CO2 intensity",
-        ]
-    ]
-    return costs
 
 
 def _monthly_to_hourly_profile(
@@ -1344,12 +1272,11 @@ def compose_network(
     output_path: str,
     costs_path: str,
     powerplants_path: str,
-    hydro_capacities_path: str | None,
+    hydro_capacities_path: str,
     chp_p_min_pu_path: str,
     interconnectors_path: str,
     interconnectors_availability_path: str,
     generator_availability_path: str,
-    battery_e_nom_path: str,
     renewable_profiles: dict[str, str],
     countries: list[str],
     costs_config: dict[str, Any],
@@ -1368,7 +1295,6 @@ def compose_network(
     flex_carrier_suffixes: dict[str, str],
     time_aggregation: list[dict],
     year: int,
-    storage_list: list[str],
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -1383,7 +1309,7 @@ def compose_network(
         Path to costs CSV file
     powerplants_path : str
         Path to powerplants CSV file
-    hydro_capacities_path : str or None
+    hydro_capacities_path : str
         Path to hydro capacities CSV file
     chp_p_min_pu_path : str
         Path to CHP minimum operation profile CSV file
@@ -1423,21 +1349,16 @@ def compose_network(
         Whether to enable the H2 bus (incl. electrolysis to generate H2, H2 demand, and storage) for European countries.
     year: int
         Modelling year
-    storage_list: list[str]
-        List of storage technologies
     """
     network = pypsa.Network(network_path)
-    max_hours = electricity_config["max_hours"]
-    context = create_context(
-        network_path, costs_path, countries, costs_config, max_hours
-    )
+    context = create_context(network_path, costs_path, countries, costs_config)
     add_gb_components(network, context)
 
     # Load FES powerplants data (already enriched with costs from create_powerplants_table)
     ppl = _load_powerplants(powerplants_path, year)
 
     # Define costs file
-    costs = _prepare_costs(ppl, year)
+    costs = ppl[ppl.build_year == year].groupby("carrier").first()
 
     _integrate_renewables(
         network,
@@ -1502,8 +1423,7 @@ def compose_network(
         network, interconnectors_path, year, interconnectors_availability_path
     )
 
-    add_battery_storage(network, ppl, battery_e_nom_path, year)
-    add_other_storage(network, ppl, storage_list)
+    add_storage(network, ppl)
 
     add_generator_availability(
         network, enable_eur_generator_unavailability, generator_availability_path
@@ -1543,7 +1463,6 @@ if __name__ == "__main__":
         interconnectors_path=snakemake.input.interconnectors_p_nom,
         interconnectors_availability_path=snakemake.input.interconnectors_availability,
         generator_availability_path=snakemake.input.generator_availability,
-        battery_e_nom_path=snakemake.input.battery_e_nom,
         countries=snakemake.params.countries,
         costs_config=snakemake.params.costs_config,
         voll=snakemake.params.voll,
@@ -1561,5 +1480,4 @@ if __name__ == "__main__":
         flex_carrier_suffixes=snakemake.params.flex_carrier_suffixes,
         time_aggregation=snakemake.params.time_aggregation,
         year=int(snakemake.wildcards.year),
-        storage_list=snakemake.params.storage_list,
     )

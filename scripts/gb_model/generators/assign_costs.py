@@ -7,6 +7,17 @@
 Costs assigner.
 
 This script enriches powerplants CSV data with costs information.
+
+Steps:
+    1. Load technology costs, FES power costs, and FES carbon costs
+    2. Join technology costs on carrier
+    3. Fill CO2 intensity and fuel costs using carrier_fuel_mapping
+    4. Format bus and build_year columns
+    5. Integrate FES power costs (VOM and fuel)
+    6. Integrate FES carbon costs
+    7. Calculate marginal_cost from VOM, fuel, efficiency, CO2 intensity, and carbon_cost
+    8. Create unique index (bus carrier-year-idx)
+    9. Integrate max hours for storage technologies
 """
 
 import logging
@@ -20,29 +31,10 @@ from scripts.gb_model._helpers import get_scenario_name
 logger = logging.getLogger(__name__)
 
 COST_NAME_MAPPING = {"Fuel Cost": "fuel", "Variable Other Work Costs": "VOM"}
+DEFAULT_SETS = {"PP", "Store"}
 
 
-def _ensure_column_with_default(
-    df: pd.DataFrame, col: str, default: float, units: str = ""
-) -> pd.DataFrame:
-    """Helper to ensure column exists and has no NaN values."""
-    unit_str = f" {units}" if units else ""
-
-    if col not in df.columns:
-        logger.warning(f"No {col} column; creating with default {default}{unit_str}")
-        df[col] = default
-    else:
-        missing = df[col].isna().sum()
-        if missing > 0:
-            logger.warning(
-                f"Missing {col} for {missing} rows; using default {default}{unit_str}"
-            )
-            df[col] = df[col].fillna(default)
-
-    return df
-
-
-def _load_costs(
+def load_costs(
     tech_costs_path: str,
     costs_config: dict[str, dict],
 ) -> pd.DataFrame:
@@ -65,12 +57,12 @@ def _load_costs(
     costs = costs.value.unstack(level=1).groupby("technology").sum(min_count=1)
 
     # Keep only relevant cost columns
-    costs = costs[costs_config["relevant_cost_columns"]]
+    costs = costs[costs_config["pypsa_eur_tech_data_columns"]]
 
     return costs
 
 
-def _load_fes_power_costs(
+def load_fes_power_costs(
     fes_power_costs_path: str,
     fes_scenario: str,
 ) -> pd.DataFrame:
@@ -92,8 +84,15 @@ def _load_fes_power_costs(
     # Load FES power costs
     fes_power_costs = pd.read_csv(fes_power_costs_path)
 
-    # Take the average across all scenarios since the scenario names change between FES2023 and FES2024
-    # And therefore the scenario filtering cannot be reliably done here.
+    if not (
+        fes_power_costs_scenario := fes_power_costs.query(
+            "Scenario == @scenario", local_dict={"scenario": fes_scenario}
+        )
+    ).empty:
+        fes_power_costs = fes_power_costs_scenario
+
+    # If we don't have a scenario match in the FES cost data (as is the case for any FES years >=2024),
+    # We take the mean of all scenarios
     # Only battery storage is affected by this (having up to ~10% difference in VOM costs in different scenarios),
     fes_power_costs_mean = (
         fes_power_costs.groupby(["Type", "Sub Type", "Cost Type", "year"])
@@ -117,10 +116,10 @@ def _load_fes_power_costs(
     return fes_power_costs_pivoted[COST_NAME_MAPPING.values()]
 
 
-def _load_fes_carbon_costs(
+def load_fes_carbon_costs(
     fes_carbon_costs_path: str,
     fes_scenario: str,
-) -> pd.DataFrame:
+) -> pd.Series:
     """
     Load FES carbon costs data.
 
@@ -129,7 +128,7 @@ def _load_fes_carbon_costs(
         fes_scenario: FES scenario name (e.g., "leading the way")
 
     Returns:
-        DataFrame with year index and carbon_cost column (£/tCO2)
+        Series with year index and carbon_cost column (£/tCO2)
 
     Steps:
         1. Load FES carbon costs CSV
@@ -140,11 +139,16 @@ def _load_fes_carbon_costs(
     # Load FES carbon costs
     fes_carbon_costs = pd.read_csv(fes_carbon_costs_path)
 
-    # We take the average across all scenarios since the scenario names change between FES2023 and FES2024
-    # And therefore the scenario filtering cannot be reliably done here.
+    if not (
+        fes_carbon_costs_scenario := fes_carbon_costs.query(
+            "Scenario == @scenario", local_dict={"scenario": fes_scenario}
+        )
+    ).empty:
+        fes_carbon_costs = fes_carbon_costs_scenario
+    # If we don't have a scenario match in the FES cost data (as is the case for any FES years >=2024),
+    # We take the mean of all scenarios
     fes_carbon_costs_mean = fes_carbon_costs.groupby("year").data.mean()
-
-    return fes_carbon_costs_mean.to_frame("carbon_cost")
+    return fes_carbon_costs_mean.rename("carbon_cost")
 
 
 def _integrate_fes_power_costs(
@@ -160,37 +164,37 @@ def _integrate_fes_power_costs(
         fes_power_costs (pd.DataFrame): FES power costs DataFrame with multi-index
             (Sub Type, year) and columns for each Cost Type (fuel, VOM).
         costs_config (dict): Configuration dict containing:
-            - fes_costs_carrier_mapping: Mapping from carrier names to FES Sub Type name.
+            - fes_costs_carrier_set_mapping: Mapping from carrier names to FES Sub Type name.
 
     Returns:
         pd.DataFrame: Updated powerplants DataFrame with integrated FES power costs.
     """
-    carrier_set = df["carrier"]
-
-    for col in ["VOM", "fuel"]:
-        techs = carrier_set.map(costs_config[f"fes_{col}_carrier_mapping"])
+    cost_cols = ["VOM", "fuel"]
+    _df = df.copy()
+    for col in cost_cols:
+        _df["technology"] = _df["name"].map(
+            costs_config[f"fes_{col}_carrier_set_mapping"]
+        )
 
         assert not (
-            missing := set(techs.dropna()).difference(
+            missing := set(_df["technology"].dropna()).difference(
                 fes_power_costs.index.get_level_values("technology")
             )
         ), (
             f"Some mapped FES technologies for {col} costs are missing in FES power costs data: {missing}"
         )
+        _df = _df.merge(fes_power_costs[[col]].reset_index(), how="left")
 
-        df[col] = fes_power_costs[[col]].reindex([techs, df.year]).values
-
-    return df
+    return _df.drop(columns=["technology"])
 
 
-def calculate_marginal_costs(
+def _map_tech_data(
     df: pd.DataFrame,
     costs: pd.DataFrame,
     costs_config: dict,
-    fes_carbon_costs: pd.DataFrame,
 ) -> pd.DataFrame:
     """
-    Function to calculate marginal costs
+    Map technology data from costs DataFrame to the powerplants DataFrame based on carrier and set mappings.
 
     Parameters
     ----------
@@ -200,147 +204,118 @@ def calculate_marginal_costs(
         Technology costs dataframe
     costs_config: dict
         config dictionary to map technology names and fill default characteristics
-    fes_carbon_costs: pd.DataFrame
-        Carbon costs indexed by year from FES data
 
     """
-    for param in costs_config["relevant_cost_columns"]:
-        if param in costs_config["carrier_gap_filling"]:
-            df[param] = df[param].fillna(
-                df["carrier"]
-                .map(costs_config["carrier_gap_filling"][param])
-                .map(costs[param])
-            )
-        elif "set" in df.columns:
-            df[param] = df[param].fillna(
-                (df["carrier"])
-                .map(costs_config["carrier_gap_filling"]["default"])
-                .map(costs[param])
-            )
-
-    # Fill VOM, fuel costs, efficiency, and CO2 intensity with default characteristics from config where FES data is missing
-    for col in costs_config["marginal_cost_columns"]:
-        df = _ensure_column_with_default(
-            df=df,
-            col=col,
-            default=costs_config["default_characteristics"][col]["data"],
-            units=costs_config["default_characteristics"][col]["unit"],
+    gap_filling_mapping = costs_config["pypsa_eur_tech_data_carrier_set_mapping"]
+    co2_intensity_mapping = costs_config["carrier_fossil_fuel_type"]
+    if diff := set(co2_intensity_mapping.values()).difference(costs.index):
+        msg = f"Found fossil fuel types not given in PyPSA-Eur technology data table: {diff}"
+        raise ValueError(msg)
+    if diff := set(gap_filling_mapping.values()).difference(costs.index):
+        msg = f"Found carrier set gap filling technologies not given in PyPSA-Eur technology data table: {diff}"
+        raise ValueError(msg)
+    for param in costs_config["pypsa_eur_tech_data_columns"]:
+        if param == "CO2 intensity":
+            col, mapper = "carrier", co2_intensity_mapping
+        else:
+            col, mapper = "name", gap_filling_mapping
+        df[param] = (
+            df[col]
+            .map(mapper)
+            .map(costs[param])
+            .fillna(costs_config["pypsa_eur_tech_data_defaults"][param])
         )
-
-    # Integrate FES carbon costs
-    df = df.join(fes_carbon_costs, on="year")
-
-    # Calculate marginal cost if possible
-    df["marginal_cost"] = (
-        df["VOM"]
-        + df["fuel"] / df["efficiency"]
-        + df["CO2 intensity"] * df["carbon_cost"] / df["efficiency"]
-    )
-    # Fill gaps in all remaining columns
-    for col in costs_config["relevant_cost_columns"]:
-        df = _ensure_column_with_default(
-            df,
-            col,
-            default=costs_config["default_characteristics"][col]["data"],
-            units=costs_config["default_characteristics"][col]["unit"],
-        )
-
     return df
 
 
+def _calculate_marginal_costs(
+    df: pd.DataFrame, fes_carbon_costs: pd.DataFrame
+) -> pd.Series:
+    """Calculate marginal cost from VOM, fuel, efficiency, CO2 intensity, and carbon_cost."""
+
+    # CCS is expected to not be subject to a carbon tax on its fossil fuel intake.
+    carbon_tax = (
+        df["CO2 intensity"]
+        .mul(fes_carbon_costs.reindex(df["year"]).values)
+        .where(df["set"] != "CCS")
+        .fillna(0)
+    )
+    return (
+        df["VOM"]
+        .fillna(0)
+        .add(df["fuel"].add(carbon_tax).fillna(0))
+        .div(df["efficiency"])
+        .fillna(0)
+    )
+
+
+def _postprocess_format_cols(df):
+    """Post-process formatting of columns after all cost and technical data has been integrated."""
+    # Format bus, build_year, and name columns
+    df["bus"] = df["bus"].astype(str)
+    df["build_year"] = df["year"].astype(int)
+    df["name"] = df["bus"] + " " + df["name"] + "-" + df["build_year"].astype(str)
+
+    # Add country columns
+    df["country"] = df["bus"].str[:2]
+    # PyPSA-Eur expects 'overnight_cost' column for the same meaning as given in the source data under "investment"
+    df = df.rename(columns={"investment": "overnight_cost"}, errors="ignore")
+    return df
+
+
+def add_max_hours(df, max_hours_path):
+    """Integrate max hours for storage technologies based on FES ES1 sheet data."""
+    # Integrate max_hours
+    df_max_hours = pd.read_csv(max_hours_path)
+    max_hours = (
+        df_max_hours.groupby(["carrier", "year"])
+        .max_hours.mean()
+        .reindex(df[["carrier", "year"]].values)
+    )
+    if max_hours.notnull().any():
+        df["max_hours"] = max_hours.values
+
+
 def assign_technical_and_costs_defaults(
-    ppl_path: str,
-    tech_costs_path: str,
-    fes_power_costs_path: str,
-    fes_carbon_costs_path: str,
+    df: pd.DataFrame,
+    fes_power_costs: pd.DataFrame,
+    costs: pd.DataFrame,
+    fes_carbon_costs: pd.DataFrame,
     costs_config: dict[str, dict],
-    fes_scenario: str,
-    data_file: str,
-    max_hours_path: str,
-    gb_config: dict[str, dict],
 ) -> pd.DataFrame:
     """
     Enrich powerplants dataframe with cost and technical parameters.
 
-    Args:
-        ppl_path: Path to powerplant data CSV file
-        tech_costs_path: Path to technology costs CSV file
-        fes_power_costs_path: Path to FES power costs CSV file
-        fes_carbon_costs_path: Path to FES carbon costs CSV file
-        costs_config: Configuration dict containing mappings and conversion rates
-        fes_scenario: FES scenario name (e.g., "leading the way")
-        data_file: Data file identifier
-        max_hours_path: Path to max hours CSV file
-        gb_config: Configuration dict of GB carrier mapping
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Powerplants dataframe with at least 'carrier', 'set', and 'year' columns
+    fes_power_costs: pd.DataFrame
+        FES power costs with multi-index (technology, year) and columns for 'fuel' and 'VOM'
+    costs: pd.DataFrame
+        Technology costs dataframe indexed by technology with columns for efficiency, CO2 intensity, capital cost, and lifetime
+    fes_carbon_costs: pd.DataFrame
+        Carbon costs indexed by year from FES data
 
-    Returns:
+    Returns
+    -------
+    pd.DataFrame
         Enriched powerplants DataFrame with efficiency, marginal_cost, VOM, fuel,
         CO2 intensity, capital_cost, lifetime, build_year, and unique index
 
-    Steps:
-        1. Load technology costs, FES power costs, and FES carbon costs
-        2. Join technology costs on carrier
-        3. Fill CO2 intensity and fuel costs using carrier_fuel_mapping
-        4. Format bus and build_year columns
-        5. Integrate FES power costs (VOM and fuel)
-        6. Integrate FES carbon costs
-        7. Calculate marginal_cost from VOM, fuel, efficiency, CO2 intensity, and carbon_cost
-        8. Create unique index (bus carrier-year-idx)
-        9. Integrate max hours for storage technologies
     """
-    # Load powerplant data
-    df = pd.read_csv(ppl_path).assign(**costs_config["add_cols"][data_file])
-
-    # Load costs data
-    costs = _load_costs(tech_costs_path, costs_config)
-    fes_power_costs = _load_fes_power_costs(fes_power_costs_path, fes_scenario)
-    fes_carbon_costs = _load_fes_carbon_costs(fes_carbon_costs_path, fes_scenario)
-    logger.info("Loaded technology costs and FES power and carbon costs data")
-
-    # Join cost data
-    df = df.join(costs[costs_config["relevant_cost_columns"]], on="carrier")
+    add_set = (
+        ("-" + df["set"].fillna(""))
+        .where(~df["set"].isin(DEFAULT_SETS) & df["set"].notnull())
+        .fillna("")
+    )
+    df["name"] = df["carrier"] + add_set
 
     # Integrate FES power costs
     df = _integrate_fes_power_costs(df, fes_power_costs, costs_config)
-
-    # Calculate marginal costs
-    df = calculate_marginal_costs(df, costs, costs_config, fes_carbon_costs)
-
-    # Format bus and build_year columns
-    df["bus"] = df["bus"].astype(str)
-    df["build_year"] = df["year"].astype(int)
-
-    # Add country columns
-    df["country"] = df["bus"].str[:2]
-
-    # Integrate max_hours
-    df_max_hours = pd.read_csv(max_hours_path)
-    df_max_hours.rename(columns={"SubType": "carrier"}, inplace=True)
-    df = pd.merge(df, df_max_hours, on=["carrier", "year"], how="left")
-
-    # Create unique index: "bus carrier-year-idx"
-    df["idx_counter"] = df.groupby(["bus", "carrier", "year"]).cumcount()
-    df["name"] = (
-        df["bus"]
-        + " "
-        + df["carrier"]
-        + "-"
-        + df["year"].astype(int).astype(str)
-        + "-"
-        + df["idx_counter"].astype(str)
-    )
-    df = df.drop(columns=["idx_counter", "carbon_cost"])
-
-    # PyPSA-Eur expects 'capital_cost' column name even though source technology data uses 'investment'
-    df = df.rename(columns={"investment": "capital_cost"})
-
-    cross_sheet_mapping = gb_config["BB2_to_ES1_mapping"]
-    bbid_mapping = gb_config["carrier_mapping"]["Building Block ID Number"]
-    for key in cross_sheet_mapping:
-        if key in bbid_mapping:
-            df.loc[df["carrier"].isin(cross_sheet_mapping[key]), "carrier"] = (
-                bbid_mapping[key]
-            )
+    df = _map_tech_data(df, costs, costs_config)
+    df["marginal_cost"] = _calculate_marginal_costs(df, fes_carbon_costs)
+    df = _postprocess_format_cols(df)
     return df
 
 
@@ -362,18 +337,25 @@ if __name__ == "__main__":
     costs_config = snakemake.params.costs_config
     fes_scenario = get_scenario_name(snakemake)
 
+    # Load powerplant data
+    df = pd.read_csv(ppl_path).assign(
+        **costs_config["add_cols"][snakemake.wildcards.data_file]
+    )
+
+    # Load costs data
+    costs = load_costs(tech_costs_path, costs_config)
+    fes_power_costs = load_fes_power_costs(fes_power_costs_path, fes_scenario)
+    fes_carbon_costs = load_fes_carbon_costs(fes_carbon_costs_path, fes_scenario)
+
     # Enrich powerplants with technical/cost parameters
     df_powerplants = assign_technical_and_costs_defaults(
-        ppl_path=ppl_path,
-        tech_costs_path=tech_costs_path,
-        fes_power_costs_path=fes_power_costs_path,
-        fes_carbon_costs_path=fes_carbon_costs_path,
+        df=df,
+        fes_power_costs=fes_power_costs,
+        costs=costs,
+        fes_carbon_costs=fes_carbon_costs,
         costs_config=costs_config,
-        fes_scenario=fes_scenario,
-        data_file=snakemake.wildcards.data_file,
-        max_hours_path=snakemake.input.max_hours,
-        gb_config=snakemake.params.gb_config,
     )
+    add_max_hours(df_powerplants, snakemake.input.max_hours)
     logger.info("Enriched powerplants with cost and technical parameters")
 
     # Save with index (contains unique generator IDs)

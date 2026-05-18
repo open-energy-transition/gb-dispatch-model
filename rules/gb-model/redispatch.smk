@@ -88,15 +88,18 @@ rule calculate_bid_offer_multipliers:
         technology_mapping=config_provider("redispatch", "elexon", "technology_mapping"),
         dukes_config=config["dukes-fuel-prices"],
     input:
-        fes_power_costs=resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
-        fes_carbon_costs=resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
         tech_costs=Path(COSTS_DATASET["folder"])
         / f"costs_{config['scenario']['planning_horizons'][0]}.csv",
+        fes_power_costs=resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
+        fes_carbon_costs=resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
+        powerplants=resources("gb-model/{fes_scenario}/fes_powerplants.csv"),
         bid_offer_data=expand(
             resources("gb-model/bids_and_offers/Elexon/{bod_year}.csv"),
             bod_year=config["redispatch"]["elexon"]["years"],
         ),
         historical_fuel_price="data/gb-model/downloaded/dukes_fuel_prices.excel",
+        # We import from assign_costs.py so we track it here to ensure any changes trigger a rule re-run
+        _track_script=scripts("gb_model/generators/assign_costs.py"),
     output:
         csv=resources("gb-model/{fes_scenario}/bid_offer_multipliers.csv"),
     log:

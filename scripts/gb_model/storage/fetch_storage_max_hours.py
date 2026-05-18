@@ -18,16 +18,16 @@ from scripts._helpers import configure_logging, set_scenario_config
 from scripts.gb_model._helpers import (
     get_scenario_name,
 )
+from scripts.gb_model.generators.create_powerplants_table import _map_names
 
 logger = logging.getLogger(__name__)
 
 
 def get_max_hours(
     es1_path: str,
-    tech_max_hours: list[str],
     year_range: list[int],
     fes_scenario: str,
-    carrier_map: dict[str, str],
+    carrier_map: dict[str, dict[str, str]],
 ) -> pd.DataFrame:
     """
     Compute max hours for storage technologies based on FES ES1 workbook sheet
@@ -36,13 +36,11 @@ def get_max_hours(
     ----------
     es1_path: str
         Path to ES1 sheet CSV file
-    tech_max_hours: list[str]
-        Technologies for which to compute the max hours
     year_range: list[int]
         Year range to filter
-    fes_scenraio: str
+    fes_scenario: str
         FES scenario to filter
-    carrier_map: dict[str,str]
+    carrier_map: dict[str, dict[str, str]]
         Mapping of ES1 subtype to PyPSA carrier name
     """
     df_es1 = pd.read_csv(es1_path)
@@ -57,7 +55,7 @@ def get_max_hours(
         )
     ]
     df_es1_grouped = (
-        df_es1_reqd.query("SubType in @hours", local_dict={"hours": tech_max_hours})
+        df_es1_reqd.query("Category == 'Storage'")
         .groupby(["SubType", "year", "Variable"])
         .data.sum()
     )
@@ -69,9 +67,7 @@ def get_max_hours(
     )
     df_max_hours.name = "max_hours"
     df_max_hours = pd.DataFrame(df_max_hours).reset_index()
-    df_max_hours["SubType"] = df_max_hours["SubType"].map(
-        lambda x: carrier_map[x] if x in carrier_map.keys() else x
-    )
+    df_max_hours["carrier"] = _map_names(df_max_hours, carrier_map)
 
     return df_max_hours
 
@@ -88,7 +84,6 @@ if __name__ == "__main__":
 
     df_max_hours = get_max_hours(
         es1_path=snakemake.input.es1_sheet,
-        tech_max_hours=snakemake.params.tech_max_hours,
         year_range=snakemake.params.year_range,
         fes_scenario=fes_scenario,
         carrier_map=snakemake.params.tech_mapping,

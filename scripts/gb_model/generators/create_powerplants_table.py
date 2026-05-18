@@ -19,12 +19,20 @@ logger = logging.getLogger(__name__)
 
 
 def _map_names(
-    df: pd.DataFrame, mapping: dict[str, dict[str, str]], default: str | None = None
+    df: pd.DataFrame,
+    mapping: dict[str, dict[str, str]],
+    default: str | None = None,
+    regex: bool = False,
 ) -> str | None:
     """Map carriers/sets to a standard name."""
     mapped = pd.Series(float("nan"), index=df.index, dtype="object")
     for col, mappings in mapping.items():
-        mapped = mapped.fillna(df[col].map(mappings))
+        if regex:
+            match = df[col].str.contains("|".join(mappings.keys()), regex=True)
+            replaced = df[col].replace(regex=mappings).where(match)
+            mapped = mapped.fillna(replaced)
+        else:
+            mapped = mapped.fillna(df[col].map(mappings))
     if default is not None:
         mapped = mapped.fillna(default)
     return mapped
@@ -46,14 +54,8 @@ def capacity_table(
     """
     df_cleaned = df.where(df.data > 0).dropna(subset=["data"])
     df_cleaned["carrier"] = _map_names(df_cleaned, mapping_config["carrier_mapping"])
-    df_cleaned["set"] = "PP"
-    df_cleaned.loc[
-        (df_cleaned["carrier"].str.contains("CHP")) & (df_cleaned["carrier"].notna()),
-        "set",
-    ] = "CHP"
-
     df_cleaned["set"] = _map_names(
-        df_cleaned, mapping_config["set_mapping"], default_set
+        df_cleaned, mapping_config["set_mapping"], default_set, regex=True
     )
 
     if any(missing := df_cleaned["carrier"].isnull()):

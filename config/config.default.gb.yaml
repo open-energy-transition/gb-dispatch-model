@@ -1463,13 +1463,13 @@ fes_costs:
   "sheet-config": {}
   GBP_to_EUR: 1
   GBP_to_USD: 1
-  relevant_cost_columns: []
-  marginal_cost_columns: []
   add_cols: {}
-  default_characteristics: {}
-  carrier_gap_filling: {}
-  fes_VOM_carrier_mapping: {}
-  fes_fuel_carrier_mapping: {}
+  carrier_fossil_fuel_type: {}
+  pypsa_eur_tech_data_columns: []
+  pypsa_eur_tech_data_defaults: {}
+  pypsa_eur_tech_data_carrier_set_mapping: {}
+  fes_VOM_carrier_set_mapping: {}
+  fes_fuel_carrier_set_mapping: {}
   voll: 0
 
 # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#low_carbon_register
@@ -1554,6 +1554,17 @@ transmission_availability:
   carrier_mapping: {}
   set_mapping: {}
 
+# docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#dukes_fuel_prices
+"dukes-fuel-prices":
+  "sheet-config":
+    sheet_name: ""
+    usecols: ""
+    skiprows: 0
+    index_col: []
+    header: 0
+  quarter_mapping: {}
+  column_mapping: {}
+
 # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#grid_supply_points
 grid_supply_points:
   manual_mapping: {}
@@ -1568,12 +1579,11 @@ fes:
   default_set: PP
   "sheet-config": {}
   gb:
-    carrier_mapping: {}
-    SubType_map: {}
-    set_mapping: {}
-    BB2_to_ES1_mapping: {}
-    BB1_ES1_mismatch_percentage: 0.0
-    tech_max_hours: []
+    generators_and_storage:
+      carrier_mapping: {}
+      set_mapping: {}
+      building_block_mapping: {}
+      building_block_mapping_tolerance: 0.0
     demand:
       Technology Detail: {}
       heat: {}
@@ -1587,8 +1597,9 @@ fes:
       v2g_storage_to_capacity_ratio: 1
     regional_distribution_reference: {}
   eur:
-    carrier_mapping: {}
-    set_mapping: {}
+    generators_and_storage:
+      carrier_mapping: {}
+      set_mapping: {}
     totals_to_demand_groups: {}
     add_data_reference: {}
     load_shedding_cost_above_marginal:

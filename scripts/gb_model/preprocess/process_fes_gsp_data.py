@@ -13,6 +13,7 @@ import logging
 from pathlib import Path
 
 import geopandas as gpd
+import linopy
 import pandas as pd
 
 from scripts._helpers import configure_logging, set_scenario_config
@@ -196,98 +197,143 @@ def parse_inputs(
     return df_final
 
 
+def _optimise_allocation(df_bb1, df_es1, bb_mapping, tolerance):
+    bb1_national = df_bb1.groupby(["Building Block ID Number", "year"])["data"].sum()
+    es1_national = df_es1.groupby(["SubType", "year"]).data.sum()
+    years = sorted(df_bb1["year"].unique())
+
+    mask = (
+        pd.Series(bb_mapping)
+        .apply(lambda x: pd.Series(1, index=x))
+        .fillna(False)
+        .astype(bool)
+        .rename_axis(index="Building Block ID Number", columns="SubType")
+    )
+    m = linopy.Model()
+    m.add_variables(
+        name="allocation",
+        lower=0.0,
+        mask=mask,
+        coords=[mask.index, mask.columns, pd.Index(years, name="year")],
+    )
+    m_bb1 = m["allocation"].sum("SubType")
+    m_es1 = m["allocation"].sum("Building Block ID Number")
+    bb1_national_da = bb1_national.to_xarray().sel(m_bb1.coords)
+    es1_national_da = es1_national.to_xarray().sel(m_es1.coords)
+    m.add_variables(
+        name="deviation_bb1",
+        lower=0.0,
+        mask=mask.any(axis=1),
+        coords=[mask.index, pd.Index(years, name="year")],
+    )
+    m.add_variables(
+        name="deviation_es1",
+        lower=0.0,
+        mask=mask.any(axis=0),
+        coords=[mask.columns, pd.Index(years, name="year")],
+    )
+    m.add_constraints(m_bb1 - m["deviation_bb1"] <= bb1_national_da, name="bb1_upper")
+    m.add_constraints(m_es1 - m["deviation_es1"] <= es1_national_da, name="es1_upper")
+    m.add_constraints(m_bb1 + m["deviation_bb1"] >= bb1_national_da, name="bb1_lower")
+    m.add_constraints(m_es1 + m["deviation_es1"] >= es1_national_da, name="es1_lower")
+    m.add_objective(m["deviation_bb1"].sum() + m["deviation_es1"].sum(), sense="min")
+    m.solve(solver_name="highs")
+    allocation = m["allocation"].solution
+    es1_sum = es1_national_da.where(mask.any(axis=0).to_xarray()).sum()
+    bb1_sum = bb1_national_da.where(mask.any(axis=1).to_xarray()).sum()
+    if (
+        abs((allocation.sum() - es1_sum) / es1_sum) > tolerance
+        or abs((allocation.sum() - bb1_sum) / bb1_sum) > tolerance
+    ):
+        message = f"Failed to map FES building block regional data to national technology data within specified tolerance of {tolerance:.1%}."
+        raise ValueError(message)
+    return allocation
+
+
 def split_technologies(
     df_with_regions: pd.DataFrame,
     df_es1: pd.DataFrame,
-    technology_mapping: dict,
+    tech_config: dict,
     fes_scenario: str,
     year_range: list[int],
-    allowed_mismatch: float,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, list[str]]:
     """
-    To split technologies based on subtypes present in ES1 sheet of the FES workbook
+    Split building block capacities into technology subtypes using ES1 national totals.
+
+    Three steps:
+
+    1. Aggregate BB1 data to national (BB ID, year) totals, ignoring GSP detail.
+    2. Find the optimal (BB ID x SubType) capacity allocation at the national level
+       using Iterative Proportional Fitting (IPF/RAS). Row marginals are the BB1
+       national totals; column marginals are the ES1 national totals. Trivial cases
+       (one SubType per BB, or one BB per SubType) are handled exactly; non-trivial
+       cases converge to the minimum-information allocation consistent with both sets
+       of marginals.
+    3. Distribute each (BB ID, SubType) national allocation regionally using the GSP
+       fractional distribution of that BB ID from BB1.
+
+    Only BB IDs present in both `tech_config["building_block_mapping"]` (with a
+    non-empty subtype list) and in `df_with_regions` are processed. This allows the
+    caller to pre-filter `df_with_regions` to avoid double-counting across configs.
 
     Parameters
     ----------
     df_with_regions: pd.DataFrame
-        Pandas dataframe to modify
+        DataFrame with columns including 'Building Block ID Number', 'GSP',
+        'year', 'data', and all other metadata columns from BB1/BB2.
     df_es1: pd.DataFrame
-        Pandas dataframe of FES workbook ES1 sheet
-    technology_mappingL dict[str, list[str]]
-        Dictionary to map technologies in BB1 sheet to ES1 sheet
+        DataFrame of FES workbook ES1 sheet with columns 'Pathway', 'year',
+        'Variable', 'SubType', 'data'.
+    tech_config: dict
+        Configuration dict with keys:
+        - 'building_block_mapping': {bb_id: [subtype, ...]} mapping
+        - 'building_block_mapping_tolerance': fractional tolerance for totals check
     fes_scenario: str
-        FES scenario
+        FES scenario name (matched case-insensitively to 'Pathway' column).
     year_range: list[int]
-        Year range of the simulation
-    allowed_mismatch: float
-        Mismatch in total capacity values between the BB1 and ES1 sheet entries for a technology
-    """
+        Two-element [start, end] year range (inclusive).
 
-    # Filter ES1 sheet
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with the same structure as `df_with_regions` but with rows for the relevant BB IDs replaced by rows for each (BB ID, SubType) combination, and 'data' values allocated according to the ES1 national totals and the BB1 regional distribution.
+    list[str]
+        List of BB IDs that were split into subtypes.
+    """
+    tolerance = tech_config["building_block_mapping_tolerance"]
+    bb_mapping: dict[str, list[str]] = {
+        bb_id: subtypes
+        for bb_id, subtypes in tech_config["building_block_mapping"].items()
+        if subtypes
+    }
+
+    bb_list = sorted(bb_mapping.keys())
+    subtype_list = sorted(set().union(*bb_mapping.values()))
+    # --- Step 1: aggregate BB1 to national (BB ID, year) totals ---
+    df_active = df_with_regions[
+        df_with_regions["Building Block ID Number"].isin(bb_list)
+    ]
+
     df_es1_reqd = df_es1[
         (df_es1["Pathway"].str.lower() == fes_scenario.lower())
         & (df_es1["year"].between(year_range[0], year_range[1], inclusive="both"))
         & (df_es1["Variable"] == "Capacity (MW)")
+        & (df_es1["SubType"].isin(subtype_list))
     ]
+    allocation = _optimise_allocation(df_active, df_es1_reqd, bb_mapping, tolerance)
 
-    df_with_regions_updated = df_with_regions.copy()
-    # Iterate through the technologies with more subtypes in ES1 sheet
-    for tech in technology_mapping.keys():
-        df_tech = df_with_regions.query("`Building Block ID Number` == @tech")
-
-        mapped_tech = technology_mapping[tech]
-
-        if not set(mapped_tech).issubset(df_es1_reqd["SubType"]):
-            logger.error(
-                f"One/more technologies in {mapped_tech} might not match with the SubType technology list in the ES1 workbook sheet."
-            )
-
-        df_es1_tech = pd.DataFrame(
-            df_es1_reqd.query("SubType in @techs", local_dict={"techs": mapped_tech})
-            .groupby(["SubType", "year"])["data"]
-            .sum()
-        )
-
-        # Calculate %share of each technology subtype for every year
-        df_es1_tech["pct"] = (
-            df_es1_tech["data"] / df_es1_tech.groupby("year")["data"].sum()
-        )
-
-        # Merge the original dataframe indexed from BB1 sheet and the data from ES1 sheet
-        df_tech = df_tech.merge(df_es1_tech.reset_index(), on="year")
-
-        # Multiply the regional data with the percentage share of the technology subtype
-        df_tech["data"] = df_tech["data_x"].mul(df_tech["pct"])
-        df_tech["Technology"] = df_tech["SubType"]
-
-        # Scaling factor to scale the mismatch in total capacity values in BB1 and ES1 sheet
-        # The factor scales the values to match the value in the ES1 sheet
-        es1_grouped = df_es1_tech.groupby("year")["data"].sum()
-        tech_grouped = df_tech.groupby("year")["data"].sum()
-
-        # Calculate % diff in the total capacity of the technology
-        df_diff = (es1_grouped - tech_grouped) * 100 / es1_grouped
-
-        if df_diff.mean() > allowed_mismatch:
-            logger.warning(
-                f"The percentage difference in capacity data for the {tech}, indexed by year in ES1 and BB1 sheet is {df_diff}"
-            )
-
-        scaling_factor = es1_grouped / tech_grouped
-        scaling_factor.name = "scaling_factor"
-        df_tech = df_tech.merge(scaling_factor, on="year")
-
-        df_tech["scaled_data"] = df_tech["data"].mul(df_tech["scaling_factor"])
-
-        df_tech["data"] = df_tech["scaled_data"]
-
-        df_with_regions_updated = pd.concat(
-            [
-                df_with_regions_updated.query("`Building Block ID Number` != @tech"),
-                df_tech[df_with_regions_updated.columns],
-            ]
-        )
-    return df_with_regions_updated
+    idx_cols = ["Building Block ID Number", "year", "GSP"]
+    bb1_regional = df_active.groupby(idx_cols)["data"].sum().to_xarray()
+    bb1_regional_frac = bb1_regional / bb1_regional.sum("GSP")
+    es1_regional = (allocation * bb1_regional_frac).to_series().dropna()
+    results = df_active.drop_duplicates(idx_cols).merge(
+        es1_regional.to_frame("data").reset_index(),
+        on=idx_cols,
+        suffixes=("", "_y"),
+        how="right",
+    )
+    results = results.assign(data=results["data_y"]).drop(columns=["data_y"])
+    return results, bb_list
 
 
 if __name__ == "__main__":
@@ -342,14 +388,17 @@ if __name__ == "__main__":
 
     df_es1 = pd.read_csv(snakemake.input.es1_sheet)
 
-    df_with_regions_updated = split_technologies(
+    tech_split, split_bb = split_technologies(
         df_with_regions=df_with_regions,
         df_es1=df_es1,
-        technology_mapping=snakemake.params.bb2_es1_mapping,
+        tech_config=snakemake.params.technology_mapping,
         fes_scenario=fes_scenario,
         year_range=snakemake.params.year_range,
-        allowed_mismatch=snakemake.params.allowed_mismatch,
     )
+    # Keep rows for BBs that have no subtype mapping in either config
+    df_unsplit = df_with_regions.query("`Building Block ID Number` not in @split_bb")
+
+    df_with_regions_updated = pd.concat([df_unsplit, tech_split], ignore_index=True)
 
     df_with_regions_updated.to_csv(snakemake.output.csv, index=False)
     logger.info(
