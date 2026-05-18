@@ -12,6 +12,10 @@ Release Notes
 Unreleased
 ==========
 
+* Calculate all storage unit max hours from FES workbook (#299)
+* Add `CCS` carrier "set" to differentiate technologies with/without carbon capture and storage.
+* Use `ror` carrier instead of `hydro` for "Hydro" FES technology (#314)
+* Refactor configuration for mapping of FES technologies to PyPSA network carriers.
 * Add 'extra' technologies represented in ES1 sheet of the FES workbook to the model (#310)
 * Add documentation for Demand and DSR implementation in the GB dispatch model (#295)
 * Share bid/offer multipliers between like carriers (e.g. fuel cost of future hydrogen turbines will use the current CCGT multiplier).
