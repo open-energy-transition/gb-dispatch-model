@@ -243,8 +243,7 @@ def _calculate_marginal_costs(
     return (
         df["VOM"]
         .fillna(0)
-        .add(df["fuel"].add(carbon_tax).fillna(0))
-        .div(df["efficiency"])
+        .add((df["fuel"].add(carbon_tax).fillna(0)).div(df["efficiency"]))
         .fillna(0)
     )
 

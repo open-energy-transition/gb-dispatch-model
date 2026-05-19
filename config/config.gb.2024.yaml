@@ -103,7 +103,7 @@ renewable:
 conventional:
   nuclear:
     max_annual_capacity_factor: 0.87
-    min_annual_capacity_factor: 0.50
+    min_annual_capacity_factor: 0.70
 
 fes_costs:
   sheet-config:

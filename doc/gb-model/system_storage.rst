@@ -35,7 +35,7 @@ The figure below gives a high-level view of the storage data pipeline:
    digraph {
       rankdir=LR;
       node [shape=box, style=filled];
-      es1        [label="FES ES2\n(storage (dis)charge capacity\n& energy capacity)", fillcolor="#B3D9FF"];
+      es1        [label="FES ES1\n(storage (dis)charge capacity\n& energy capacity)", fillcolor="#B3D9FF"];
       fes_bb1    [label="FES BB1\n(battery p_nom,\nPHS capacity)", fillcolor="#B3D9FF"];
       dukes      [label="DUKES 5.11\n(PHS existing caps)", fillcolor="#B3D9FF"];
       es2        [label="FES ES2\n(EUR battery p_nom)", fillcolor="#B3D9FF"];
@@ -60,7 +60,7 @@ FES ES1 — Storage Max Hours
 
 Storage *(dis)charge* (``p_nom``, in MW) and *energy* capacity (``e_nom``, in GWh) for Great Britain is drawn from the NESO **Future Energy Scenarios (FES) 2024** workbook, sheet **ES1 (Electricity supply)**.
 
-Together, these can be used to define the maximum number of hours that a storage vessel could discharge for: :math:`\text{max\_hours} = e_\text{nom}/p_\text{nom}`.
+Together, these can be used to define the maximum number of hours that a storage vessel could discharge for: :math:`\text{max_hours} = e_\text{nom}/p_\text{nom}`.
 
 This is then used in defining the technologies in PyPSA since ``StorageUnit`` component energy capacity is defined by its ``max_hours``.
 
@@ -106,20 +106,20 @@ Hydrogen storage is documented separately in :doc:`system_hydrogen`.
 
 For each of these components, charge / discharge efficiency is calculated based on their
 .. list-table::
-   :header-rows: 1
-   :stub-columns: 1
-   :widths: 20 26 27 27
+    :header-rows: 1
+    :stub-columns: 1
+    :widths: 20 26 27 27
 
-   * - Attribute
-     - Battery
-     - PHS
-     - Compressed air
-     - Liquid air
-   * - **Carrier**
-     - ``battery``
-     - ``PHS``
-     - ``compressed-air``
-     - ``liquid-air``
+    * - Attribute
+      - Battery
+      - PHS
+      - Compressed air
+      - Liquid air
+    * - **Carrier**
+      - ``battery``
+      - ``PHS``
+      - ``compressed-air``
+      - ``liquid-air``
 
 .. _storage-config:
 
@@ -132,7 +132,7 @@ FES technology to PyPSA network carrier mapping (GB):
    :language: yaml
    :start-after: # [doc:gb-generator-storage-start]
    :end-before: # [doc:gb-generator-storage-end]
-   :prepend: fes:\n  gb:
+   :prepend: fes.gb:
 
 FES technology to PyPSA network carrier mapping (EUR):
 
@@ -140,7 +140,11 @@ FES technology to PyPSA network carrier mapping (EUR):
    :language: yaml
    :start-after: # [doc:eur-generator-storage-start]
    :end-before: # [doc:eur-generator-storage-end]
-   :prepend: fes:\n  eur:
+   :prepend: fes.eur:
+
+.. note::
+   We use the dot notation for parent configuration keys.
+   For example, ``fes.gb`` is equivalent to ``fes`` as the top-level key, ``gb`` as the first-level key, then the configuration snippet is at the level below this.
 
 PyPSA network carrier to PyPSA-Eur technology data mapping:
 
