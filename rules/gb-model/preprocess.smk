@@ -143,15 +143,17 @@ rule process_dukes_current_capacities:
 
 rule process_fes_gsp_data:
     message:
-        "Process FES workbook sheet BB1 together with metadata from sheet BB2."
+        "Process FES workbook sheet BB1 together with metadata from sheet BB2 and ES1."
     params:
         year_range=config["redispatch"]["year_range_incl"],
         target_crs=config["target_crs"],
         fill_gsp_lat_lons=config["grid_supply_points"]["fill-lat-lons"],
         manual_gsp_mapping=config["grid_supply_points"]["manual_mapping"],
+        technology_mapping=config["fes"]["gb"]["generators_and_storage"],
     input:
         bb1_sheet=resources(f"gb-model/fes/BB1.csv"),
         bb2_sheet=resources(f"gb-model/fes/BB2.csv"),
+        es1_sheet=resources(f"gb-model/fes/ES1.csv"),
         gsp_coordinates="data/gb-model/downloaded/gsp-coordinates.csv",
         regions=resources("gb-model/merged_shapes.geojson"),
     output:

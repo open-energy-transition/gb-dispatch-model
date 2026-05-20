@@ -7,20 +7,17 @@ Storage unit component rules.
 """
 
 
-rule process_regional_battery_storage_capacity:
+rule fetch_storage_max_hours:
     message:
-        "Process national storage data from FES workbook into CSV format"
+        "Process FES workbook sheet ES1 to get max_hours for storage plants"
     params:
         year_range=config["redispatch"]["year_range_incl"],
-        carrier_mapping=config["fes"]["gb"]["flexibility"]["carrier_mapping"]["battery"],
+        tech_mapping=config["fes"]["gb"]["generators_and_storage"]["carrier_mapping"],
     input:
-        flexibility_sheet=resources(f"gb-model/fes/FLX1.csv"),
-        regional_data=resources("gb-model/{fes_scenario}/fes_powerplants.csv"),
+        es1_sheet=resources(f"gb-model/fes/ES1.csv"),
     output:
-        csv=resources(
-            "gb-model/{fes_scenario}/regional_battery_storage_capacity_inc_eur.csv"
-        ),
+        max_hours=resources("gb-model/{fes_scenario}/max_hours.csv"),
     log:
-        logs("process_regional_battery_storage_capacity_{fes_scenario}.log"),
+        logs("fetch_storage_max_hours_{fes_scenario}.log"),
     script:
-        scripts("gb_model/storage/process_regional_battery_storage_capacity.py")
+        scripts("gb_model/storage/fetch_storage_max_hours.py")

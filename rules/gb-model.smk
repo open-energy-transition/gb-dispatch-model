@@ -74,9 +74,6 @@ rule compose_network:
         generator_availability=resources(
             "gb-model/GB_generator_monthly_availability_fraction.csv"
         ),
-        battery_e_nom=resources(
-            "gb-model/{fes_scenario}/regional_battery_storage_capacity_inc_eur.csv"
-        ),
         H2_data=[
             resources("gb-model/{fes_scenario}/regional_H2_demand_annual_inc_eur.csv"),
             resources(

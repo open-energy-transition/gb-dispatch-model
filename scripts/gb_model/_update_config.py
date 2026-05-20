@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 
+import logging
 from collections.abc import Hashable
 from typing import Annotated, Any, Literal, Self, TypeVar, Union
 
@@ -14,6 +15,9 @@ from scripts.lib.validation.config._schema import ConfigSchema
 
 T = TypeVar("T", bound=Hashable | list)
 TwoEntryList = Annotated[list[T], Len(min_length=2, max_length=2)]
+
+
+logger = logging.getLogger("gb-model-config-validation")
 
 
 class GBBaseConfig(ConfigModel):
@@ -42,26 +46,34 @@ class CostsGBConfig(GBBaseConfig):
     )
     GBP_to_EUR: float = Field(gt=0, description="GBP to EUR exchange rate", default=1)
     GBP_to_USD: float = Field(gt=0, description="GBP to USD exchange rate", default=1)
-    relevant_cost_columns: list[str] = Field(
-        min_length=1, description="List of relevant cost columns", default_factory=list
-    )
-    marginal_cost_columns: list[str] = Field(
-        min_length=1, description="List of marginal cost columns", default_factory=list
-    )
     add_cols: dict[str, dict[str, Any]] = Field(
         default_factory=dict, description="Additional cost columns configuration"
     )
-    default_characteristics: dict[str, dict[str, str | float]] = Field(
-        default_factory=dict, description="Default characteristics for cost data"
+    carrier_fossil_fuel_type: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping from carrier names to fossil fuel types",
     )
-    carrier_gap_filling: dict[str, dict[str, str]] = Field(
-        default_factory=dict, description="Carrier gap filling mappings"
+    pypsa_eur_tech_data_columns: list[str] = Field(
+        min_length=0,
+        description="List of columns from PyPSA-Eur technology data to pass onto GB dispatch model tech data",
+        default_factory=list,
     )
-    fes_VOM_carrier_mapping: dict[str, str] = Field(
-        default_factory=dict, description="FES variable O&M carrier mapping"
+    pypsa_eur_tech_data_defaults: dict[str, float] = Field(
+        default_factory=dict,
+        description="Default values for columns in PyPSA-Eur technology data",
     )
-    fes_fuel_carrier_mapping: dict[str, str] = Field(
-        default_factory=dict, description="FES fuel carrier mapping"
+    pypsa_eur_tech_data_carrier_set_mapping: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping from <carrier>(-<set>) to PyPSA-Eur technology data index names, for filling missing technology data. "
+        "set names will be added for non-default sets (PP for generators, Store for stores)",
+    )
+    fes_VOM_carrier_set_mapping: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping from <carrier>(-<set>) to FES costing table <Type>-<Sub Type> column name concatenations, for selecting variable O&M (VOM) data.",
+    )
+    fes_fuel_carrier_set_mapping: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping from <carrier>(-<set>) to FES costing table <Type>-<Sub Type> column name concatenations, for selecting fuel cost data.",
     )
     voll: float = Field(ge=0, description="Value of lost load in £/MWh", default=0)
 
@@ -335,6 +347,23 @@ class DukesConfig(GBBaseConfig):
     )
 
 
+class DukesFuelPriceConfig(GBBaseConfig):
+    sheet_config: DukesSheetConfig = Field(
+        alias="sheet-config",
+        description="Sheet configuration",
+        default_factory=DukesSheetConfig,
+    )
+    quarter_mapping: dict[str, Literal[1, 2, 3, 4]] = Field(
+        description="Mapping from DUKES quarter names to quarter numbers (1-4)",
+        default_factory=dict,
+    )
+    column_mapping: dict[str, list[str]] = Field(
+        description="Mapping from DUKES column names to FES costing table fuel cost <Type>-<Sub Type> column name concatenations."
+        "One DUKES column can map to multiple FES columns if the same fuel cost is used for multiple fuels in the FES costing table.",
+        default_factory=dict,
+    )
+
+
 class GridSupplyPointsConfig(GBBaseConfig):
     """Grid supply points configuration."""
 
@@ -353,6 +382,58 @@ class GridSupplyPointsConfig(GBBaseConfig):
         default_factory=dict,
         description="Groups of GSPs to combine. Key is the name of the resulting combined GSP, value is a list of FES workbook GSP names to combine . This is used to combine GSPs which are split in the FES workbook but represented as a single GSP in the GIS data.",
     )
+
+
+class FESGeneratorStorageConfig(GBBaseConfig):
+    """FES carrier mapping configuration."""
+
+    carrier_mapping: dict[str, dict[str, str]] = Field(
+        description="Carrier mappings based on values in SubType column. "
+        "Maps from FES European data SubType column values to PyPSA carrier names.",
+        default_factory=dict,
+    )
+    set_mapping: dict[str, dict[Any, str]] = Field(
+        description="Set mapping configuration. "
+        "Top level keys are column names, second level maps from column values to set names. "
+        "A regular expression can be used.",
+        default_factory=dict,
+    )
+
+
+class FESGBGeneratorStorageConfig(FESGeneratorStorageConfig):
+    building_block_mapping: dict[str, list[str]] = Field(
+        description="Mapping FES building block IDs (see sheet BB2 'Building Block ID' column) to FES technology names (see sheet ES1 `SubType`). "
+        "Where multiple building block IDs map to the same technology, the total capacity of the technology will be split proportionally across the building blocks. "
+        "Where multiple technology names map to the same building block ID, the regional capacity of the building block will be split proportionally across those technologies.",
+        default_factory=dict,
+    )
+    building_block_mapping_tolerance: float = Field(
+        description="Allowed mismatch between regional building block capacity (sheet BB1) and total national technology capacity (sheet ES1). "
+        "Value given as a fraction and is reciprocal, so `sum(technologies) * (1 - tolerance) <= sum(building blocks) <= sum(technologies) * (1 + tolerance)` and`sum(building blocks) * (1 - tolerance) <= sum(technology) <= sum(building blocks) * (1 + tolerance)`",
+        default_factory=float,
+        ge=0,
+        le=1,
+    )
+
+    @model_validator(mode="after")
+    def mapping_techs_consistency(self) -> Self:
+        """Validate that all technologies in the building block mapping are included in the carrier mapping."""
+        building_block_techs = set().union(*self.building_block_mapping.values())
+        carrier_mapping_techs = set().union(
+            *[v.keys() for v in self.carrier_mapping.values()]
+        )
+        if diff := carrier_mapping_techs.difference(building_block_techs):
+            raise ValueError(
+                "All technologies in the carrier mapping must have been included in the building block mapping. "
+                f"Missing: {diff}"
+            )
+        if diff := building_block_techs.difference(carrier_mapping_techs):
+            logger.warning(
+                "Some technologies in the building block mapping are not included in the carrier mapping. "
+                "This is not necessarily a problem, but it means that these technologies will be ignored in the model. "
+                f"Missing: {diff}"
+            )
+        return self
 
 
 class FESDemandConfig(GBBaseConfig):
@@ -426,13 +507,9 @@ class FESRegionalDistributionReference(GBBaseConfig):
 class FESGBConfig(GBBaseConfig):
     """FES GB-specific configuration."""
 
-    carrier_mapping: dict[str, dict[str, str]] = Field(
-        description="Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-        default_factory=dict,
-    )
-    set_mapping: dict[str, dict[str, Literal["CHP", "PP", "Store"]]] = Field(
-        description="Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-        default_factory=dict,
+    generators_and_storage: FESGBGeneratorStorageConfig = Field(
+        description="FES generator and storage configuration",
+        default_factory=FESGBGeneratorStorageConfig,
     )
     demand: FESDemandConfig = Field(
         description="Demand configuration", default_factory=FESDemandConfig
@@ -451,13 +528,9 @@ class FESGBConfig(GBBaseConfig):
 class FESEURConfig(GBBaseConfig):
     """FES European configuration."""
 
-    carrier_mapping: dict[str, dict[str, str]] = Field(
-        description="Carrier mappings based on values in different columns. Top level keys are column names, second level maps from column values to carrier names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-        default_factory=dict,
-    )
-    set_mapping: dict[str, dict[str, Literal["CHP", "PP", "Store"]]] = Field(
-        description="Set mappings based on values in different columns. Top level keys are column names, second level maps from column values to set names. The order of the top level keys determines the priority of the mappings, with earlier keys taking precedence over later ones when there are overlapping mappings.",
-        default_factory=dict,
+    generators_and_storage: FESGeneratorStorageConfig = Field(
+        description="FES European Generator & Storage configuration",
+        default_factory=FESGeneratorStorageConfig,
     )
     totals_to_demand_groups: dict[str, list[str]] = Field(
         description="Keys are gb-model demand carriers, values are energy total column names.",
@@ -855,6 +928,14 @@ class GBConfigUpdater(ConfigUpdater):
                     alias="dukes-5.11",
                     description="DUKES 5.11 data configuration",
                     default_factory=DukesConfig,
+                ),
+            ),
+            "dukes_fuel_prices": (
+                DukesFuelPriceConfig,
+                Field(
+                    alias="dukes-fuel-prices",
+                    description="DUKES fuel prices data configuration",
+                    default_factory=DukesFuelPriceConfig,
                 ),
             ),
             "grid_supply_points": GridSupplyPointsConfig,

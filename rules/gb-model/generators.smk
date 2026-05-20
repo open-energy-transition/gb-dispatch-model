@@ -49,8 +49,8 @@ rule create_powerplants_table:
     message:
         "Tabulate powerplant data GSP-wise from FES workbook sheet BB1 and EU supply data"
     params:
-        gb_config=config["fes"]["gb"],
-        eur_config=config["fes"]["eur"],
+        gb_config=config["fes"]["gb"]["generators_and_storage"],
+        eur_config=config["fes"]["eur"]["generators_and_storage"],
         dukes_config=config["dukes-5.11"],
         default_set=config["fes"]["default_set"],
     input:
@@ -70,12 +70,14 @@ rule assign_costs:
         "Prepares costs file from technology-data of PyPSA-Eur and FES and assigns to {wildcards.data_file}"
     params:
         costs_config=config["fes_costs"],
+        gb_config=config["fes"]["gb"],
     input:
         tech_costs=Path(COSTS_DATASET["folder"])
         / f"costs_{config['scenario']['planning_horizons'][0]}.csv",
         fes_power_costs=resources("gb-model/fes-costing/AS.1 (Power Gen).csv"),
         fes_carbon_costs=resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
         fes_powerplants=resources("gb-model/{fes_scenario}/{data_file}.csv"),
+        max_hours=resources("gb-model/{fes_scenario}/max_hours.csv"),
     output:
         enriched_powerplants=resources(
             "gb-model/{fes_scenario}/{data_file}_inc_tech_data.csv"

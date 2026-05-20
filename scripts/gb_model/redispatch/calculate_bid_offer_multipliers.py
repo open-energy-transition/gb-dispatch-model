@@ -15,112 +15,18 @@ import pandas as pd
 from scripts._helpers import configure_logging, set_scenario_config
 from scripts.gb_model._helpers import get_scenario_name
 from scripts.gb_model.generators.assign_costs import (
-    _load_costs,
-    _load_fes_carbon_costs,
-    _load_fes_power_costs,
-    calculate_marginal_costs,
+    DEFAULT_SETS,
+    assign_technical_and_costs_defaults,
+    load_costs,
+    load_fes_carbon_costs,
+    load_fes_power_costs,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def calculate_costs(
-    fes_power_costs_path: str,
-    fes_carbon_costs_path: str,
-    fes_scenario: str,
-    tech_costs_path: str,
-    costs_config: dict,
-    technology_mapping: dict[str, str],
-    years: list[int],
-    historical_fuel_cost: pd.DataFrame,
-) -> pd.DataFrame:
-    """
-    Calculate marginal costs for each technology
-
-    Parameters
-    ----------
-    fes_power_costs_path: str
-        Filepath to FES power costs CSV
-    fes_carbon_costs_path: str
-        Filepath to FES carbon costs CSV
-    fes_scenario: str
-        FES Scenario name
-    tech_costs_path: str
-        Filepath to technology costs CSV
-    costs_config: dict
-        Configuration dictionary for costs
-    technology_mapping: dict[str, str]
-        Mapping of technology names
-    years: list[int]
-        List of years to consider
-    historical_fuel_cost: pd.DataFrame
-        Historical fuel prices index by carrier, year and quarter
-    """
-
-    # Load FES power and carbon costs
-    fes_power_costs = _load_fes_power_costs(fes_power_costs_path, fes_scenario)
-    fes_carbon_costs = _load_fes_carbon_costs(fes_carbon_costs_path, fes_scenario)
-    costs = _load_costs(tech_costs_path, costs_config)
-
-    # Map FES technology names to PyPSA carriers
-    power_tech_map = {
-        v: k.split(" ")[0]
-        for k, v in costs_config["fes_VOM_carrier_mapping"].items()
-        if "CHP" not in k
-    }
-
-    fes_power_costs["carrier"] = (
-        fes_power_costs.index.get_level_values("technology")
-        .map(power_tech_map)
-        .str.upper()
-        .map(technology_mapping)
-    )
-
-    # Create a multi-index dataframe for technologies and years and merge the FES costs data
-    multi_index = pd.MultiIndex.from_product(
-        [technology_mapping.values(), years, np.arange(1, 5)],
-        names=["carrier", "year", "quarter"],
-    )
-    df_tech = pd.DataFrame(index=multi_index)
-
-    # Merge FES power costs
-    df_tech = df_tech.join(fes_power_costs.reset_index().set_index(["carrier", "year"]))
-
-    # Merge technology costs data
-    df_tech = (
-        df_tech.reset_index()
-        .set_index("carrier")
-        .join(costs[["efficiency", "CO2 intensity"]])
-    ).reset_index()
-
-    for fuel in historical_fuel_cost.columns:
-        # Replace existing fuel costs from FES with DUKES historical fuel prices
-        fuel_fuel_keys = [
-            k
-            for k, v in costs_config["carrier_gap_filling"]["fuel"].items()
-            if v == fuel
-        ]
-        fuel_rows = df_tech.carrier.isin(fuel_fuel_keys)
-        df_tech.loc[fuel_rows, "fuel"] = (
-            df_tech[fuel_rows][["year", "quarter"]]
-            .apply(tuple, axis=1)
-            .map(historical_fuel_cost[fuel].to_dict())
-        )
-
-    df_tech = calculate_marginal_costs(
-        df_tech,
-        costs,
-        costs_config,
-        fes_carbon_costs,
-    )
-
-    logger.info(f"Calculated marginal costs for each technology for the years {years}.")
-    return df_tech
-
-
 def calc_bid_offer_multipliers(
-    bid_offer_costs_path: list[str],
-    df_cost: pd.DataFrame,
+    bid_offer_costs_path: list[str], df_cost: pd.DataFrame
 ) -> pd.DataFrame:
     """
     Calculate bid and offer multipliers as a fraction of the average marginal cost for each technology
@@ -131,6 +37,11 @@ def calc_bid_offer_multipliers(
         Filepaths of bid and offer costs data for each technology year-wise
     df_costs: pd.DataFrame
         DataFrame containing the average marginal cost for each technology across years
+
+    Returns
+    -------
+    pd.DataFrame: DataFrame containing the bid and offer multipliers for each technology
+
     """
     # Read bid offer data
     df_bid_offer = pd.concat(
@@ -145,10 +56,12 @@ def calc_bid_offer_multipliers(
     )
     df_bid_offer = df_bid_offer.reset_index().set_index(["carrier", "year", "quarter"])
 
-    df_cost.set_index(["carrier", "year", "quarter"], inplace=True)
+    df_cost_filtered = df_cost.query("set in @set", local_dict={"set": DEFAULT_SETS})
 
     # Join bid offer quarterly dataframe with cost dataframe
-    df_multipliers = df_bid_offer.join(df_cost)
+    df_multipliers = df_bid_offer.join(
+        df_cost_filtered.set_index(["carrier", "year", "quarter"])
+    )
 
     # Compute bid and offer multipliers for each quarter across the years
     df_multipliers["bid_multiplier"] = (
@@ -171,9 +84,12 @@ def calc_bid_offer_multipliers(
     return df_multipliers
 
 
-def get_historical_fuel_prices(
-    historical_fuel_path: str, years: list[int], dukes_config: dict
-):
+def add_historical_fuel_prices(
+    historical_fuel_path: str,
+    years: list[int],
+    dukes_config: dict,
+    fes_power_costs: pd.DataFrame,
+) -> pd.DataFrame:
     """
     Get historical fuel prices
 
@@ -185,6 +101,12 @@ def get_historical_fuel_prices(
         List of years to consider
     dukes_config: dict
         Configuration parameters when reading the historical fuel price data
+    fes_power_costs: pd.DataFrame
+        DataFrame containing FES power costs to which we want to add the historical fuel prices
+
+    Returns
+    -------
+        pd.DataFrame: Updated FES power costs DataFrame with historical fuel prices instead of the original fuel costs.
     """
 
     sheet_config = dukes_config["sheet-config"]
@@ -195,13 +117,59 @@ def get_historical_fuel_prices(
 
     # Filter the required years of data
     df = df.query("Year in @y", local_dict={"y": years})
-    df["Quarter"] = df["Quarter"].replace(dukes_config["quarter_mapping"])
-    df.set_index(["Year", "Quarter"], inplace=True)
-    df.rename(columns=dukes_config["column_mapping"], inplace=True)
-    df = df[["gas", "coal", "oil"]]
-    df[df.columns] = df[df.columns].replace("..", np.nan)
-    df *= 10  # Convert pence per kWh to GBP per MWh
-    return df
+    df["Quarter"] = (
+        df["Quarter"].replace(dukes_config["quarter_mapping"]).infer_objects(copy=False)
+    )
+    new_cols = {
+        i: df[k].values for k, v in dukes_config["column_mapping"].items() for i in v
+    }
+    df_renamed = (
+        df.set_index(["Year", "Quarter"])
+        .assign(**new_cols)
+        .loc[:, new_cols.keys()]
+        .replace("..", np.nan)
+        .rename_axis(index={"Year": "year", "Quarter": "quarter"}, columns="technology")
+        .stack()
+        .to_frame("fuel")
+    )
+    df_renamed *= 10  # Convert pence per kWh to GBP per MWh
+
+    new_fes_power_costs = (
+        df_renamed.assign(VOM=np.nan)
+        .to_xarray()
+        .broadcast_like(fes_power_costs.to_xarray())
+        .fillna(fes_power_costs.to_xarray())
+        .to_dataframe()
+    )
+    return new_fes_power_costs
+
+
+def bid_offer_powerplants(df: pd.DataFrame, bid_offer_years: list[int]) -> pd.DataFrame:
+    """
+    Create a dummy powerplant dataframe for the years for which we have bid and offer data.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        DataFrame containing powerplant data with columns 'bus', 'carrier', 'set', 'year', 'p_nom'
+    bid_offer_years: list[int]
+        List of years for which we have bid and offer data
+
+    Returns
+    -------
+        pd.DataFrame: `df` with year column changed to the years in `bid_offer_years` and p_nom set to -1 for these years (since we won't be using this column).
+    """
+    df_bid_offer_years = df.pivot(
+        index=["bus", "carrier", "set"], columns="year", values="p_nom"
+    ).assign(**{str(year): -1 for year in bid_offer_years})
+    df_bid_offer_years.columns = df_bid_offer_years.columns.astype(int)
+    df_bid_offer_years = (
+        df_bid_offer_years.loc[:, bid_offer_years]
+        .stack()
+        .to_frame("p_nom")
+        .reset_index()
+    )
+    return df_bid_offer_years
 
 
 if __name__ == "__main__":
@@ -212,23 +180,33 @@ if __name__ == "__main__":
 
     configure_logging(snakemake)
     set_scenario_config(snakemake)
-
+    fes_scenario = get_scenario_name(snakemake)
+    costs_config = snakemake.params.costs_config
     bid_offer_years = [int(Path(x).stem) for x in snakemake.input.bid_offer_data]
-    historical_fuel_cost = get_historical_fuel_prices(
+    df = pd.read_csv(snakemake.input.powerplants)
+    # Load costs data
+    costs = load_costs(snakemake.input.tech_costs, costs_config)
+    fes_power_costs = load_fes_power_costs(
+        snakemake.input.fes_power_costs, fes_scenario
+    )
+    fes_carbon_costs = load_fes_carbon_costs(
+        snakemake.input.fes_carbon_costs, fes_scenario
+    )
+    updated_fes_power_costs = add_historical_fuel_prices(
         historical_fuel_path=snakemake.input.historical_fuel_price,
         years=bid_offer_years,
         dukes_config=snakemake.params.dukes_config,
+        fes_power_costs=fes_power_costs,
     )
+    df_bid_offer_years = bid_offer_powerplants(df, bid_offer_years)
 
-    df_cost = calculate_costs(
-        fes_power_costs_path=snakemake.input.fes_power_costs,
-        fes_carbon_costs_path=snakemake.input.fes_carbon_costs,
-        fes_scenario=get_scenario_name(snakemake),
-        tech_costs_path=snakemake.input.tech_costs,
-        costs_config=snakemake.params.costs_config,
-        technology_mapping=snakemake.params.technology_mapping,
-        years=bid_offer_years,
-        historical_fuel_cost=historical_fuel_cost,
+    # Enrich powerplants with technical/cost parameters
+    df_cost = assign_technical_and_costs_defaults(
+        df=df_bid_offer_years,
+        fes_power_costs=updated_fes_power_costs,
+        costs=costs,
+        fes_carbon_costs=fes_carbon_costs,
+        costs_config=costs_config,
     )
 
     df_multipliers = calc_bid_offer_multipliers(
