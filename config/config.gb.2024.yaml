@@ -103,7 +103,7 @@ renewable:
 conventional:
   nuclear:
     max_annual_capacity_factor: 0.87
-    min_annual_capacity_factor: 0.50
+    min_annual_capacity_factor: 0.70
 
 fes_costs:
   sheet-config:
@@ -551,7 +551,7 @@ dukes-fuel-prices:
   sheet-config:
     sheet_name: "3.2.1 (Real)"
     usecols: "A:I"
-    skiprows: 14
+    skiprows: 15
     header: 0
   quarter_mapping:
     "Jan to Mar": 1

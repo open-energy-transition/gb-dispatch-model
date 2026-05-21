@@ -97,7 +97,7 @@ rule calculate_bid_offer_multipliers:
             resources("gb-model/bids_and_offers/Elexon/{bod_year}.csv"),
             bod_year=config["redispatch"]["elexon"]["years"],
         ),
-        historical_fuel_price="data/gb-model/downloaded/dukes_fuel_prices.excel",
+        historical_fuel_price="data/gb-model/downloaded/dukes_fuel_prices.xlsx",
         # We import from assign_costs.py so we track it here to ensure any changes trigger a rule re-run
         _track_script=scripts("gb_model/generators/assign_costs.py"),
     output:

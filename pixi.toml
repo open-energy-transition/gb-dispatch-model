@@ -9,7 +9,7 @@ channels = ["conda-forge", "bioconda", "gurobi", "conda-forge/label/dev"]
 name = "gb-dispatch-model"
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
 version = "0.2.2"
-
+exclude-newer = "7d"
 [tasks]
 
 reset = """bash -c '
@@ -63,7 +63,6 @@ gurobi = ">=12.0.3"
 highspy = ">=1.12.0"
 ipython = ">=9.7.0"
 jpype1 = ">=1.6.0"
-jupyter = ">=1.1.1"
 libgdal-netcdf = ">=3.10.3"
 linopy = ">=0.6.1"
 lxml = ">=6.0.2"
@@ -111,6 +110,8 @@ natsort = ">=8.4.0"
 snakemake-logger-plugin-pypsa = ">=0.1.0"
 pydeflate = ">=2.3.4"
 grpcio = "<1.78"
+urllib3 = "==2.7.0"
+diskcache = ">=5.6.3"
 
 [target.unix.dependencies]
 snakemake-executor-plugin-slurm = ">=1.9.2"
@@ -172,12 +173,14 @@ all-tests = {depends-on = ["integration-tests", "clean-tests", "unit-tests"]}
 [feature.test.dependencies]
 pytest = ">=8.4.2"
 
-[feature.gb-model.tasks]
-gb-test = """
-	snakemake gb_all -n &&
-	snakemake gb_all -n --configfile config/config.gb.etys-subset.yaml &&
+[feature.gb-model.tasks.gb-test]
+cmd = """
+	snakemake gb_all -n {{ smk_config }} &&
+	snakemake gb_all -n --configfile config/config.gb.etys-subset.yaml {{ smk_config }} &&
 	echo "All GB tests completed successfully."
     """
+args = [{"arg" = "smk_config", "default" = "--forceall --rerun-incomplete"}]
+
 [feature.gb-model.tasks.model]
 cmd = "snakemake gb_all"
 
@@ -197,9 +200,12 @@ shapely = ">=2.1"
 pypsa = ">=1.1.0"
 libabseil = "<20260107" # revert once https://github.com/grpc/grpc/issues/41672 is closed
 highspy = { version = ">=1.13.2.dev0", channel = "conda-forge/label/dev" }
-
-[feature.gb-model.pypi-dependencies]
-pdfplumber = "==0.9.0"
+atlite = "<0.5.0"
+pdfplumber = ">=0.11.0"
+pandas = "<3"
+python = ">=3.13"
+cpython = ">=3.13"
+setuptools = "<81"
 
 [environments]
 doc = { features = ["doc"], no-default-feature = true }

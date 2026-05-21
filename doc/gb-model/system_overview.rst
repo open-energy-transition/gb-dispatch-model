@@ -28,14 +28,14 @@ We represent the GB model in PyPSA as follows:
         onwind [label="Onshore Wind", fillcolor="#D8BFD8"];
         offwind [label="Offshore Wind", fillcolor="#D8BFD8"];
         solar [label="Solar", fillcolor="#FFFFCC"];
-        gas [label="Gas plant", fillcolor="#D3D3D3"];
+        gas [label="Gas plant (incl. CHP/CCS)", fillcolor="#D3D3D3"];
         coal [label="Coal plant", fillcolor="#A9A9A9", fontcolor=white];
-        oil [label="Oil plant", fillcolor="#A9A9A9", fontcolor=white];
-        biomass [label="Biomass", fillcolor="#C1FFC1"];
-        waste [label="Waste", fillcolor="#D9A088"];
+        oil [label="Oil plant (incl. CHP)", fillcolor="#A9A9A9", fontcolor=white];
+        biomass [label="Biomass (incl. CHP/CCS)", fillcolor="#C1FFC1"];
+        waste [label="Waste (incl. CHP)", fillcolor="#D9A088"];
         nuclear [label="Nuclear", fillcolor="#ff5364ff"];
         geothermal [label="Geothermal", fillcolor="#ff9844ff"];
-        hydro [label="Hydro", fillcolor="#B3D9FF"];
+        hydro [label="Run-of-River Hydro", fillcolor="#B3D9FF"];
       }
 
       subgraph storage {
@@ -44,6 +44,8 @@ We represent the GB model in PyPSA as follows:
 
         // Storage components (bottom middle)
         battery [label="Battery Storage", fillcolor="#FFFFCC"];
+        liquid-air [label="Liquid Air Storage", fillcolor="#FFFFCC"];
+        compressed-air [label="Compressed Air Storage", fillcolor="#FFFFCC"];
         PHS [label="Pumped Hydro Storage", fillcolor="#FFFFCC"];
       }
       subgraph hydrogen {
@@ -103,6 +105,8 @@ We represent the GB model in PyPSA as follows:
       // Storage connections
       battery -> AC_bus [dir=both, label="charge/discharge"];
       PHS -> AC_bus [dir=both, label="charge/discharge"];
+      liquid-air -> AC_bus [dir=both, label="charge/discharge"];
+      compressed-air -> AC_bus [dir=both, label="charge/discharge"];
 
       // Hydrogen connections
       AC_bus -> h2_bus [label="Electrolysis"];
@@ -224,9 +228,8 @@ These generators are tagged separately based on input data and have an additiona
 Storage
 -------
 
-There are three primary energy storage technologies defined in the model: pumped hydropower (``PHS``), utility-scale batteries (``battery``), and hydrogen storage.
+There are five primary energy storage technologies defined in the model: pumped hydropower (``PHS``), utility-scale batteries (``battery``), liquid-/compressed-air storage (``liquid-air`` / ``compressed-air``) and hydrogen storage.
 Pumped hydropower and batteries have a maximum number of hours they can store energy for which, when combined with their discharge/charge capacity, defines their reservoir capacity.
-In general, we expect pumped hydro and batteries to cycle on short timescales and their max hours reflect this.
 
 .. seealso::
    :ref:`system-hydrogen`, :ref:`system-storage`

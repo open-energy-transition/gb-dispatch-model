@@ -1094,7 +1094,7 @@ def add_H2(
     )
 
     if not (
-        h2_gen := ppl.query("carrier in ['hydrogen turbine', 'hydrogen fuel cell']")
+        h2_gen := ppl.query("carrier in ['hydrogen-turbine', 'hydrogen-fuel-cell']")
     ).empty:
         h2_gen_buses = h2_gen.bus.unique()
         n.add(
@@ -1125,7 +1125,7 @@ def add_H2(
             p_nom=np.inf,
         )
 
-    if not (fuel_cells := ppl.query("carrier == 'hydrogen fuel cell'")).empty:
+    if not (fuel_cells := ppl.query("carrier == 'hydrogen-fuel-cell'")).empty:
         n.add("Carrier", "H2 fuel cell")
         n.add(
             "Link",
@@ -1140,7 +1140,7 @@ def add_H2(
             lifetime=fuel_cells.lifetime,
         )
 
-    if not (turbines := ppl.query("carrier == 'hydrogen turbine'")).empty:
+    if not (turbines := ppl.query("carrier == 'hydrogen-turbine'")).empty:
         n.add("Carrier", "H2 Turbine")
         n.add(
             "Link",
