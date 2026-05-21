@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Python package updates to address security vulnerabilities (#322).
 * Remove unused environment set-up files inherited from upstream (`dockerfile`, `envs/`) (#318).
 * Add documentation for Demand and DSR implementation in the GB dispatch model (#295)
 * Share bid/offer multipliers between like carriers (e.g. fuel cost of future hydrogen turbines will use the current CCGT multiplier).
