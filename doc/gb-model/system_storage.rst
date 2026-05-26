@@ -104,18 +104,19 @@ System Components
 All electricity storage technologies are modelled as PyPSA ``StorageUnit`` components.
 Hydrogen storage is documented separately in :doc:`system_hydrogen`.
 
-For each of these components, charge / discharge efficiency is calculated based on their
+For each of these components, charge / discharge efficiency is calculated based on values derived from PyPSA-Eur technology data.
+The PyPSA-Eur technology chosen to represent each GB storage technology is :ref:`configurable <storage-config>`.
+
 .. list-table::
     :header-rows: 1
     :stub-columns: 1
-    :widths: 20 26 27 27
 
-    * - Attribute
+    * - Technology
       - Battery
       - PHS
       - Compressed air
       - Liquid air
-    * - **Carrier**
+    * - **PyPSA network carrier**
       - ``battery``
       - ``PHS``
       - ``compressed-air``
@@ -168,7 +169,8 @@ Cost mappings for storage VOM (``fes_costs.fes_VOM_carrier_mapping``):
 Implementation Notes
 ====================
 
-**Data Processing Workflow**:
+Data Processing Workflow
+------------------------
 
 The storage system is built through a pipeline implemented in ``rules/gb-model/storage.smk`` and integrated via the standard PyPSA-Eur ``attach_hydro`` function:
 
@@ -179,11 +181,11 @@ The storage system is built through a pipeline implemented in ``rules/gb-model/s
    The graph above was generated using::
 
       pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/regional_battery_storage_capacity_inc_eur.csv
-      resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv
-      resources/GB/gb-model/HT/fes_powerplants_inc_tech_data.csv
-      -w fes_scenario -w year
-      -f rules/gb-model/storage.smk
+      "resources/GB/gb-model/HT/max_hours.csv \
+      resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv \
+      resources/GB/gb-model/HT/fes_powerplants_inc_tech_data.csv \
+      -w fes_scenario -w year \
+      -f rules/gb-model/storage.smk \
       -s 10,8" \
       "doc/gb-model/img/storage_workflow.svg"
 
@@ -194,7 +196,10 @@ The storage system is built through a pipeline implemented in ``rules/gb-model/s
 3. **Battery storage attachment** (``add_battery_storage`` in ``scripts/gb_model/compose_network.py``): Merges regional ``e_nom`` with the powerplants table on ``bus`` and ``year``, computes ``max_hours``, sets efficiency and cyclic state-of-charge, and adds each entry as a ``StorageUnit``
 4. **PHS and hydro attachment** (``attach_hydro`` inside ``_integrate_renewables``): Reads ``p_nom`` for PHS and hydro from the powerplants table, sizes ``e_nom`` from ``data/hydro_capacities.csv``, and attaches inflow time series from the ERA5/runoff cutout in a single pass
 
-**Key Assumptions**:
+.. _system-storage-assumptions:
+
+Key Assumptions
+---------------
 
 - **Regional battery distribution**: ``e_nom`` is allocated to regions strictly in proportion to their share of total GB battery ``p_nom``; regions with zero ``p_nom`` receive no energy capacity
 - **European battery duration**: The GB mean ``e_nom``/``p_nom`` ratio is applied uniformly to all European battery entries; no country-specific duration data is used

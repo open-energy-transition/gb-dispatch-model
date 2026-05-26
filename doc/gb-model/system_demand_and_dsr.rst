@@ -93,7 +93,7 @@ The table below summarizes the specific sheets extracted from the FES workbook f
      - Electricity Demand Summary (ED1)
 
 European data
----------------
+-------------
 
 For European neighbour countries included in the model, the demand data is sourced from the PyPSA-Eur workflow (via ``energy_totals.csv``).
 Specific data requirements are explained in detail in the corresponding sections of the documentation (e.g., :ref:`system-heat` uses ES2 from the FES workbook for European demand assumptions).
@@ -170,7 +170,7 @@ The appropriate time zone conversions are accounted for when modelling DSR time 
 
 
 Data Processing Workflow
-========================
+------------------------
 
 The demand and DSR implementation follows a multi-step workflow:
 
@@ -179,9 +179,6 @@ The demand and DSR implementation follows a multi-step workflow:
 3. **Regional Distribution** - Distribute national data to regional PyPSA buses
 4. **Demand Profile Scaling** - Apply temporal profiles to annual demands
 5. **Network Composition** - Add DSR components to the PyPSA network
-
-Data Processing Pipeline
-=========================
 
 The demand and DSR workflow is implemented through Snakemake rules in ``rules/gb-model/demand_and_dsr.smk`` and Python scripts in the folder ``scripts/gb_model/demand_and_dsr``.
 
@@ -194,12 +191,12 @@ The rulegraph for the demand and DSR workflow is illustrated below:
   The graph above was generated using::
 
       pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/baseline_electricity_demand/2030.csv
-      resources/GB/gb-model/HT/additional_demand/2030.csv
-      resources/GB/gb-model/HT/regional_iandc_dsr_inc_eur.csv
-      resources/GB/gb-model/HT/regional_residential_dsr_inc_eur.csv
-      -w fes_scenario -w year
-      -f rules/gb-model/demand_and_dsr.smk
+      "resources/GB/gb-model/HT/baseline_electricity_demand/2030.csv \
+      resources/GB/gb-model/HT/additional_demand/2030.csv \
+      resources/GB/gb-model/HT/regional_iandc_dsr_inc_eur.csv \
+      resources/GB/gb-model/HT/regional_residential_dsr_inc_eur.csv \
+      -w fes_scenario -w year \
+      -f rules/gb-model/demand_and_dsr.smk \
       -s 10,12" \
       "doc/gb-model/img/demand_and_dsr_workflow.svg"
 
@@ -217,11 +214,19 @@ The demand and DSR workflow was built based on several key processing steps as f
 * **scaled_demand_profile**: Scales normalized demand profile shapes to match annual regional demand totals
 * **add_extra_demands**: Adds additional demand from FES workbook not accounted for in the BB1 sheet (e.g., direct transmission demand, T&D losses) to the model inputs.
 
-Assumptions:
-------------
+.. _system-demand_dsr-assumptions:
+
+Key Assumptions
+---------------
 
 - DSR links operate at 100% efficiency (no losses in shifting energy).
 - DSR links and stores do not have any capital or operational costs associated with them, as the model focuses on the technical potential of DSR rather than economic optimization.
+- DSR balances on a daily cycle.
+  That is, it is not possible to shift demand by more than 24 hours.
+- The baseline electricity profile shape is the same in all future years as in the historical weather year (2013).
+- Direct transmission demands do not vary in time.
+- T&D losses follow the baseline electricity demand profile shape.
+- Electrification of end-use energy consumption in European countries occurs at the same rate as in GB.
 
 .. seealso::
 

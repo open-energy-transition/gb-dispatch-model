@@ -283,7 +283,10 @@ From ``config/config.gb.2024.yaml``:
 Implementation Notes
 ====================
 
-**Data Processing Workflow**:
+.. _system-hydrogen-workflow:
+
+Data Processing Workflow
+------------------------
 
 The hydrogen system is built through a multi-stage data processing pipeline implemented in ``rules/gb-model/hydrogen.smk``:
 
@@ -294,18 +297,21 @@ The hydrogen system is built through a multi-stage data processing pipeline impl
    The graph above was generated using::
 
       pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/regional_H2_demand_annual_inc_eur.csv
-      resources/GB/gb-model/HT/regional_non_networked_electrolysis_demand_annual_inc_eur.csv
-      resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv
-      resources/GB/gb-model/HT/regional_grid_electrolysis_capacities_inc_eur_inc_tech_data.csv
-      -w fes_scenario -w year
-      -f rules/gb-model/hydrogen.smk
+      "resources/GB/gb-model/HT/regional_H2_demand_annual_inc_eur.csv \
+      resources/GB/gb-model/HT/regional_non_networked_electrolysis_demand_annual_inc_eur.csv \
+      resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv \
+      resources/GB/gb-model/HT/regional_grid_electrolysis_capacities_inc_eur_inc_tech_data.csv \
+      -w fes_scenario -w year \
+      -f rules/gb-model/hydrogen.smk \
       -s 10,8" \
       "doc/gb-model/img/hydrogen_workflow.svg"
 
    The ``filtered_rulegraph`` task allows us to trim the full DAG to hydrogen-related rules only.
 
-**Key Assumptions**:
+.. _system-hydrogen-assumptions:
+
+Key Assumptions
+---------------
 
 - **Temporal Profile**: Hydrogen demand is assumed constant across the year due to lack of hourly data
 - **Regionalization**: National hydrogen data is distributed spatially using hydrogen electrolysis capacity as a reference pattern

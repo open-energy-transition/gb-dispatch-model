@@ -1277,6 +1277,7 @@ interconnectors:
   # [doc:interconnector-plan-end]
 
 
+# [doc:redispatch-start]
 redispatch:
   year_range_incl: [2025, 2044] # 20-year period over which we will run the simulation
   constraint_cost_extra_years: 20
@@ -1314,5 +1315,4 @@ redispatch:
     max_concurrent_requests: 4
   bid_offer_multiplier_mapping:
     purchased H2: CCGT
-    PHS: battery storage
-    ror: battery storage
+# [doc:redispatch-end]

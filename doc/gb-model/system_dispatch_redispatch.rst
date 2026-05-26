@@ -281,3 +281,55 @@ Each year in the horizon of interest is optimised separately and a file for each
         └── {year}.nc
 
 In addition, once all runs have completed, a ``results/{run}/constraint_costs.csv`` will be available, which gives a single value constraint cost for the entire modelling horizon, plus the final year's cost duplicated N times to simulate costs until the end of current infrastructure asset lifetimes.
+
+.. _redispatch-configuration:
+
+Configuration
+=============
+
+The workflow is configured under ``redispatch`` in the model configuration.
+
+.. literalinclude:: ../../config/config.gb.2024.yaml
+   :language: yaml
+   :start-after: # [doc:redispatch-start]
+   :end-before: # [doc:redispatch-end]
+
+
+.. _redispatch-implementation-notes:
+
+Implementation Notes
+====================
+
+Data Processing Workflow
+------------------------
+
+The redispatch workflow is built through ``rules/gb-model/redispatch.smk``.
+
+.. image:: img/redispatch_workflow.svg
+    :align: center
+
+.. note::
+    The graph above was generated using::
+
+        pixi run filtered_rulegraph \
+        "results/GB/networks/HT/constrained_clustered/2040.nc \
+        -w fes_scenario -w year \
+        -c compose_network \
+        -f rules/gb-model/redispatch.smk -s 11,8" \
+        "doc/gb-model/img/redispatch_workflow.svg"
+
+    The ``filtered_rulegraph`` task allows us to trim the full DAG to the redispatch-related workflow slice while retaining the upstream steps that build the PyPSA network.
+
+.. _system-redispatch-assumptions:
+
+Key Assumptions
+---------------
+
+- Storage is redispatched at the short-run marginal cost since the storage opportunity cost is reflected in the overall optimisation.
+- Historical redispatch is suitable for defining bid/offer multipliers of conventional generators
+- Historical low carbon contracts (e.g., CfDs) are suitable for defining future renewable energy bids/offers.
+- Inverted bid/offer costs, caused by short-run marginal prices being higher than contracts subsidies for some low carbon generators, are not allowed; costs are instead set to zero.
+- European renewable energy subsidy schemes are ignored when considering marginal generator bid/offer costs in interconnector redispatch cost calculations.
+- Electrolyser and demand-side response load profiles can be adapted at zero cost in response to redispatched generation.
+- Nuclear power is not able to redispatch due to ramping limitations.
+- Renewable generators that were curtailed in the dispatch run may _increase_ there generation (bid on) during redispatch.

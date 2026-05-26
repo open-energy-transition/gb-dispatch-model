@@ -153,7 +153,8 @@ Heat pump source availability is configured per geographic location type in the 
 Implementation Steps
 =====================
 
-**Data Processing**:
+Data Processing Workflow
+------------------------
 
 The heat system is built through a pipeline implemented across ``rules/gb-model/heat.smk`` and ``rules/gb-model/demand_and_dsr.smk``:
 
@@ -166,10 +167,10 @@ The rulegraph for the heat system is illustrated below, showing the key processi
    The graph above was generated using::
 
       pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/residential_heat_demand/2030.csv
-      resources/GB/gb-model/HT/iandc_heat_demand/2030.csv
-      -w fes_scenario -w year
-      -f rules/gb-model/heat.smk
+      "resources/GB/gb-model/HT/residential_heat_demand/2030.csv \
+      resources/GB/gb-model/HT/iandc_heat_demand/2030.csv \
+      -w fes_scenario -w year \
+      -f rules/gb-model/heat.smk \
       -s 10,8" \
       "doc/gb-model/img/heat_workflow.svg"
 
@@ -183,8 +184,10 @@ The heat system pipeline was built based on several key processing steps as foll
 3. **resistive_heater_demand_profile**: Creates technology-specific demand profiles for resistive heating by removing future resistive heating demand from historical electrified heat demand.
 4. **heat_demand_electricity_load_profile**: Generates hourly heat demand profiles by technology and sector for each node in the network and also accounts for the COP of heat pump technologies to convert heat demand into equivalent electricity demand.
 
-Assumptions
-------------
+.. _system-heat-assumptions:
+
+Key Assumptions
+---------------
 
 - The model maps all heating technologies to three primary categories (resistive, ASHP, GSHP) for simplicity, which may not capture all nuances of specific technologies provided in the FES workbook.
 - The share of district heating is assumed from what is provided in the PyPSA-Eur workflow.

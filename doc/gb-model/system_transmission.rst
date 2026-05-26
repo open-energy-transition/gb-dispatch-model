@@ -236,7 +236,8 @@ Transmission availability data configuration:
 Implementation Notes
 ====================
 
-**Data Processing Workflow**:
+Data Processing Workflow
+------------------------
 
 The transmission system is built through a pipeline implemented in ``rules/gb-model/transmission.smk``:
 
@@ -247,12 +248,12 @@ The transmission system is built through a pipeline implemented in ``rules/gb-mo
    The graph above was generated using::
 
       pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/interconnectors_p_nom.csv
-      resources/GB/gb-model/intra_gb_transmission_availability.csv
-      resources/GB/gb-model/inter_gb_transmission_availability.csv
-      resources/GB/gb-model/custom_busmap.csv
-      -w fes_scenario -w year
-      -f rules/gb-model/transmission.smk
+      "resources/GB/gb-model/HT/interconnectors_p_nom.csv \
+      resources/GB/gb-model/intra_gb_transmission_availability.csv \
+      resources/GB/gb-model/inter_gb_transmission_availability.csv \
+      resources/GB/gb-model/custom_busmap.csv \
+      -w fes_scenario -w year \
+      -f rules/gb-model/transmission.smk \
       -s 10,8" \
       "doc/gb-model/img/transmission_workflow.svg"
 
@@ -263,7 +264,10 @@ The transmission system is built through a pipeline implemented in ``rules/gb-mo
 3. **Interconnector table** (``create_interconnectors_table``): Reads the ``interconnectors.plan`` for the active FES scenario, accumulates capacity year-by-year, assigns each project to a GB model region using lat/lon point-in-polygon matching, computes line geometry (shortest path to neighbour country region), and outputs a per-year ``p_nom`` CSV
 4. **Offshore busmap** (``identify_regions_for_offshore_buses``): Traverses the OSM base network graph to identify offshore stub buses and maps them to their onshore regional bus; iterates until all multi-hop offshore chains are resolved
 
-**Key Assumptions**:
+.. _system-transmission-assumptions:
+
+Key Assumptions
+---------------
 
 - **Uniform zone availability**: Intra-GB availability is applied at the TO zone level (NGET, SPTL, SHETL); individual line ratings within a zone are not differentiated
 - **Interconnector availability**: A single aggregate monthly fraction is used for all interconnectors, averaged over all projects and report years

@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Update FAQs (#285, #289).
 * Python package updates to address security vulnerabilities (#322).
   - Removed `jupyter` package, updated `urllib3` to 2.7.0 and diskcache to `5.6.3`
   - The list of fixed vulnerabilities can be found in the PR linked above.

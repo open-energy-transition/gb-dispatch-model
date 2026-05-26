@@ -202,7 +202,8 @@ Otherwise, ``lower_optimization_bound`` and ``upper_optimization_bound`` define 
 Implementation Notes
 ====================
 
-**Data Processing Workflow**:
+Data Processing Workflow
+------------------------
 
 The EV system is built through a pipeline implemented across ``rules/gb-model/ev.smk`` and ``rules/gb-model/demand_and_dsr.smk``:
 
@@ -213,11 +214,11 @@ The EV system is built through a pipeline implemented across ``rules/gb-model/ev
    The graph above was generated using::
 
       pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/regional_ev_v2g_storage_inc_eur.csv
-      resources/GB/gb-model/HT/ev_demand/2035.csv
-      resources/GB/gb-model/HT/regional_ev_dsr_inc_eur.csv
-      -w fes_scenario -w year
-      -f rules/gb-model/ev.smk
+      "resources/GB/gb-model/HT/regional_ev_v2g_storage_inc_eur.csv \
+      resources/GB/gb-model/HT/ev_demand/2035.csv \
+      resources/GB/gb-model/HT/regional_ev_dsr_inc_eur.csv \
+      -w fes_scenario -w year \
+      -f rules/gb-model/ev.smk \
       -s 10,8" \
       "doc/gb-model/img/ev_workflow.svg"
 
@@ -231,7 +232,10 @@ The EV system is built through a pipeline implemented across ``rules/gb-model/ev
 5. **V2G storage** (``create_ev_v2g_storage_table``): Multiplies V2G capacity by the storage ratio to derive energy capacity
 6. **Scaled demand profile** (``scaled_ev_demand_profile``): Combines annual/peak data with the demand shape to produce hourly profiles for each model year
 
-**Key Assumptions**:
+.. _system-ev-assumptions:
+
+Key Assumptions
+---------------
 
 - **Demand shape**: Derived from German traffic data (KFZ); the same shape is applied uniformly to all GB regions and European countries
 - **Plug-in timing**: ``plug_in_offset`` hours after peak traffic activity (default 2 hours); ``charging_duration`` hours of active charging (default 4 hours)

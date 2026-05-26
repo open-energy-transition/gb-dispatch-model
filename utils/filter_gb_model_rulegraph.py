@@ -16,7 +16,7 @@ instead of being filled in.
 Usage::
 
     python utils/filter_gb_model_rulegraph.py \\
-        [-w wildcard_name ...] [-f rule_file ...] [targets...] | \\
+        [-w wildcard_name ...] [-f rule_file ...] [-c cutoff_rule ...] [targets...] | \\
         dot -Tsvg -o doc/gb-model/img/gb_model_workflow.svg
 
 Example — keep ``fes_scenario`` and ``year`` as wildcards, highlight ev rules::
@@ -25,6 +25,15 @@ Example — keep ``fes_scenario`` and ``year`` as wildcards, highlight ev rules:
         -w fes_scenario -w year \\
         -f rules/gb-model/ev.smk \\
         resources/GB/gb-model/HT/ev_demand/2035.csv
+
+Example — prune all rules upstream of ``compose_network`` (useful for redispatch docs
+where the upstream pipeline is already documented elsewhere)::
+
+    python utils/filter_gb_model_rulegraph.py \\
+        -c compose_network \\
+        -w fes_scenario \\
+        -f rules/gb-model/redispatch.smk \\
+        results/GB/networks/HT/constrained_clustered/2040.nc
 """
 
 import re
@@ -43,6 +52,7 @@ _RULE_RE = re.compile(r"^rule\s+(\w+)\s*:", re.MULTILINE)
 _USE_RULE_RE = re.compile(r"^use rule\s+(\w+)\s+as\s+(\w+)", re.MULTILINE)
 _TOP_LEVEL_RE = re.compile(r"^(?:rule|use rule)\s+", re.MULTILINE)
 _RESOURCES_RE = re.compile(r'resources\s*\(\s*f?["\']([^"\']+)["\']')
+_RESULTS_RE = re.compile(r'RESULTS\s*\+\s*f?["\']([^"\']+)["\']')
 _OUTPUT_SEC_RE = re.compile(r"\n    output\s*:(.*?)(?=\n    \w|\Z)", re.DOTALL)
 _NODE_RE = re.compile(r'(\d+)\[label\s*=\s*"([^"]+)"')
 _EDGE_RE = re.compile(r"(\d+)\s*->\s*(\d+)")
@@ -68,10 +78,10 @@ _COLOUR_FILE_BORDER = "darkorange"
 def _rule_names_in_files(paths) -> set[str]:
     """Return all rule/alias names declared in *paths*."""
     names: set[str] = set()
-    for path in paths:
-        text = path.read_text()
-        names |= set(_RULE_RE.findall(text))
-        names |= {m.group(2) for m in _USE_RULE_RE.finditer(text)}
+    for text in (p.read_text() for p in paths):
+        names |= set(_RULE_RE.findall(text)) | {
+            m.group(2) for m in _USE_RULE_RE.finditer(text)
+        }
     return names
 
 
@@ -91,14 +101,29 @@ def _rule_body(text: str, start: int) -> str:
     return text[start : m.start()] if m else text[start:]
 
 
-def _output_patterns(body: str) -> list[str]:
-    """Extract ``resources(...)`` string arguments from an output: section."""
+def _output_patterns(body: str) -> list[tuple[str, str]]:
+    """
+    Return ``(match_pattern, display_pattern)`` pairs from an output: section.
+
+    *match_pattern* is the inner path used for wildcard matching; *display_pattern*
+    prepends the top-level directory (``resources/`` or ``results/``).
+    """
     m = _OUTPUT_SEC_RE.search("\n" + body)
-    return _RESOURCES_RE.findall(m.group(1)) if m else []
+    if not m:
+        return []
+    section = m.group(1)
+    return [
+        (inner, f"{prefix}/{inner}")
+        for regex, prefix in ((_RESOURCES_RE, "resources"), (_RESULTS_RE, "results"))
+        for inner in regex.findall(section)
+    ]
 
 
-def parse_rule_outputs(smk_dir: Path) -> dict[str, list[str]]:
-    """Return ``{rule_name: [output_pattern, ...]}`` for every rule in *smk_dir*."""
+def parse_rule_outputs(smk_dir: Path) -> dict[str, list[tuple[str, str]]]:
+    """
+    Return ``{rule_name: [(match_pattern, display_pattern), ...]}`` for every
+    rule in *smk_dir*.
+    """
     bodies: dict[str, str] = {}
     parents: dict[str, str] = {}  # alias -> original rule
 
@@ -127,6 +152,11 @@ def parse_rule_outputs(smk_dir: Path) -> dict[str, list[str]]:
 # ---------------------------------------------------------------------------
 
 
+def _top_level(display_pattern: str) -> str:
+    """Return the top-level directory prefix from a display pattern, e.g. ``results/``."""
+    return display_pattern.split("/")[0] + "/"
+
+
 def _wildcard_regex(pattern: str) -> tuple[re.Pattern[str], list[str]]:
     """
     Convert a Snakemake pattern to a named-group capturing regex.
@@ -142,51 +172,64 @@ def _wildcard_regex(pattern: str) -> tuple[re.Pattern[str], list[str]]:
     return re.compile(capturing + "$"), names
 
 
-def patterns_matching_targets(patterns: list[str], targets: list[str]) -> list[str]:
-    """Return patterns matched by at least one target path."""
-    return [
-        p for p in patterns if any(_wildcard_regex(p)[0].search(t) for t in targets)
-    ]
+def patterns_matching_targets(
+    patterns: list[tuple[str, str]], targets: list[str]
+) -> list[tuple[str, str]]:
+    """Return ``(match_pattern, display_pattern)`` pairs matched by at least one target path."""
+
+    def _matches_any(mp: str, dp: str) -> bool:
+        top, cap_re = _top_level(dp), _wildcard_regex(mp)[0]
+        return any(t.startswith(top) and cap_re.search(t) for t in targets)
+
+    return [(mp, dp) for mp, dp in patterns if _matches_any(mp, dp)]
 
 
-def _match_score(pattern: str, target: str) -> int | None:
+def _match_score(
+    match_pattern: str, target: str, display_pattern: str = ""
+) -> int | None:
     """
-    Total length of all wildcard matches for *pattern* against *target*.
+    Total wildcard match length for *match_pattern* against *target* (smaller = more specific).
 
-    Returns ``None`` if the pattern does not match.  A smaller score means
-    the pattern is more specific (less of the target path is consumed by
-    wildcards), which disambiguates when multiple rules have patterns that
-    match the same target.
+    Returns ``None`` on no match.  When *display_pattern* is supplied the target must
+    share its top-level directory (``results/`` vs ``resources/``) to avoid false positives.
     """
-    cap_re, names = _wildcard_regex(pattern)
+    if display_pattern and not target.startswith(_top_level(display_pattern)):
+        return None
+    cap_re, names = _wildcard_regex(match_pattern)
     m = cap_re.search(target)
     return sum(len(m.group(n)) for n in names) if m else None
 
 
 def make_partial_labels(
-    pattern: str, targets: list[str], keep_wildcards: set[str]
+    display_pattern: str,
+    match_pattern: str,
+    targets: list[str],
+    keep_wildcards: set[str],
 ) -> list[str]:
     """
-    Derive display labels by filling wildcard values from matching targets.
+    Fill wildcard values from matching targets into *display_pattern*.
 
-    Wildcards in *keep_wildcards* remain as ``{name}``; others are replaced
-    with concrete values.  Returns a deduplicated list, or ``[pattern]`` if no
-    target matches.
+    Uses *match_pattern* for matching and *display_pattern* as the label template.
+    Wildcards in *keep_wildcards* are left as ``{name}``.  Returns a deduplicated
+    list, or ``[display_pattern]`` when nothing matches.
     """
-    cap_re, names = _wildcard_regex(pattern)
+    cap_re, names = _wildcard_regex(match_pattern)
+    top = _top_level(display_pattern)
 
     def _fill(target: str) -> str | None:
+        if not target.startswith(top):
+            return None
         m = cap_re.search(target)
         if m is None:
             return None
-        label = pattern
+        label = display_pattern
         for name in names:
             if name not in keep_wildcards:
                 label = label.replace(f"{{{name}}}", m.group(name))
         return label
 
     labels = list(dict.fromkeys(filter(None, (_fill(t) for t in targets))))
-    return labels or [pattern]
+    return labels or [display_pattern]
 
 
 # ---------------------------------------------------------------------------
@@ -202,6 +245,14 @@ def get_rulegraph_dot(targets: list[str]) -> str:
         text=True,
         check=True,
     ).stdout
+
+
+def _build_rev_adj(edges: list[tuple[str, str]]) -> dict[str, set[str]]:
+    """Return a reverse adjacency map ``{dst: {src, ...}}`` for *edges*."""
+    rev_adj: dict[str, set[str]] = defaultdict(set)
+    for src, dst in edges:
+        rev_adj[dst].add(src)
+    return rev_adj
 
 
 def _ancestors(start: set[str], rev_adj: dict[str, set[str]]) -> set[str]:
@@ -240,11 +291,7 @@ def filter_graph(
     # (a node with no outgoing edges in the full graph).
     all_srcs = {src for src, _ in all_edges}
     dag_targets = {nid for nid in keep_nodes if nid not in all_srcs}
-    rev_adj: dict[str, set[str]] = defaultdict(set)
-    for src, dst in edges:
-        rev_adj[dst].add(src)
-
-    keep_nodes &= _ancestors(dag_targets, rev_adj)
+    keep_nodes &= _ancestors(dag_targets, _build_rev_adj(edges))
     edges = [(s, d) for s, d in edges if s in keep_nodes and d in keep_nodes]
 
     return keep_nodes, gb_model_nodes, all_nodes, edges
@@ -257,7 +304,7 @@ def build_file_nodes(
     edges: list[tuple[str, str]],
     targets: list[str],
     keep_wildcards: set[str],
-    rule_output_patterns: dict[str, list[str]],
+    rule_output_patterns: dict[str, list[tuple[str, str]]],
 ) -> tuple[dict[str, str], list[tuple[str, str]]]:
     """
     Build output-file nodes for gb-model rules, using specificity to disambiguate.
@@ -281,8 +328,10 @@ def build_file_nodes(
             all_labels = list(
                 dict.fromkeys(
                     lbl
-                    for p in pats
-                    for lbl in make_partial_labels(p, [], keep_wildcards)
+                    for match_pat, display_pat in pats
+                    for lbl in make_partial_labels(
+                        display_pat, match_pat, [], keep_wildcards
+                    )
                 )
             )
             if all_labels:
@@ -300,12 +349,14 @@ def build_file_nodes(
         candidates: list[tuple[str, str]] = []  # (nid, label)
 
         for nid in sorted(keep_nodes & gb_model_nodes, key=int):
-            for pat in rule_output_patterns.get(all_nodes[nid], []):
-                score = _match_score(pat, target)
+            for match_pat, display_pat in rule_output_patterns.get(all_nodes[nid], []):
+                score = _match_score(match_pat, target, display_pat)
                 if score is None:
                     continue
-                labels = make_partial_labels(pat, [target], keep_wildcards)
-                label = labels[0] if labels else pat
+                labels = make_partial_labels(
+                    display_pat, match_pat, [target], keep_wildcards
+                )
+                label = labels[0] if labels else display_pat
                 if best_score is None or score < best_score:
                     best_score = score
                     candidates = [(nid, label)]
@@ -425,6 +476,14 @@ def emit_dot(
     help="Highlight rules defined in this .smk file (repeatable).",
 )
 @click.option(
+    "-c",
+    "--cutoff-rule",
+    "cutoff_rules",
+    multiple=True,
+    metavar="RULE",
+    help="Rule name above which all ancestor rules are pruned from the graph (repeatable).",
+)
+@click.option(
     "-s",
     "--size",
     default="10,8",
@@ -436,6 +495,7 @@ def main(
     targets: tuple[str, ...],
     keep_wildcards: tuple[str, ...],
     rule_files: tuple[Path, ...],
+    cutoff_rules: tuple[str, ...],
     size: str,
 ) -> None:
     """
@@ -452,6 +512,18 @@ def main(
     keep_nodes, gb_model_nodes, all_nodes, edges = filter_graph(
         dot_input, gb_model_rules
     )
+
+    if cutoff_rules:
+        cutoff_nids = {
+            nid
+            for nid, label in all_nodes.items()
+            if label in set(cutoff_rules) and nid in keep_nodes
+        }
+        if cutoff_nids:
+            ancestors = _ancestors(cutoff_nids, _build_rev_adj(edges)) - cutoff_nids
+            keep_nodes -= ancestors
+            gb_model_nodes &= keep_nodes
+            edges = [(s, d) for s, d in edges if s in keep_nodes and d in keep_nodes]
 
     highlight_nodes = {
         nid

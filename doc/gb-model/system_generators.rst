@@ -339,7 +339,8 @@ ENTSO-E Unavailability
 Implementation Notes
 ====================
 
-**Data Processing Workflow**:
+Data Processing Workflow
+------------------------
 
 The generator system is built through a pipeline implemented in ``rules/gb-model/generators.smk``:
 
@@ -350,11 +351,11 @@ The generator system is built through a pipeline implemented in ``rules/gb-model
    The graph above was generated using::
 
       pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/fes_powerplants_inc_tech_data.csv
-      resources/GB/gb-model/GB_generator_monthly_availability_fraction.csv
-      resources/GB/gb-model/chp_p_min_pu.csv
-      -w fes_scenario -w year
-      -f rules/gb-model/generators.smk
+      "resources/GB/gb-model/HT/fes_powerplants_inc_tech_data.csv \
+      resources/GB/gb-model/GB_generator_monthly_availability_fraction.csv \
+      resources/GB/gb-model/chp_p_min_pu.csv \
+      -w fes_scenario -w year \
+      -f rules/gb-model/generators.smk \
       -s 10,8" \
       "doc/gb-model/img/generators_workflow.svg"
 
@@ -393,7 +394,10 @@ When FES supplies only TO-level (Transmission Owner region) totals rather than G
 
 This hierarchy preserves known regional concentrations (e.g., offshore wind clusters near specific GSPs) while gracefully handling carriers with no fine-grained spatial data.
 
-**Key Assumptions**:
+.. _system-generators-assumptions:
+
+Key Assumptions
+---------------
 
 - **No capacity expansion**: All generator capacities are fixed at the FES scenario projections for the modelled year; the optimiser dispatches within these limits
 - **Uniform availability**: Monthly availability fractions are applied uniformly to all generators of the same carrier across all GB regions

@@ -90,6 +90,16 @@ Running the Model
 
        pixi run -e gb-model snakemake /path/to/output.ext
 
+.. dropdown:: Q: Can I run dispatch+redispatch for only a single year and scenario?
+
+   Yes, use the standard Snakemake syntax to request the output file for the given scenario and model year.
+   The file is of the form ``results/<run-name>/networks/<scenario>/constrained_clustered/<year>.nc``
+   For example:
+
+   .. code:: bash
+
+       pixi run -e gb-model snakemake "results/GB/networks/HT/constrained_clustered/2030.nc"
+
 .. dropdown:: Q: How long does the workflow take to run?
 
    This depends on configuration and available solvers:
@@ -224,6 +234,29 @@ Data & Input Files
    - **Network topology**: OpenStreetMap (via PyPSA-Eur).
    - **Costs**: FES datasets and PyPSA-Eur defaults.
    - **GB-specific data**: various NESO and DUKES datasets and reports.
+
+.. dropdown:: Q: What assumptions have been made where data is unavailable?
+
+   Not all data required to build and run the model is available from public sources.
+   In these cases, we have made assumptions to fill gaps.
+   Where possible, we have made these assumptions configurable so that you can choose to override them with your own, if desired.
+
+   To find out more about the assumptions, check the "key assumptions" section of each system sub-page.
+   For instance, key assumptions of the hydrogen subsystem can be found :ref:`here <system-hydrogen-assumptions>`.
+
+.. dropdown:: Q: How much do you rely on the PyPSA-Eur workflow to prepare input data?
+
+   Although most of the data used in this workflow is from separate sources to the "parent" PyPSA-Eur workflow, we still use several parts of it to prepare our PyPSA network and to fill data gaps:
+
+   - **Spatial representation**: The spatial representation of GB and neighbouring countries and of the transmission network is based on PyPSA-Eur data retrieval and processing steps.
+     This includes transmission network reduction once the final model regions have been set by the GB workflow.
+   - **Timeseries data**: Hourly profiles are derived from the PyPSA-Eur workflow.
+     This includes renewable generator capacity factors, demand profiles, and heat pump COP profiles.
+   - **European data gap filling**: When mapping total annual demand to sectoral demands in European countries, we use historical sectoral demands in all countries derived from the PyPSA-Eur workflow.
+   - **Technology characteristics**: Where unavailable in the FES data (e.g., operating efficiency), technology characteristics are derived from the nearest equivalent technology type from the PyPSA-Eur workflow.
+
+   To better understand when we are relying on the PyPSA-Eur workflow, refer to the "Data Processing Workflow" section of each system component / subsystem page.
+   For instance, the data processing workflow of the hydrogen subsystem can be found :ref:`here <system-hydrogen-workflow>`.
 
 .. dropdown:: Q: How frequently is the input data updated?
 
