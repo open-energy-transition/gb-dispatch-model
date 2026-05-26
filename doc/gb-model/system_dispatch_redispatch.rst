@@ -133,9 +133,9 @@ By default, we optimise with a perfect foresight at an hourly resolution for ind
 
 1. **Fixed dispatch & redispatch generators**
 
-   The initial dispatch profiles for generators, GB->neighbour interconnectors, and storage units are all fixed to their optimal values from stage 1.
-   We also re-impose the physical intra-GB transmission line and link limits (as well as applying the boundary constraints defined below).
-   Generators, interconnectors, and storage units can deviate from their optimal dispatch via virtual ``up`` and ``down`` generators that we create for each asset.
+   The initial dispatch profiles for generators, GB → neighbour interconnectors, and storage units are all fixed to their optimal values from stage 1.
+   We also impose limits on intra-GB transmission using GB Electricity Ten-Year Statement (ETYS) boundary constraints, defined below.
+   Generators (except nuclear power), interconnectors, and storage units can deviate from their optimal dispatch via virtual ``up`` and ``down`` generators that we create for each asset.
    ``down`` generators can only remove energy from the system, ``up`` generators can only add energy to it.
    To these virtual generators we then apply redispatch (bid/offer) costs.
 
@@ -165,6 +165,11 @@ By default, we optimise with a perfect foresight at an hourly resolution for ind
 
    Several transmission lines cross each boundary.
    Some lines cross several boundaries, such as offshore HVDC lines that connect northern Scotland with central England.
+   The boundary capabilities are scaled in shoulder and summer seasons to reflect the impact of thermal limits on the lines crossing those boundaries.
+   This scaling is configurable and based initially on values defined by NESO in table 2.3 of their `network options assessment methodology <https://www.neso.energy/document/285321/download>`_.
+
+   By default, transmission lines are not otherwise constrained to their individual physical capacities.
+   This behaviour can be changed in the configuration so that individual transmission line capacities, as calculated by the PyPSA-Eur workflow, can *also* constraint intra-GB flows.
 
 4. **Rest of Europe**
 
@@ -180,7 +185,11 @@ By default, we optimise with a perfect foresight at an hourly resolution for ind
 
 .. math::
 
-    \min \sum_{t,g} MC'_g \cdot (p_{g,t} - p^{unconstrained}_{g,t})
+    \min \sum_{t,g} MC'_g \cdot (p_{g,t} - p^{unconstrained}_{g,t}) + RP \cdot |(p_{g,t} - p^{unconstrained}_{g,t})|
+
+Where:
+
+- :math:`RP` - The :ref:`redispatch penalty cost <system-redispatch-penalty>`.
 
 Bid/Offer Profile Calculation
 ------------------------------
@@ -196,19 +205,30 @@ For conventional assets (e.g., fossil-fuelled power plants), the bid cost is a p
 This premium reflects a penalty paid by the system operator in lieu of profit lost by the asset operator.
 The offer cost is the asset's short-run marginal cost plus a premium, to reflect additional profits gained in the balancing market.
 
-**Low-Carbon Generators**
+**Low-Carbon Generators with Contracts for Difference**
 
 For low-carbon generators with Contracts for Difference (CfD), the bid/offer costs are based on the strike price (the subsidy received by the operator) minus the asset short-run marginal cost.
 This value is applied as a cost to the system whether the asset operator is increasing or decreasing output in redispatch.
 It reflects a cost to the system operator to account for lost subsidy (bids) and to pay for additional generation (offers).
 
+In rare cases, the strike price we have may be lower than our modelled short-run marginal costs.
+For instance, if using wood pellet fuel prices for waste plants, their marginal costs exceed the strike price.
+This highlights the problem of matching real, historical CfD data with modelled future costs.
+In these cases, to mitigate strange model behaviour, we set the bid/offer costs to zero rather than allowing them to become negative.
+
 **Other Generators & Storage Units**
 
-Some generators have no historical bid/offer data, nor do we have subsidy information (e.g., geothermal plants).
-For these plants, we use their short run marginal costs as their bid/offer costs.
-Therefore, when bidding, the system receives a revenue equal to the cost of generating that power.
+Some system components have no historical bid/offer data, nor do we have subsidy information (e.g., geothermal plants, run-of-river hydropower).
+For these plants, we do one of two things:
 
-We similarly only apply short-run marginal costs as the bid/offer costs for storage units (pumped hydro and batteries), noting that the opportunity cost of this energy in future time periods is already accounted for in the optimisation.
+1. Directly map their short run marginal costs to their bid/offer costs.
+   Therefore, when bidding, the system receives a revenue equal to the cost of generating that power.
+2. Directly map a multiplier from another component
+
+For storage units (pumped hydro and batteries), we *could* apply a multiplier (based on historical battery bid/offer costs).
+However, storage redispatch costs are based on the opportunity cost of dispatching / storing energy in future time periods.
+This opportunity cost is already reflected in the optimisation problem since it has perfect foresight for the model year.
+Therefore, we set the storage redispatch costs to their short-run marginal costs (which are generally negligible).
 
 **Demand-side response**
 
@@ -265,6 +285,23 @@ The neighbours marginal plant is selected as the plant anywhere in Europe with m
 This is because any plant could be setting the marginal price, via intra-European interconnectors.
 The bid/offer costs of this plant are calculated as in GB, using the same multipliers.
 However, since we do not have information on renewables subsidy mechanisms in each European country, if a low-carbon plant is setting the price, we do not set bids/offers to a strike price but rather to the plant's marginal cost.
+This can mean that there are times with negligible bid/offer costs on the European side of the interconnector.
+
+.. _system-redispatch-penalty:
+
+Redispatch penalty
+------------------
+
+The redispatch costs are sometimes formed in such a way that the system benefits financially from bidding off with one generator and bidding on with another an equal amount.
+This happens in particular with interconnectors, in periods where is is cheaper to import more electricity than, say, ramp down a CCGT plant.
+This is an optimisation quirk rather than reflection of how the balancing market operates.
+In reality, overall redispatching is always kept to an absolute minimum.
+
+To ensure we do not have excess redispatching in the optimisation, both bids and offers are penalised in the objective function.
+This is a non-monetary penalisation that is added directly to the optimisation problem and is only used to mitigate this optimisation quirk;
+PyPSA network statistics (e.g., `opex`, `revenue`, `market_value`) will not include this penalty.
+
+The value of the penalty is configurable, to allow for it to be tweaked to be just large enough to mitigate excess redispatching but small enough not to cause numerical instability in the optimisation.
 
 Analysing results
 -----------------

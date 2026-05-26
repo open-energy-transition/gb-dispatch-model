@@ -1305,7 +1305,8 @@ redispatch:
       coal: coal
       CCGT: CCGT
       OCGT: OCGT
-      BATTERY: battery storage
+      # We do not collect battery data by default since we do not want to calculate a bid/offer multiplier for storage devices.
+      # BATTERY: battery
       BIOMASS: biomass
       DIESEL: oil
       GAS: engine
