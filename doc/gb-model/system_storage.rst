@@ -69,7 +69,7 @@ The max hours of a storage technology is assumed to be the same in all model reg
 FES BB1 — Regional Discharge Capacity
 -------------------------------------
 
-Regional *(dis)charge* capacity (in GW) for Great Britain comes from the **FES BB1 (Building Blocks)** sheet and the powerplants pipeline (see :doc:`generators`).
+Regional *(dis)charge* capacity (in GW) for Great Britain comes from the **FES BB1 (Building Blocks)** sheet and the powerplants pipeline (see :doc:`system_generators`).
 
 Battery and PHS capacity are both defined as their own building blocks.
 Compressed/liquid air storage is defined as an "other" building block and is distributed between the two technologies using GB capacities defined in the **FES ES1** sheet.

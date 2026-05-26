@@ -44,8 +44,8 @@ We represent the GB model in PyPSA as follows:
 
         // Storage components (bottom middle)
         battery [label="Battery Storage", fillcolor="#FFFFCC"];
-        liquid-air [label="Liquid Air Storage", fillcolor="#FFFFCC"];
-        compressed-air [label="Compressed Air Storage", fillcolor="#FFFFCC"];
+        liquid_air [label="Liquid Air Storage", fillcolor="#FFFFCC"];
+        compressed_air [label="Compressed Air Storage", fillcolor="#FFFFCC"];
         PHS [label="Pumped Hydro Storage", fillcolor="#FFFFCC"];
       }
       subgraph hydrogen {
@@ -105,8 +105,8 @@ We represent the GB model in PyPSA as follows:
       // Storage connections
       battery -> AC_bus [dir=both, label="charge/discharge"];
       PHS -> AC_bus [dir=both, label="charge/discharge"];
-      liquid-air -> AC_bus [dir=both, label="charge/discharge"];
-      compressed-air -> AC_bus [dir=both, label="charge/discharge"];
+      liquid_air -> AC_bus [dir=both, label="charge/discharge"];
+      compressed_air -> AC_bus [dir=both, label="charge/discharge"];
 
       // Hydrogen connections
       AC_bus -> h2_bus [label="Electrolysis"];

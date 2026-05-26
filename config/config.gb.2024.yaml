@@ -751,12 +751,14 @@ fes:
           Solar PV: solar
           Waste CHP: waste
           Waste: waste
+      # [doc:fes-gb-set-mapping-start]
       set_mapping:
         SubType:
           "^CCS .+": CCS
           ".+ CHP$": CHP
         Technology:
           Storage: Store
+      # [doc:fes-gb-set-mapping-end]
       building_block_mapping:
         Gen_BB001: [Gas CHP, CCGT, CCS Gas]
         Gen_BB002: [Gas CHP]
