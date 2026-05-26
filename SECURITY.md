@@ -19,8 +19,8 @@ This will create a private communication channel between the reporter and the re
 
 If you are absolutely unable to or have strong reasons not to use GitHub's vulnerability reporting workflow, please reach out to the OET security team: security@openenergytransition<!--.example-->.org.
 
-A lead maintainer or security team member will acknowledge your email within 72 hours, and will send a more detailed response within 48 hours indicating the next steps in handling your report.
-After the initial reply to your report, the security team will endeavor to keep you informed of the progress towards a fix and full announcement, and may ask for additional information or guidance.
+A lead maintainer or security team member will acknowledge your report within 2 business days, and will follow up with next steps shortly after.
+The security team will endeavor to keep you informed of the progress towards a fix and full announcement, and may ask for additional information or guidance.
 
 Please report security bugs in third-party modules to the person or team maintaining that module.
 
@@ -31,6 +31,21 @@ This person will coordinate the fix and release process, involving the following
 
 - Confirm the problem and determine the affected versions.
 - Audit code to find any potential similar problems.
-- Prepare fixes for the next patch or minor release.
+- Prepare fixes according to the patching targets below.
 
 Security fixes are given priority and might be enough to cause a new version to be released.
+
+## Patching Targets
+
+Time-to-patch targets from verification of the report:
+
+| Severity | Target |
+| -------- | ------ |
+| Critical | 48 hours |
+| High | 14 days |
+| Medium | 60 days |
+| Low | Best effort / next scheduled release |
+
+## End of Life
+
+When this project is no longer maintained, the repository will be archived on GitHub and a notice added stating that security updates have ceased.
