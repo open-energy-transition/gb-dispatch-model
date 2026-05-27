@@ -9,34 +9,40 @@
 Release Notes
 ##########################################
 
-Unreleased
-==========
+v0.3.0 (2026-05-27)
+===================
+
+This includes several additions to the documentation, fixes to energy demand in the workflow, new naming convention for PyPSA network generator and storage components, and updated dependencies to mitigate security vulnerabilities.
+
+This version was synchronised with the upstream PyPSA-Eur repository on 2026-03-19.
+
+Documentation
+-------------
 
 * Update FAQs (#285, #289).
-* Python package updates to address security vulnerabilities (#322).
-  - Removed `jupyter` package, updated `urllib3` to 2.7.0 and diskcache to `5.6.3`
-  - The list of fixed vulnerabilities can be found in the PR linked above.
-* Remove unused environment set-up files inherited from upstream (`dockerfile`, `envs/`) (#318).
+* Add documentation for Demand and DSR implementation in the GB dispatch model (#295)
+* Add line/link components documentation (#316).
+* Add storage components documentation (#315).
+* Add generation components documentation (#308).
+* Add heat subsystem documentation (#293)
+* Add ``pixi`` task to generate filtered snakemake DAGs for use in documenting gb-dispatch-model subsystems.
+* Add EV subsystem documentation (#279).
+* Add hydrogen subsystem documentation (#280).
+
+Workflow
+--------
+
 * Calculate all storage unit max hours from FES workbook (#299)
 * Add `CCS` carrier "set" to differentiate technologies with/without carbon capture and storage.
 * Use `ror` carrier instead of `hydro` for "Hydro" FES technology (#314)
 * Refactor configuration for mapping of FES technologies to PyPSA network carriers.
 * Add 'extra' technologies represented in ES1 sheet of the FES workbook to the model (#310)
-* Add documentation for Demand and DSR implementation in the GB dispatch model (#295)
 * Share bid/offer multipliers between like carriers (e.g. fuel cost of future hydrogen turbines will use the current CCGT multiplier).
 * Update European future electrolysis-derived hydrogen demand to be based on the TYNDP model outputs.
   This decreases overall electrolysis electricity demand in Europe but also redistributes the demand between countries, with some increasing compared to previously.
 * Add blue hydrogen as a costed source of supply for hydrogen turbines/fuel cells (#301).
 * Make hydrogen subsystem & generator unavailability profiles optional for non-GB regions (#306).
 * Add redispatch objective function penalty to mitigate unrealistic system revenue within redispatch, in which components with a favourable bid/offer spread can be offset against each other (#304).
-* Add line/link components documentation (#316).
-* Add storage components documentation (#315).
-* Add generation components documentation (#308).
-* Documentation related to the heat system (#293)
-* Add ``pixi`` task to generate filtered snakemake DAGs for use in documenting gb-dispatch-model subsystems.
-* Add EV subsystem documentation (#279).
-* Add hydrogen subsystem documentation (#280).
-* Add HiGHS HiPO solver to `pixi` dependencies and to the solver config options.
 * Fix demand profile scaling to correctly match annual FES demands.
   This increases heat, EV, and baseline electricity demand in all model regions (GB & EUR) compared to the previous version.
 * Move resistive heating demand to the heat demand bus, rather than having it rolled in with baseline electricity demand.
@@ -47,6 +53,15 @@ Unreleased
 * Update source of hydrogen demand to use networked electrolysis hydrogen demand directly, rather than the leftover hydrogen demand after considering all other sources of hydrogen supply (e.g. blue H2).
   This increases GB hydrogen demand compared to the previous version.
 * Fix technology efficiencies being erroneously set to 100% in network composition.
+
+Dependencies
+------------
+
+* Python package updates to address security vulnerabilities (#322).
+  - Removed `jupyter` package, updated `urllib3` to 2.7.0 and diskcache to `5.6.3`
+  - The list of fixed vulnerabilities can be found in the PR linked above.
+* Remove unused environment set-up files inherited from upstream (`dockerfile`, `envs/`) (#318).
+* Add HiGHS HiPO solver to `pixi` dependencies and to the solver config options.
 
 v0.2.2 (2026-03-24)
 ===================
