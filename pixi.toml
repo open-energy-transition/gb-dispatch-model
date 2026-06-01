@@ -206,6 +206,7 @@ pandas = "<3"
 python = ">=3.13"
 cpython = ">=3.13"
 setuptools = "<81"
+aiohttp = ">=3.13.5"
 
 [environments]
 doc = { features = ["doc"], no-default-feature = true }

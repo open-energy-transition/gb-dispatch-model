@@ -63,6 +63,6 @@ System Requirements
 ===================
 
 Building the model with the scripts in this repository runs on a regular computer.
-You will need around 70GB of disk space to store input, intermediate, and result data, and at least 8GB of RAM to run the pre-processing steps (16-32 GB if running several workflow jobs in parallel).
+You will need around 40-50GB of disk space to store input, intermediate, and result data, and at least 8GB of RAM to run the pre-processing steps (16-32GB if running several workflow jobs in parallel).
 Optimising for dispatch and redispatch decisions at an hourly resolution requires a strong interior-point solver like `Gurobi <http://www.gurobi.com/>`__ or `CPLEX <https://www.ibm.com/analytics/cplex-optimizer>`__ with at least 16 GB of RAM per parallel job.
 Open-source solvers like `HiGHS <https://highs.dev>`__ can also be used for smaller problems, particularly if using the `HiPO` solver option.

@@ -44,7 +44,9 @@ Access API keys
 ===============
 
 For successful execution, you will need the ENTSO-E Transparency platform API key, stored in a `.env` file in your working directory.
-To get this key, first create an `ENTSO-E transparency platform <https://transparency.entsoe.eu/>`_ account.
+To get this key, you will need to follow the `instructions provided by the transparency platform helpdesk <https://transparencyplatform.zendesk.com/hc/en-us/articles/12845911031188-How-to-get-security-token>`_:
+
+First create an `ENTSO-E transparency platform <https://transparency.entsoe.eu/>`_ account.
 Then, contact the ENTSO-E helpdesk by emailing ``transparency@entsoe.eu`` with the email subject ``Restful API access`` and email body being just the email address associated with your account.
 
 Your `.env` file should then look like:
