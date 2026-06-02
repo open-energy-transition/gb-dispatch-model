@@ -9,6 +9,17 @@
 Release Notes
 ##########################################
 
+v0.3.1 (2026-06-02)
+===================
+
+This is a patch release with minor dependency and documentation updates.
+
+This version was synchronised with the upstream PyPSA-Eur repository on 2026-03-19.
+
+* Add `aiohttp` as explicit dependency.
+* Update lockfile to ensure latest `pdfminer-six` version is installed.
+* Update docs to better reflect disk space requirements.
+
 v0.3.0 (2026-05-27)
 ===================
 
