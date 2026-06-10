@@ -169,7 +169,7 @@ By default, we optimise with a perfect foresight at an hourly resolution for ind
    This scaling is configurable and based initially on values defined by NESO in table 2.3 of their `network options assessment methodology <https://www.neso.energy/document/285321/download>`_.
 
    By default, transmission lines are not otherwise constrained to their individual physical capacities.
-   This behaviour can be changed in the configuration so that individual transmission line capacities, as calculated by the PyPSA-Eur workflow, can *also* constraint intra-GB flows.
+   This behaviour can be changed in the configuration so that individual transmission line capacities, as calculated by the PyPSA-Eur workflow, can *also* constrain intra-GB flows.
 
 4. **Rest of Europe**
 
@@ -293,7 +293,7 @@ Redispatch penalty
 ------------------
 
 The redispatch costs are sometimes formed in such a way that the system benefits financially from bidding off with one generator and bidding on with another an equal amount.
-This happens in particular with interconnectors, in periods where is is cheaper to import more electricity than, say, ramp down a CCGT plant.
+This happens in particular with interconnectors, in periods where it is cheaper to import more electricity than, say, ramp down a CCGT plant.
 This is an optimisation quirk rather than reflection of how the balancing market operates.
 In reality, overall redispatching is always kept to an absolute minimum.
 

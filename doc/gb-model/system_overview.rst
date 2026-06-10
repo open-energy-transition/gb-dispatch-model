@@ -142,7 +142,7 @@ We represent the GB model in PyPSA as follows:
    }
 
 .. note::
-   The extent of the system and the components defined within it represent the system as defined by the NESO FES amd are subsets of what is available in PyPSA-Eur.
+   The extent of the system and the components defined within it represent the system as defined by the NESO FES and are subsets of what is available in PyPSA-Eur.
    It is unlikely that our representation is a direct match for the FES model and we have not attempted to create a mirror copy (a feat that would be infeasible with the limited data available).
    Instead, we aim to see similar system dynamics when answering questions with the model.
 
@@ -182,7 +182,7 @@ Our system contains variable renewable, conventional dispatchable, and combined 
 Variable renewables
 ^^^^^^^^^^^^^^^^^^^
 
-We represent four types of variable renewable generator: onshore wind (``onwind``), offshore wind (``offwind``), solar photovoltaic (PV) panels (``solar``), and reservoir / run-of-river hydropower (``hydro`` / ``ror``).
+We represent four types of variable renewable generators: onshore wind (``onwind``), offshore wind (``offwind``), solar photovoltaic (PV) panels (``solar``), and reservoir / run-of-river hydropower (``hydro`` / ``ror``).
 For each, we simulate a time-varying capacity factor curve which represents the availability of the natural resource with which they are powered (wind, sun, water flow).
 These curves are based on historical, global or European weather reanalyses (ERA5 / SARAH) and exogenous generator parameterisation (e.g. defining the wind turbine height).
 
@@ -262,10 +262,10 @@ Building heat
 ^^^^^^^^^^^^^
 
 Residential and Industry & Commercial (I&C) building heat demand is considered separately.
-Since we are only concerned with the electricity system, this load the electricity demand to operate technologies that generate heat.
+Since we are only concerned with the electricity system, this load represents the electricity demand to operate technologies that generate heat.
 Importantly, this is building heat load met by heat pumps **and** direct (resistive) heaters.
 
-For countries which have been reliant on electrical for many years already (e.g. France, Norway and Sweden), the reference weather year :ref:`system-load-baseline-summary` profile would include the seasonal effect of heat pumps already.
+For countries which have been reliant on electricity for many years already (e.g. France, Norway and Sweden), the reference weather year :ref:`system-load-baseline-summary` profile would include the seasonal effect of heat pumps already.
 To ensure we do not double-count this seasonal effect in both load profiles, we remove a simulated historical heat pump load from the historical baseline electricity load profile.
 This means that only this "building heat" load has that profile shape, whereas the baseline electricity profile should not reflect building heat seasonality at all.
 
@@ -276,7 +276,7 @@ Additional demand
 
 Our GB demands are based on those defined at each grid supply point (GSP).
 There are several other demands that are not geographically distributed in the published FES workbook but that need to be accounted for in the model.
-We capture these as the additional demand above that which is defined at the GSPs and apply it as a static, baseload demand.
+We capture these as the additional demand above that which is defined at the GSPs and apply it as a static, base load demand.
 We distribute it according to the relative magnitude of GSP-based demand in each model region.
 
 Furthermore, there are transmission and distribution (T&D) losses in the FES  workbook that add to the effective system electricity demand.
