@@ -20,7 +20,7 @@ To trigger the full workflow and generate redispatch results for all configured 
 
 .. code:: console
 
-    pixi run model
+    $ pixi run model
 
 To trigger the workflow up to, but not including, the solve steps (usually the most computationally burdensome stage), use the following command in your terminal:
 
@@ -33,13 +33,13 @@ For instance, to run using multiple simultaneous threads, you can add the ``snak
 
 .. code:: console
 
-    pixi run model --cores 4
+    $ pixi run model --cores 4
 
 Or, to "dry" run the workflow, to see a list of all jobs that will be executed without actually running anything, you can add the ``snakemake`` ``dry-run`` option:
 
 .. code:: console
 
-    pixi run model --dry-run
+    $ pixi run model --dry-run
 
 For more details on the snakemake options available, refer to the `snakemake CLI documentation <https://snakemake.readthedocs.io/en/stable/executing/cli.html>`__.
 

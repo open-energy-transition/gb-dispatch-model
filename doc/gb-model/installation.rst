@@ -32,7 +32,7 @@ You can also install ``pixi`` into a ``conda`` environment using the command lin
 
 .. code:: console
 
-    conda install pixi
+    $ conda install pixi
 
 Once pixi is installed, you can run various tasks in the command line.
 See our ``Running`` page for more information.
