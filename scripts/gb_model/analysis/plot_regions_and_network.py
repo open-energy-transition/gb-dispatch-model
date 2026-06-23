@@ -552,6 +552,7 @@ if __name__ == "__main__":
         + len(network_data["buses"]["v_nom"].dropna().unique())
         + (1 if not network_data["links"].empty else 0)
         + len(interconnector_data)
+        + 1  # choropleth trace for regions
     )
 
     # Create figure and add traces
