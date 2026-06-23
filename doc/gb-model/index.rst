@@ -58,7 +58,7 @@ Open the image in a new tab/window to view it in more detail.
 Operating Systems
 =================
 
-The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windows Subsystem for Linux (WSL).
+The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windows.
 
 
 .. toctree::
