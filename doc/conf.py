@@ -65,9 +65,12 @@ extensions = [
     #'sphinxcontrib.tikz',
     #'rinoh.frontend.sphinx',
     "sphinx.ext.imgconverter",  # for SVG conversion
+    "sphinx-jsonschema",
+    "sphinx_design",
 ]
 
 autodoc_mock_imports = [
+    "annotated_types",
     "atlite",
     "snakemake",
     "rioxarray",
@@ -77,6 +80,8 @@ autodoc_mock_imports = [
     "powerplantmatching",
     "rasterio",
     "dask.distributed",
+    "pydantic",
+    "ruamel",
 ]
 
 autodoc_default_flags = ["members"]
@@ -109,7 +114,7 @@ author = "gb-dispatch-model contributors"
 # built documents.
 #
 # The short X.Y version.
-version = "v2025.07.0"
+version = "v2026.02.0"
 # The full version, including alpha/beta/rc tags.
 release = version + ""
 
@@ -186,7 +191,7 @@ html_short_title = "gb-dispatch-model"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "img/pypsa-logo.png"
+html_logo = "img/logo.svg"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -194,7 +199,7 @@ html_logo = "img/pypsa-logo.png"
 # html_favicon = None
 
 # These folders are copied to the documentation's HTML output
-html_static_path = ["gb-model/_static"]
+html_static_path: list[str] = []
 
 # These paths are either relative to html_static_path
 # or fully qualified paths (eg. https://...)

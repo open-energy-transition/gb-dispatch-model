@@ -409,9 +409,9 @@ def clustering_for_n_clusters(
     if aggregation_strategies is None:
         aggregation_strategies = dict()
 
-    line_strategies = aggregation_strategies.get("lines", dict())
+    line_strategies = dict(aggregation_strategies.get("lines", {}))
 
-    bus_strategies = aggregation_strategies.get("buses", dict())
+    bus_strategies = dict(aggregation_strategies.get("buses", {}))
     bus_strategies.setdefault("substation_lv", lambda x: bool(x.sum()))
     bus_strategies.setdefault("substation_off", lambda x: bool(x.sum()))
 
@@ -599,6 +599,29 @@ def update_bus_coordinates(
     n.buses["y"] = busmap_df["y"]
 
 
+def _update_bus_country(
+    n: pypsa.Network, custom_busmap: pd.Series, bus_to_country: dict
+) -> pypsa.Network:
+    """
+    Updates the country of the buses in the original network based on the custom busmap
+    to avoid inconsistencies.
+
+    Parameters
+    ----------
+        - n (pypsa.Network) : The original network.
+        - custom_busmap (pd.Series) : The custom busmap with country information.
+        - bus_to_country (dict): mapping of busname to country.
+
+
+    Returns
+    -------
+        n (pypsa.Network) : The network with updated country information.
+    """
+    logger.info("Updating country of buses based on custom busmap.")
+    country = custom_busmap.replace(bus_to_country)
+    n.buses["country"] = country
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         from scripts._helpers import mock_snakemake
@@ -651,6 +674,24 @@ if __name__ == "__main__":
             logger.info(
                 f"Imported custom shapes from {snakemake.input.custom_busshapes}"
             )
+            if mode == "gb_shapes":
+                custom_gb_busmap = pd.read_csv(
+                    snakemake.input.custom_busmap,
+                    index_col="Index",
+                    dtype={"Index": "str"},
+                ).squeeze()
+
+                # Replace bus assignments based on gb custom busmap
+                overlapping_indices = custom_busmap.index.intersection(
+                    custom_gb_busmap.index
+                )
+                custom_busmap.update(custom_gb_busmap)
+                logger.info(
+                    f"Replaced {len(overlapping_indices)} entries in custom busmap from {snakemake.input.custom_busmap}"
+                )
+
+                bus_to_country = custom_shapes.set_index("name").country.to_dict()
+                _update_bus_country(n, custom_busmap, bus_to_country)
 
             busmap = custom_busmap
         elif mode == "custom_busmap":

@@ -4,9 +4,9 @@ SPDX-FileCopyrightText: Open Energy Transition gGmbH
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
-![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/pypsa/pypsa-eur?include_prereleases)
-[![Test workflows](https://github.com/pypsa/pypsa-eur/actions/workflows/test.yaml/badge.svg)](https://github.com/pypsa/pypsa-eur/actions/workflows/test.yaml)
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/pypsa/pypsa-eur?include_prereleases)](https://github.com/PyPSA/pypsa-eur/releases)
 [![Documentation](https://readthedocs.org/projects/pypsa-eur/badge/?version=latest)](https://pypsa-eur.readthedocs.io/en/latest/?badge=latest)
+[![Test workflows](https://github.com/pypsa/pypsa-eur/actions/workflows/test.yaml/badge.svg)](https://github.com/pypsa/pypsa-eur/actions/workflows/test.yaml)
 ![Size](https://img.shields.io/github/repo-size/pypsa/pypsa-eur)
 [![Zenodo PyPSA-Eur](https://zenodo.org/badge/DOI/10.5281/zenodo.3520874.svg)](https://doi.org/10.5281/zenodo.3520874)
 [![Zenodo PyPSA-Eur-Sec](https://zenodo.org/badge/DOI/10.5281/zenodo.3938042.svg)](https://doi.org/10.5281/zenodo.3938042)
@@ -29,7 +29,7 @@ This repository is maintained using [OET's soft-fork strategy](https://open-ener
 * `cutouts`: will store raw weather data cutouts from `atlite` (does not exist initially)
 * `data`: includes input data that is not produced by any `snakemake` rule
 * `doc`: includes all files necessary to build the `readthedocs` documentation of PyPSA-Eur
-* `envs`: includes all the `mamba` environment specifications to run the workflow
+* `envs`: includes backup `conda` environments if `pixi` installation does not work.
 * `logs`: will store log files (does not exist initially)
 * `notebooks`: includes all the `notebooks` used for ad-hoc analysis
 * `report`: contains all files necessary to build the report; plots and result files are generated automatically
@@ -44,25 +44,104 @@ This repository is maintained using [OET's soft-fork strategy](https://open-ener
 
 Clone the repository:
 
-    git clone https://github.com/open-energy-transition/{{repository}}
+```sh
+git clone https://github.com/open-energy-transition/{{repository}}
+```
 
-You need [mamba](https://mamba.readthedocs.io/en/latest/) to run the analysis. Users may also prefer to use [micromamba](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html) or [conda](https://docs.conda.io/projects/conda/en/latest/index.html). Using `mamba`, you can create an environment from within you can run it:
+You need [pixi](https://pixi.sh/latest/) to run the analysis.
+Once installed, activate your pixi environment in a terminal session:
 
-    mamba env create -f environment.yaml
+```sh
+pixi shell
+```
 
-Activate the newly created `{{project_short_name}}` environment:
+>[!NOTE]
+>`pixi` will create a distinct environment in every project directory, even if you have identical copies of a project cloned locally.
+>As there is a common system-level package cache, `pixi` efficiently conserves disk space in such cases.
 
-    mamba activate {{project_short_name}}
+>[!TIP]
+>If `pixi` isn't working, you can install from one of the fallback `conda` environment files found in `envs`.
+>For more details see [the PyPSA-Eur installation guide](https://pypsa-eur.readthedocs.io/en/latest/installation.html).
+
+### Extra soft-fork dependencies
+
+If you add dependencies to your project, we recommend you add them to a [new `pixi` environment](https://pixi.sh/v0.21.1/features/multi_environment/#feature-environment-set-definitions).
+For instance, if you need access to `plotly`, want to pin the version of gurobi you are using, and want to add a PyPI dependency:
+
+```sh
+pixi add -f {{ project_short_name }} "gurobi<13" "plotly"
+pixi add -f {{ project_short_name }} --pypi pypsa-explorer
+```
+
+This will create these entries in your `pixi.toml`
+
+```toml
+[feature.{{ project_short_name }}.pypi-dependencies]
+pypsa-explorer = "*"
+
+[feature.{{ project_short_name }}.dependencies]
+gurobi = "<13"
+plotly = "*"
+```
+
+Then, you can create an environment from this feature in `pixi.toml`:
+
+```toml
+[environments]
+...
+{{ project_short_name }} = [{{ project_short_name }}]
+```
+
+These dependencies will be combined with the core PyPSA-Eur dependencies and can be accessed by calling:
+
+```sh
+pixi shell -e {{ project_short_name }}
+```
+
+#### Updating CI tests
+
+To run CI tests using your environment you should add the `test` feature to it and create test tasks for your environment, e.g.:
+
+```toml
+[feature.{{ project_short_name }}.tasks]
+{{ project_short_name }}-test = """
+	snakemake --configfile config/config.{{ project_short_name }}.default.yaml -n &&
+    """
+[environments]
+...
+{{ project_short_name }} = ["test", {{ project_short_name }}]
+```
+
+And then update `.github/workflows/test.yaml` to run that test:
+
+```yaml
+- name: Run project-specific snakemake test workflows
+  run: |
+    pixi run {{ project_short_name }}-test
+```
+
+If you also add your own unit tests, update the unit test runner to use your environment as well:
+
+```yaml
+- name: Run unit tests
+  run: |
+    pixi run -e {{ project_short_name }} unit-tests
+```
+
 
 ## 2. Run the analysis
 
-    snakemake -call
+```sh
+pixi run model
+```
 
 This will run all analysis steps to reproduce results and build the report.
 
 To generate a PDF of the dependency graph of all steps `resources/dag.pdf` run:
 
-    snakemake -c1 dag
+```sh
+pixi run snakemake -c1 dag
+```
 
 <sup>*</sup> Open Energy Transition (g)GmbH, Königsallee 52, 95448 Bayreuth, Germany
 
@@ -73,25 +152,51 @@ To generate a PDF of the dependency graph of all steps `resources/dag.pdf` run:
 # PyPSA-Eur: A Sector-Coupled Open Optimisation Model of the European Energy System
 
 PyPSA-Eur is an open model dataset of the European energy system at the
-transmission network level that covers the full ENTSO-E area. The model is suitable both for operational studies and generation and transmission expansion planning studies.
-The continental scope and highly resolved spatial scale enables a proper description of the long-range
-smoothing effects for renewable power generation and their varying resource availability.
+transmission network level that covers the full ENTSO-E area and all energy sectors, including transport, heating, biomass, industry, and agriculture.
+Besides the power grid, pipeline networks for gas, hydrogen, carbon dioxide, and liquid fuels are included.
+The model is suitable both for planning studies and operational studies.
+The model is built from open data using a Snakemake workflow and fully open source.
+It is designed to be imported into the open-source energy system modelling framework [PyPSA](www.pypsa.org).
+
+> [!NOTE]
+> PyPSA-Eur has many contributors, with the maintenance currently led by the [Department of Digital Transformation in
+> Energy Systems](https://tu.berlin/en/ensys) at the [Technical University of
+> Berlin](https://www.tu.berlin).
+> Previous versions were developed at the [Karlsruhe
+> Institute of Technology](http://www.kit.edu/english/index.php) funded by the
+> [Helmholtz Association](https://www.helmholtz.de/en/).
+
+
+Among many other things, the dataset consists of:
+
+- A power grid model based on [OpenStreetMap](https://zenodo.org/records/18619025) for voltage levels above 220kV (optional above 60kV).
+- The open power plant database
+  [powerplantmatching](https://github.com/PyPSA/powerplantmatching).
+- Electrical demand time series from the [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/).
+- Renewable time series based on ERA5 and SARAH-3, assembled using [atlite](https://github.com/PyPSA/atlite).
+- Geographical potentials for wind and solar generators based land eligibility analysis in [atlite](https://github.com/PyPSA/atlite).
+- Energy balances compiled from Eurostat and JRC-IDEES datasets.
+
+The high-voltage grid and the power plant fleet are shown in this map of the unclustered model (as of 1 January 2026):
+
+![PyPSA-Eur Unclustered](doc/img/base.png)
+
+
+For computational reasons the model is usually clustered down
+to 50-250 nodes. The image below shows the electricity network and power plants clustered to NUTS2 regions:
+
+![network diagram](doc/img/elec.png)
+
+This diagram gives an overview of the sectors and the links between
+them within each model region:
+
+![sector diagram](doc/img/multisector_figure.png)
 
 
 
+# Warnings
 
-The model is described in the [documentation](https://pypsa-eur.readthedocs.io)
-and in the paper
-[PyPSA-Eur: An Open Optimisation Model of the European Transmission
-System](https://arxiv.org/abs/1806.01613), 2018,
-[arXiv:1806.01613](https://arxiv.org/abs/1806.01613).
-The model building routines are defined through a snakemake workflow.
-Please see the [documentation](https://pypsa-eur.readthedocs.io/)
-for installation instructions and other useful information about the snakemake workflow.
-The model is designed to be imported into the open toolbox
-[PyPSA](https://github.com/PyPSA/PyPSA).
-
-**WARNING**: PyPSA-Eur is under active development and has several
+PyPSA-Eur is under active development and has several
 [limitations](https://pypsa-eur.readthedocs.io/en/latest/limitations.html) which
 you should understand before using the model. The github repository
 [issues](https://github.com/PyPSA/pypsa-eur/issues) collect known topics we are
@@ -110,45 +215,6 @@ grid, and local grid bottlenecks may cause unrealistic load-shedding or
 generator curtailment. We recommend to cluster the network to a couple of
 hundred nodes to remove these local inconsistencies. See the discussion in
 Section 3.4 "Model validation" of the paper.
-
-
-![PyPSA-Eur Grid Model](doc/img/elec.png)
-
-The dataset consists of:
-
-- A grid model based on a modified [GridKit](https://github.com/bdw/GridKit)
-  extraction of the [ENTSO-E Transmission System
-  Map](https://www.entsoe.eu/data/map/). The grid model contains 7072 lines
-  (alternating current lines at and above 220kV voltage level and all high
-  voltage direct current lines) and 3803 substations.
-- The open power plant database
-  [powerplantmatching](https://github.com/PyPSA/powerplantmatching).
-- Electrical demand time series from the
-  [OPSD project](https://open-power-system-data.org/).
-- Renewable time series based on ERA5 and SARAH, assembled using the [atlite tool](https://github.com/PyPSA/atlite).
-- Geographical potentials for wind and solar generators based on land use (CORINE) and excluding nature reserves (Natura2000) are computed with the [atlite library](https://github.com/PyPSA/atlite).
-
-A sector-coupled extension adds demand
-and supply for the following sectors: transport, space and water
-heating, biomass, industry and industrial feedstocks, agriculture,
-forestry and fishing. This completes the energy system and includes
-all greenhouse gas emitters except waste management and land use.
-
-This diagram gives an overview of the sectors and the links between
-them:
-
-![sector diagram](doc/img/multisector_figure.png)
-
-Each of these sectors is built up on the transmission network nodes
-from [PyPSA-Eur](https://github.com/PyPSA/pypsa-eur):
-
-![network diagram](https://github.com/PyPSA/pypsa-eur/blob/master/doc/img/base.png?raw=true)
-
-For computational reasons the model is usually clustered down
-to 50-200 nodes.
-
-Already-built versions of the model can be found in the accompanying [Zenodo
-repository](https://doi.org/10.5281/zenodo.3601881).
 
 # Contributing and Support
 We strongly welcome anyone interested in contributing to this project. If you have any ideas, suggestions or encounter problems, feel invited to file issues or make pull requests on GitHub.

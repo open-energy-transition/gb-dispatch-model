@@ -5,8 +5,6 @@ Closes # (if applicable).
 
 ## Checklist
 
-<!-- Remove what doesn't apply. -->
-
 - [ ] I tested my contribution locally and it works as intended.
 - [ ] Code and workflow changes are sufficiently documented.
 - [ ] Changed dependencies are added to `pixi.toml` (using `pixi add -f gb-model <dependency-name>`).

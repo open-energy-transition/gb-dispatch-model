@@ -4,6 +4,8 @@
 
   SPDX-License-Identifier: CC-BY-4.0
 
+.. _data_sources_gb:
+
 #############
 Data Sources
 #############
@@ -18,26 +20,19 @@ The Future Energy Scenarios (FES)
 ---------------------------------
 
 `The FES <https://www.neso.energy/publications/future-energy-scenarios-fes>`_ is the primary data source for defining the model, both for GB and other European countries.
-Here, we use the 2021 FES data workbook.
+By default, we use the 2024 FES data workbook.
 Tables from the workbook we use are:
 
 - BB1: Building Block Data
 - BB2: Building Block Metadata
-- SV.34: Installed BECCS generation capacity (GW)
-- CV.10: Annual hydrogen demand for home heating
-- CV.33: Annual energy demand for Road Transport Leading the Way
-- CV.53: Annual hydrogen demand for the industrial sector
-- CV.54: Annual hydrogen demand for the commercial sector
-- SV.20: Leading the Way Hydrogen supply (TWh)
-- ED1: Electricity demand summary
-- FL.6: Hydrogen Storage Capacity Requirements
+- FLX1: Flexibility data table
+- ES2: European electricity supply data table
+- ED3: Gas and heat demand summary
+- ED5: Road transport summary
+- WS1: Whole system & gas supply
 
-In addition, we use FES 2023 to detailed annual hydrogen demand for other sectors.
-Tables from the workbook we use are:
-
-- WS1: Whole System & Gas Supply
-
-We also use the same cost assumptions as given by the FES, available in a separate dataset linked to `a 2023 report <https://assets.publishing.service.gov.uk/media/6556027d046ed400148b99fe/electricity-generation-costs-2023.pdf>`_.
+We also use the same cost assumptions given by an earlier FES report, available in a separate dataset linked to `a 2023 report <https://assets.publishing.service.gov.uk/media/6556027d046ed400148b99fe/electricity-generation-costs-2023.pdf>`_.
+No cost assumption dataset exists specifically for FES2024.
 
 ------------------------------------------
 The Digest of UK Energy Statistics (DUKES)
@@ -60,12 +55,19 @@ We use the report to:
 GSP coordinates
 -----------------
 GB `grid-supply point (GSP) coordinates <https://api.neso.energy/dataset/963525d6-5d83-4448-a99c-663f1c76330a/resource/41fb4ca1-7b59-4fce-b480-b46682f346c9/download/fes2021_regional_breakdown_gsp_info.csv>`_ are obtained from the NESO website.
-This is used to assign lat, lon to powerplants extracted from the FES workbook
+This is used to assign geographic coordinates to powerplants extracted from the FES workbook and to connect geographically varying data from PyPSA-Eur (heat pump COPs, heat demand profiles) to GSP-level supply/demand data.
+
+Several GSPs referenced in the FES workbook cannot be matched to the coordinate dataset.
+Where this is the case, a manual match / coordinate assignment has been configured.
+
 
 -----------------------
-FES EU Supply data
+FES European data
 -----------------------
-The `FES EU supply data <https://api.neso.energy/dataset/bd83ce0b-7b1e-4ff2-89e8-12d524c34d99/resource/6563801b-6da4-46e7-b147-3d81c0237779/download/fes2023_es2_v001.csv>`_ is used to retrieve powerplant data of neighbouring countries to GB.
+The FES workbook ES2 sheet (see above) provides us with powerplant and demand data of other countries in Europe.
+
+Note that the split of demand data into types and all other FES datasets (e.g., load flexibility potential) are not available for these countries.
+Accordingly, we create synthetic European datasets using the relative magnitude of total annual demand in a European country compared to GB annual demand.
 
 ---------------
 Interconnectors
@@ -96,35 +98,73 @@ Transmission availability profile
 Transmission unavailability, as a percentage of hours in a month, is taken from the NESO `System Performance Reports <https://www.neso.energy/industry-information/industry-data-and-reports/system-performance-reports>`.
 This covers unavailability for both internal GB transmission (split by transmission operator) and interconnectors (per interconnector).
 
--------------
-Hydrogen data
--------------
-All hydrogen related data such as demand, supply, storage, and generation capacities are sourced from the FES workbooks as detailed above.
+----------------
+GB Hydrogen data
+----------------
+All hydrogen subsystem data such as demand, supply, storage, and generation capacities are sourced from the FES workbook (see above).
 
---------------
-EV demand data
---------------
-Electric vehicle (EV) demand data is extracted from the FES-2021 workbook table BB1.
-EV demand profile shape is prepared based on transport demand profile shape of PyPSA-Eur.
-EV charging demand shape is computed by shifting traffic rate data of PyPSA-Eur with plug-in offset and applying charging duration.
-Unmanaged EV charging demand is extracted from FES-2021 workbook table FL.11.
+----------------------
+European Hydrogen data
+----------------------
+No hydrogen subsystem data is provided for European countries except for Hydrogen → Electricity conversion technology capacities.
+
+We use a data dump of the `ENTSO-E TYNDP <https://zenodo.org/records/14230568>`_ to define the future hydrogen demands in non-GB countries.
+To reduce intermediate data processing requirements in this workflow, we have separately prepared the corresponding input data using the `Open-TYNDP project <https://github.com/open-energy-transition/open-tyndp>`_ workflow, and stored outputs for the NT scenario here as ``data/gb-model/tyndp_h2_demand.csv``.
+To interpolate to 2030, we use historical "clean" hydrogen demand from the `European clean hydrogen observatory <https://observatory.clean-hydrogen.europa.eu/hydrogen-landscape/end-use/hydrogen-demand>`_.
+
+For the remainder (e.g. electrolyser capacity, storage capacity), we synthesise data based on trends seen in GB.
+
+-----------------------
+Electric vehicles (EVs)
+-----------------------
+EV annual data is extracted from the FES workbook (see above).
+The EV charging demand shape is quantified by shifting traffic rate data used in PyPSA-Eur with a configured plug-in offset and then applying charging duration.
+This is the *unmanaged* EV charging profile.
+Flexibility via smart charging and vehicle-to-grid (V2G) technologies is given by the FES as a reduction in peak unmanaged EV demand.
+We apply this as the capacity of these flexibility mechanisms.
+
+In Europe, for lack of data from FES, we synthesise all EV subsystem data following the same methodology we apply in other parts of the workflow.
 
 --------------------------------
 Baseline electricity demand data
 --------------------------------
-Baseline electricity demand data is extracted from FES-2021 workbook table BB1.
+Annual baseline electricity demand data is extracted from the FES workbook per grid supply point.
+This is mapped onto PyPSA-Eur hourly profiles, which are historical national load profiles for the configured weather year.
+
+------------------------------------
+DSR flexibility for base electricity
+------------------------------------
+Demand-side response (DSR) flexibility data for base electricity (residential and I&C) is extracted from the FES workbook.
+
+------------------------------
+GB regional data distributions
+------------------------------
+The FES workbook contains regional distributions of several data points, down to the level of grid supply points.
+Where this data is not available, we use the regional distribution of a close match dataset to distribute.
+For instance, residential base electricity demand-side response capacity is distributed according to the distribution of annual base electricity demand.
 
 -------------------
-EV flexibility data
+Low carbon register
 -------------------
-Electric vehicle (EV) flexibility data is extracted from the FES-2021 workbook table FLX1.
-Energy storage capacity of EVs are obtained by interpolating EV storage data from FL.14 sheet of FES-2021 workbook with V2G peak capacity from FLX1 sheet.
-Storage data is regionally disaggregated based on EV flexibility data.
-Regional distribution of V2G and smart charging flexibility is based on V2G distribution provided in BB1 sheet of FES-2021.
+The `low carbon register <https://www.lowcarboncontracts.uk/our-schemes/contracts-for-difference/register/>`_ provides historical Contracts for Difference (CfD) strike price data.
+We use the average strike price data from all historical years before the first model run year to define the renewable generator offers.
+These are calculated relative to the GB wholesale market price as given by the solved unconstrained model output.
 
 -------------------
-DSM flexibility for base electricity
+Elexon BMU Fuel Map
 -------------------
-Demand-side management (DSM) flexibility data for base electricity (residential and I&C) is extracted from the FES-2021 workbook table FLX1.
-Regional distribution of residential demand side response (DSR) flexibility is based on Baseline demand distribution provided in BB1 sheet of FES-2021,
-while regional distribution of services DSR flexibility is based on I&C Flexibility (TouT) distribution provided in BB1 sheet of FES-2021.
+The `Elexon BMU Fuel Map <https://www.elexon.co.uk/documents/data/operational-data/bmu-fuel-type/>` provides a mapping of the balancing mechanism units (BMU) to their respective fuel types.
+This information is required to calculate bid / offer multiplier carrier-wise for redispatch. This is a static copy in the repo and can be updated by navigating to `<https://bmrs.elexon.co.uk/generation-by-fuel-type?>`
+
+-----------
+GSP shapes
+-----------
+The `GSP shapes < https://www.neso.energy/data-portal/gis-boundaries-gb-grid-supply-points>` provide a shapefile of the GSP regions.
+The FES workbook on one hand contains GSP names and the shapefile itself contains GSP ID. The GSP coordinates data is used as a bridge to map the GSP shape data to FES workbook data.
+The shape data will be useful to disaggregate renewable capacity factors by GSP regions rather than by GB regions.
+
+-----------------
+DUKES fuel prices
+-----------------
+The `DUKES fuel prices <https://www.gov.uk/government/statistical-data-sets/prices-of-fuels-purchased-by-major-power-producers>` provide a dataset for tracking historical fuel prices in the UK.
+This is required to account for historical variations in quarterly fossil fuel prices when calculating bid/offer multipliers for redispatch.

@@ -14,6 +14,7 @@ connection costs) so that downstream rules can import a consistent
 
 import copy
 import logging
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -22,7 +23,6 @@ import numpy as np
 import pandas as pd
 import pypsa
 import xarray as xr
-from scipy.optimize import minimize_scalar
 
 from scripts._helpers import configure_logging, set_scenario_config
 from scripts.add_electricity import (
@@ -31,6 +31,7 @@ from scripts.add_electricity import (
     attach_hydro,
     flatten,
 )
+from scripts.gb_model._helpers import time_difference_hours
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,6 @@ class CompositionContext:
     countries: tuple[str, ...]
     costs_path: Path
     costs_config: dict[str, Any]
-    max_hours: dict[str, Any] | None
 
 
 def create_context(
@@ -51,7 +51,6 @@ def create_context(
     costs_path: str,
     countries: list[str],
     costs_config: dict[str, Any],
-    max_hours: dict[str, Any] | None,
 ) -> CompositionContext:
     """
     Create composition context from network path and configuration.
@@ -66,8 +65,6 @@ def create_context(
         List of country codes to include
     costs_config : dict
         Costs configuration dictionary
-    max_hours : dict or None
-        Maximum hours configuration
 
     Returns
     -------
@@ -81,12 +78,29 @@ def create_context(
         countries=tuple(countries),
         costs_path=Path(costs_path),
         costs_config=copy.deepcopy(costs_config),
-        max_hours=max_hours,
     )
 
 
+def _input_list_to_dict(input_list: list[str], parent: bool = False) -> dict[str, str]:
+    """
+    Convert a list of input file paths to a dictionary mapping types to paths.
+
+    Args:
+        input_list (list[str]): List of input file paths.
+        parent (bool): Whether to use the parent directory name as the key.
+
+    Returns:
+        dict[str, str]: Dictionary mapping input types to file paths.
+    """
+    input_dict = {}
+    for input_path in input_list:
+        key = (Path(input_path).parent if parent else Path(input_path)).stem
+        input_dict[key] = input_path
+    return input_dict
+
+
 def _add_timeseries_data_to_network(
-    pypsa_t_dict: dict, data: pd.DataFrame, attribute: str
+    pypsa_t_dict: dict, data: pd.DataFrame, attribute: str, conflicts: str = "overwrite"
 ) -> None:
     """
     Add/update timeseries data to a network attribute.
@@ -99,6 +113,7 @@ def _add_timeseries_data_to_network(
         pypsa_t_dict (dict): PyPSA network timeseries component dictionary (e.g., n.loads_t).
         data (pd.DataFrame): Timeseries data to add.
         attribute (str): Network timeseries attribute to update.
+        conflicts (str, optional): How to handle conflicting columns ('overwrite' or 'mul'). Defaults to 'overwrite'.
     """
     assert pypsa_t_dict[attribute].index.equals(data.index), (
         f"Snapshot indices do not match between network attribute {attribute} and data being added."
@@ -108,16 +123,43 @@ def _add_timeseries_data_to_network(
         attribute,
         len(data.columns),
     )
-    pypsa_t_dict[attribute] = (
+    conflict_cols = pypsa_t_dict[attribute].columns.intersection(data.columns)
+    updated_data = (
         pypsa_t_dict[attribute]
-        .loc[:, ~pypsa_t_dict[attribute].columns.isin(data.columns)]
-        .join(data)
+        .loc[:, ~pypsa_t_dict[attribute].columns.isin(conflict_cols)]
+        .join(data.loc[:, ~data.columns.isin(conflict_cols)])
     )
+    if conflict_cols.any():
+        logger.info(
+            "Conflicting columns found when updating network attribute '%s': %s",
+            attribute,
+            list(conflict_cols),
+        )
+        match conflicts:
+            case "overwrite":
+                updated_data = updated_data.join(data.loc[:, conflict_cols])
+            case "mul":
+                multiplied = (
+                    pypsa_t_dict[attribute]
+                    .loc[:, conflict_cols]
+                    .mul(data.loc[:, conflict_cols], fill_value=1)
+                )
+                updated_data = pd.concat(
+                    [updated_data, multiplied],
+                    axis=1,
+                )
+    if not all(pypsa_t_dict[attribute].columns.isin(updated_data.columns)):
+        logger.warning(
+            "Some columns lost when updating network attribute %s.",
+            attribute,
+        )
+    pypsa_t_dict[attribute] = updated_data
 
 
 def _load_powerplants(
     powerplants_path: str,
     year: int,
+    filter_idx: str | None = None,
 ) -> pd.DataFrame:
     """
     Load powerplant data.
@@ -128,15 +170,29 @@ def _load_powerplants(
         Path to powerplants CSV file
     year : int
         Year to filter powerplants
+    filter_idx : str or None
+        Optional regex to filter powerplants by name
 
     Returns
     -------
     pd.DataFrame
         Powerplant data filtered by year
     """
-    ppl = pd.read_csv(powerplants_path, index_col=0, dtype={"bus": "str"})
+    ppl = pd.read_csv(powerplants_path, index_col="name", dtype={"bus": "str"})
     ppl = ppl[ppl.build_year == year]
-    ppl["max_hours"] = 0  # Initialize max_hours column
+    if filter_idx is not None:
+        ppl = ppl.filter(regex=filter_idx, axis=0)
+
+    # Add empty columns that might be needed by PyPSA-Eur methods
+    for col in [
+        "capital_cost",
+        "lifetime",
+        "marginal_cost",
+        "efficiency",
+        "CO2 intensity",
+    ]:
+        if col not in ppl.columns:
+            ppl[col] = np.nan
 
     return ppl
 
@@ -148,7 +204,7 @@ def _integrate_renewables(
     costs: pd.DataFrame,
     renewable_profiles: dict[str, str],
     ppl: pd.DataFrame,
-    hydro_capacities_path: str | None,
+    hydro_capacities_path: str,
 ) -> None:
     """
     Integrate renewable generators into the network.
@@ -171,7 +227,7 @@ def _integrate_renewables(
         Mapping of carrier names to profile file paths
     powerplants_path : str
         Path to powerplants CSV file
-    hydro_capacities_path : str or None
+    hydro_capacities_path : str
         Path to hydro capacities CSV file
     """
     renewable_carriers = list(electricity_config["renewable_carriers"])
@@ -198,13 +254,16 @@ def _integrate_renewables(
             ppl,
             non_hydro_profiles,
             non_hydro_carriers,
-            extendable_carriers,
+            extendable_carriers["Generator"],
         )
 
     if "hydro" in renewable_carriers:
         hydro_cfg = copy.deepcopy(renewable_config["hydro"])
         carriers = hydro_cfg.pop("carriers")
-
+        if "hydro" in carriers:
+            raise ValueError(
+                "Cannot represent the reservoir hydro ('hydro') carrier in GB model"
+            )
         attach_hydro(
             n,
             costs,
@@ -298,10 +357,7 @@ def process_demand_data(
 
 
 def add_load(
-    n: pypsa.Network,
-    demands: dict[str, list[str]],
-    eur_demand: str,
-    year: int,
+    n: pypsa.Network, demands: dict[str, str], load_bus_suffixes: dict[str, str]
 ):
     """
     Add load as a timeseries to PyPSA network
@@ -310,33 +366,23 @@ def add_load(
     ----------
     n : pypsa.Network
         Network to finalize
-    demands: dict[str, list[str]]
-        Mapping of demand types to list of CSV paths for demand data (GB annual demand, profile shapes)
-    eur_demand: str
-        Path to European annual demand data CSV
-    year:
-        Year used in the modelling
+    demands: dict[str, str]
+        Mapping of demand types to CSV paths for demand data
     """
-    eur_demand_df = pd.read_csv(eur_demand, index_col=["load_type", "bus", "year"])
     # Iterate through each demand type
-    for demand_type, (annual_demand, clustered_demand_profile) in demands.items():
+    for demand_type, demand_path in demands.items():
+        if not demand_type.endswith("_demand"):
+            raise ValueError(
+                f"Unexpected demand type: {demand_type}. "
+                "All demand types should start with 'demand_'."
+            )
         # Process data for the demand type
-        load = process_demand_data(
-            annual_demand, clustered_demand_profile, eur_demand_df.xs(demand_type), year
-        )
-
-        # Add the load to pypsa Network
-        suffix = f" {demand_type}"
-        n.add("Load", load.columns + suffix, bus=load.columns)
-        _add_timeseries_data_to_network(n.loads_t, load.add_suffix(suffix), "p_set")
+        suffix = load_bus_suffixes[demand_type.removesuffix("_demand")]
+        load = pd.read_csv(demand_path, index_col=[0], parse_dates=True)
+        _add_load_bus(n, load, suffix)
 
 
-def add_EVs(
-    n: pypsa.Network,
-    ev_data: dict[str, str],
-    ev_params: dict[str, float],
-    year: int,
-):
+def _add_load_bus(n: pypsa.Network, load: pd.DataFrame, suffix: str):
     """
     Add EV load as a timeseries to PyPSA network
 
@@ -344,316 +390,371 @@ def add_EVs(
     ----------
     n : pypsa.Network
         Network to finalize
-    ev_data: dict[str, str]
-        Dictionary containing paths to EV data files:
-            ev_demand_annual:
-                CSV path for annual EV demand
-            ev_demand_peak:
-                CSV path for peak EV demand
-            ev_demand_shape:
-                CSV path for EV demand shape
-            ev_storage_capacity:
-                CSV path for EV storage capacity
-            ev_smart_charging:
-                CSV path for EV smart charging (DSR) data
-            ev_v2g:
-                CSV path for EV V2G data
-    ev_params: dict[str, float]
-        Dictionary containing EV profile adjustment parameters such as:
-            relative_peak_tolerance: float
-                Relative tolerance for peak load
-            relative_energy_tolerance: float
-                Relative tolerance for energy load
-            upper_optimization_bound: float
-                Upper bound for optimization
-            lower_optimization_bound: float
-                Lower bound for optimization
-    year:
-        Year used in the modelling
+    load : pd.DataFrame
+        DataFrame containing load data indexed by time and bus
+    suffix : str
+        Suffix to append to load buses
     """
-    # Compute EV demand profile using demand shape, annual EV demand and peak EV demand
-    ev_demand_profile = _estimate_ev_demand_profile(
-        ev_data["ev_demand_shape"],
-        ev_data["ev_demand_annual"],
-        ev_data["ev_demand_peak"],
-        year=year,
-        ev_params=ev_params,
-    )
+    # Add load carrier to pypsa Network
+    carrier = suffix.strip()
+    link_carrier = f"{carrier} unmanaged load"
+    n.add("Carrier", carrier)
 
-    # Add EV bus
+    # Add unmanaged load carrier to pypsa Network
+    n.add("Carrier", link_carrier)
+
+    # Add load bus
     n.add(
         "Bus",
-        ev_demand_profile.columns,
-        suffix=" EV",
-        carrier="EV",
-        x=n.buses.loc[ev_demand_profile.columns].x,
-        y=n.buses.loc[ev_demand_profile.columns].y,
-        country=n.buses.loc[ev_demand_profile.columns].country,
+        load.columns,
+        suffix=suffix,
+        carrier=carrier,
+        x=n.buses.loc[load.columns].x,
+        y=n.buses.loc[load.columns].y,
+        country=n.buses.loc[load.columns].country,
     )
 
-    # Add the EV load to pypsa Network
+    # Add the load to pypsa Network
     n.add(
         "Load",
-        ev_demand_profile.columns,
-        suffix=" EV",
-        bus=ev_demand_profile.columns + " EV",
-        carrier="EV",
-    )
-    _add_timeseries_data_to_network(
-        n.loads_t, ev_demand_profile.add_suffix(" EV"), "p_set"
+        load.columns,
+        suffix=suffix,
+        bus=load.columns + suffix,
+        carrier=carrier,
+        p_set=load.add_suffix(suffix),
     )
 
-    # Add EV unmanaged charging
+    # Link the load profile to the AC bus
     n.add(
         "Link",
-        ev_demand_profile.columns,
-        suffix=" EV unmanaged charging",
-        bus0=ev_demand_profile.columns,
-        bus1=ev_demand_profile.columns + " EV",
-        p_nom=ev_demand_profile.max(),
+        load.columns,
+        suffix=" " + link_carrier,
+        bus0=load.columns,
+        bus1=load.columns + suffix,
+        p_nom=load.max(),
         efficiency=1.0,
-        carrier="EV unmanaged charging",
-    )
-
-    # Load EV storage data
-    ev_storage_capacity = pd.read_csv(
-        ev_data["ev_storage_capacity"], index_col=["bus", "year"]
-    )
-    ev_storage_capacity = ev_storage_capacity.xs(year, level="year")
-
-    # Add EV storage buses
-    n.add(
-        "Bus",
-        ev_storage_capacity.index,
-        suffix=" EV store",
-        carrier="EV store",
-        x=n.buses.loc[ev_storage_capacity.index].x,
-        y=n.buses.loc[ev_storage_capacity.index].y,
-        country=n.buses.loc[ev_storage_capacity.index].country,
-    )
-
-    # Add the EV store to pypsa Network
-    ev_dsm_profile = pd.read_csv(
-        ev_data["ev_dsm_profile"], index_col=0, parse_dates=True
-    )
-    n.add(
-        "Store",
-        ev_storage_capacity.index,
-        suffix=" EV store",
-        bus=ev_storage_capacity.index + " EV store",
-        e_nom=ev_storage_capacity["MWh"],
-        e_cyclic=True,
-        carrier="EV store",
-        e_min_pu=ev_dsm_profile.loc[n.snapshots, ev_storage_capacity.index],
-    )
-
-    # Load EV dsr and V2G data
-    ev_dsr = pd.read_csv(ev_data["ev_smart_charging"], index_col=["bus", "year"])
-    ev_v2g = pd.read_csv(ev_data["ev_v2g"], index_col=["bus", "year"])
-
-    # Filter data for the given year
-    ev_dsr = ev_dsr.xs(year, level="year")
-    ev_v2g = ev_v2g.xs(year, level="year")
-
-    # Add the EV DSR to the PyPSA network
-    n.add(
-        "Link",
-        ev_dsr.index,
-        suffix=" EV DSR",
-        bus0=ev_dsr.index + " EV store",
-        bus1=ev_dsr.index + " EV",
-        p_nom=ev_dsr["p_nom"].abs(),
-        efficiency=1.0,
-        carrier="EV DSR",
-    )
-    n.add(
-        "Link",
-        ev_dsr.index,
-        suffix=" EV DSR reverse",
-        bus0=ev_dsr.index + " EV",
-        bus1=ev_dsr.index + " EV store",
-        p_nom=ev_dsr["p_nom"].abs(),
-        efficiency=1.0,
-        carrier="EV DSR reverse",
-    )
-
-    # Add EV V2G to the PyPSA network
-    n.add(
-        "Link",
-        ev_v2g.index,
-        suffix=" EV V2G",
-        bus0=ev_v2g.index + " EV store",
-        bus1=ev_v2g.index,
-        p_nom=ev_v2g["p_nom"].abs(),
-        efficiency=1.0,
-        carrier="EV V2G",
+        carrier=link_carrier,
     )
 
 
-def _normalize(series: pd.Series) -> pd.Series:
-    """Normalize a pandas Series so that its sum equals 1."""
-    normalized = series / series.sum()
-    return normalized
-
-
-def _transform_ev_profile_with_shape_adjustment(
-    shape_series: pd.Series,
-    peak_target: float,
-    annual_target: float,
-    relative_peak_tolerance: float,
-    relative_energy_tolerance: float,
-    upper_optimization_bound: float,
-    lower_optimization_bound: float,
-) -> pd.Series:
-    """
-    Transform EV profile to match both peak and annual targets by adjusting the shape.
-
-    This function can squeeze (make peakier) or widen (make flatter) the profile
-    to satisfy both constraints simultaneously.
-
-    Parameters
-    ----------
-    shape_series : pd.Series
-        Normalized EV demand shape (sum = 1)
-    peak_target : float
-        Target peak demand (MW)
-    annual_target : float
-        Target annual energy (MWh)
-
-    Returns
-    -------
-    pd.Series
-        Transformed profile satisfying both constraints
-    """
-    # Normalize input to ensure sum = 1
-    normalized_shape = _normalize(shape_series)
-
-    # Try simple scaling first
-    simple_scaled = normalized_shape * annual_target
-    scaled_peak = simple_scaled.max()
-
-    # If simple scaling satisfies peak constraint, return it
-    if np.isclose(scaled_peak, peak_target, rtol=relative_peak_tolerance, atol=0):
-        return simple_scaled
-
-    # Need to adjust the shape - use power transformation
-    # Higher gamma = more peaked, lower gamma = flatter
-
-    def objective_function(gamma):
-        """Objective function to find optimal shape parameter."""
-        if gamma <= 0:
-            return float("inf")
-
-        # Apply power transformation and scale to match annual target
-        scaled = _normalize(normalized_shape**gamma) * annual_target
-
-        # Check how well we satisfy both constraints
-        peak_error = abs(scaled.max() - peak_target) / peak_target
-        annual_error = abs(scaled.sum() - annual_target) / annual_target
-
-        return peak_error + annual_error
-
-    result = minimize_scalar(
-        objective_function,
-        bounds=(lower_optimization_bound, upper_optimization_bound),
-        method="bounded",
-    )
-    optimal_gamma = result.x
-
-    # Apply optimal transformation
-    final_profile = _normalize(normalized_shape**optimal_gamma) * annual_target
-
-    # Verify constraints
-    final_peak = final_profile.max()
-    final_annual = final_profile.sum()
-
-    logger.info(
-        "Gamma optimization result for bus %s: optimal_gamma=%.4f, final_peak=%.2f MW, target_peak=%.2f MW, final_annual=%.2f MWh, target_annual=%.2f MWh",
-        shape_series.name,
-        optimal_gamma,
-        final_peak,
-        peak_target,
-        final_annual,
-        annual_target,
-    )
-
-    assert np.isclose(final_peak, peak_target, rtol=relative_peak_tolerance, atol=0), (
-        f"Peak constraint violated after optimization for bus {shape_series.name} - "
-        f"Expected: {peak_target:.2f} MW, Obtained: {final_peak:.2f} MW"
-    )
-
-    assert np.isclose(
-        final_annual, annual_target, rtol=relative_energy_tolerance, atol=0
-    ), (
-        f"Annual constraint violated after optimization for bus {shape_series.name} - "
-        f"Expected: {annual_target:.2f} MWh, Obtained: {final_annual:.2f} MWh"
-    )
-
-    return final_profile
-
-
-def _estimate_ev_demand_profile(
-    ev_demand_shape_path: str,
-    ev_demand_annual_path: str,
-    ev_demand_peak_path: str,
-    year: int,
-    ev_params: dict[str, float],
+def _load_regional_data(
+    path: str, year: int, filter_idx: str | None = None
 ) -> pd.DataFrame:
     """
-    Estimate the EV demand profile for the given year using shape, annual and peak data.
+    Load regional data from CSV file and filter by year.
 
     Parameters
     ----------
-    ev_demand_shape_path : str
-        CSV path for EV demand shape
-    ev_demand_annual_path : str
-        CSV path for annual EV demand
-    ev_demand_peak_path : str
-        CSV path for peak EV demand
+    path : str
+        Path to the CSV file containing regional data
     year : int
-        Year used in the modelling
-    ev_params: dict[str, float]
-        Dictionary containing EV profile adjustment parameters
+        Year to filter the data by
+    filter_idx : str or None
+        Optional regex to filter the data by index (e.g., bus name)
 
     Returns
     -------
     pd.DataFrame
-        Estimated EV demand profile
+        DataFrame containing the filtered regional data
+
     """
-    # Load the files
-    ev_demand_shape = pd.read_csv(ev_demand_shape_path, index_col=[0], parse_dates=True)
-    ev_demand_annual = pd.read_csv(ev_demand_annual_path, index_col=["bus", "year"])
-    ev_demand_peak = pd.read_csv(ev_demand_peak_path, index_col=["bus", "year"])
+    df = pd.read_csv(path, index_col=["bus", "year"])
+    df_year = df.xs(year, level="year")
+    if filter_idx is not None:
+        df_year = df_year.filter(regex=filter_idx, axis=0)
+    return df_year
 
-    # Select data for given year
-    ev_demand_annual = ev_demand_annual.xs(year, level="year")
-    ev_demand_peak = ev_demand_peak.xs(year, level="year")
 
-    # Affine transformation to scale the maximum with peak and total energy with annual demand
-    ev_demand_profile = pd.DataFrame(index=ev_demand_shape.index)
-    for bus in ev_demand_shape.columns:
-        if bus not in ev_demand_annual.index or bus not in ev_demand_peak.index:
-            continue
+def add_EV_V2G(
+    n: pypsa.Network,
+    year: int,
+    regional_ev_v2g_inc_eur: str,
+    ev_v2g_storage_capacity_path: str,
+    ev_availability_profile: pd.DataFrame,
+):
+    """
+    Add EV DSR and V2G components to PyPSA network
 
-        peak = ev_demand_peak.loc[bus, "p_nom"]
-        annual = ev_demand_annual.loc[bus, "p_set"]
+    Parameters
+    ----------
+    n : pypsa.Network
+        Network to finalize
+    year: int
+        Year used in the modelling
+    regional_ev_v2g_inc_eur: str
+        CSV path for EV V2G data
+    ev_v2g_storage_capacity_path : str
+        Path to EV storage capacity CSV
+    ev_avail_profile : pd.DataFrame
+        DataFrame containing EV availability profile
+    """
+    # Load EV V2G data
+    ev_v2g_df = _load_regional_data(regional_ev_v2g_inc_eur, year)
+    ev_v2g_storage_capacity = _load_regional_data(ev_v2g_storage_capacity_path, year)
 
-        # Use shape-adjusting transformation to satisfy both peak and annual constraints
-        ev_demand_profile[bus] = _transform_ev_profile_with_shape_adjustment(
-            ev_demand_shape[bus],
-            peak,
-            annual,
-            relative_peak_tolerance=ev_params["relative_peak_tolerance"],
-            relative_energy_tolerance=ev_params["relative_energy_tolerance"],
-            upper_optimization_bound=ev_params["upper_optimization_bound"],
-            lower_optimization_bound=ev_params["lower_optimization_bound"],
-        )
-
-    logger.info(
-        "EV unmanaged charging demand profile successfully generated with both peak and annual constraints satisfied."
+    # Add EV V2G carrier to the PyPSA network
+    n.add(
+        "Carrier",
+        "EV V2G",
     )
 
-    return ev_demand_profile
+    # Add EV V2G bus to the PyPSA network
+    n.add(
+        "Bus",
+        ev_v2g_df.index,
+        suffix=" EV V2G bus",
+        carrier="EV V2G",
+        x=n.buses.loc[ev_v2g_df.index].x,
+        y=n.buses.loc[ev_v2g_df.index].y,
+        country=n.buses.loc[ev_v2g_df.index].country,
+    )
+
+    # Add link from EV bus to V2G bus to the PyPSA network
+    n.add(
+        "Link",
+        ev_v2g_df.index,
+        suffix=" EV V2G feed-in",
+        bus0=ev_v2g_df.index + " EV",
+        bus1=ev_v2g_df.index + " EV V2G bus",
+        p_nom=ev_v2g_df.p_nom.abs(),
+        p_max_pu=ev_availability_profile.loc[:, ev_v2g_df.index],
+        efficiency=1.0,
+        carrier="EV V2G",
+    )
+
+    # Add link from V2G bus to AC bus to the PyPSA network
+    n.add(
+        "Link",
+        ev_v2g_df.index,
+        suffix=" EV V2G",
+        bus0=ev_v2g_df.index + " EV V2G bus",
+        bus1=ev_v2g_df.index,
+        p_nom=ev_v2g_df.p_nom.abs(),
+        p_max_pu=ev_availability_profile.loc[:, ev_v2g_df.index],
+        efficiency=1.0,
+        carrier="EV V2G",
+    )
+
+    # Add the EV V2G store to the PyPSA network
+    n.add(
+        "Store",
+        ev_v2g_df.index,
+        suffix=" EV V2G store",
+        bus=ev_v2g_df.index + " EV V2G bus",
+        e_nom=ev_v2g_storage_capacity.e_nom,
+        e_cyclic=True,
+        carrier="EV V2G",
+    )
+
+
+def _get_dsr_profile(
+    n: pypsa.Network, df: pd.DataFrame, dsr_hours: list[int], key: str
+) -> pd.DataFrame:
+    """
+    Create DSR profile to set as e_max_pu for DSR store
+
+    Parameters
+    ----------
+        n : pypsa.Network
+            Network to finalize
+        df : pd.DataFrame
+            DataFrame containing flexibility p_nom data indexed by bus
+        dsr_hours : list[int]
+            Hours during which demand-side management can occur
+        key : str
+            Sector key (e.g., 'residential', 'iandc', 'iandc_heat', 'ev')
+    """
+
+    dsr_profile = pd.DataFrame(index=n.snapshots, columns=df.index, data=0.0)
+    if dsr_hours[0] < dsr_hours[1]:
+        mask = (dsr_profile.index.hour >= dsr_hours[0]) & (
+            dsr_profile.index.hour <= dsr_hours[1]
+        )
+    else:
+        mask = (dsr_profile.index.hour <= dsr_hours[1]) | (
+            dsr_profile.index.hour >= dsr_hours[0]
+        )
+    dsr_profile.loc[mask] = 1.0
+
+    # Calculate time difference between each neighbouring country and GB
+    time_shift = {
+        x: time_difference_hours(x) for x in n.buses.country.unique().tolist()
+    }
+
+    # Shift European neighbour DSR by 'x' hours to account for time zone difference
+    for country, shift_hours in time_shift.items():
+        country_columns = dsr_profile.filter(like=country).columns
+        dsr_profile.loc[:, country_columns] = dsr_profile[country_columns].shift(
+            shift_hours, fill_value=0.0
+        )
+
+    logger.info(f"Created DSR profile for {key} sector with DSR hours {dsr_hours}")
+
+    return dsr_profile
+
+
+def _add_dsr_pypsa_components(
+    n: pypsa.Network,
+    df: pd.DataFrame,
+    key: str,
+    storage_capacity: pd.DataFrame,
+    e_max_pu: pd.DataFrame,
+    p_max_pu: pd.DataFrame,
+    load_bus_suffixes: dict[str, str],
+    flex_carrier_suffixes: dict[str, str],
+):
+    """
+    Add DSR components for a given sector to PyPSA network
+
+    Parameters
+    ----------
+        n : pypsa.Network
+            Network to finalize
+        df : pd.DataFrame
+            DataFrame containing flexibility p_nom data indexed by bus
+        key : str
+            Sector key (e.g., 'residential', 'iandc', 'iandc_heat', "ev")
+        storage_capacity : pd.DataFrame
+            DataFrame containing storage capacity of the store in MWh indexed by time and bus
+        e_max_pu : pd.DataFrame
+            DataFrame containing maximum state of charge as per unit of the store indexed by time and bus
+        p_max_pu : pd.DataFrame
+            DataFrame containing maximum power availability as per unit of the link indexed by time and bus
+        load_bus_suffixes: dict[str, str]
+            Suffixes to append to load buses
+        flex_carrier_suffixes : dict[str, str]
+            Suffixes to append to flexibility carriers for each flexibility type
+    """
+    load_bus_suffix = load_bus_suffixes[key]
+    dsr_carrier_suffix = flex_carrier_suffixes[key]
+
+    # Add the store carrier to the PyPSA network
+    n.add("Carrier", dsr_carrier_suffix.strip())
+
+    # Add the DSR shift and reverse carriers to the PyPSA network
+    n.add("Carrier", f"{dsr_carrier_suffix.strip()} shift")
+
+    n.add("Carrier", f"{dsr_carrier_suffix.strip()} reverse")
+
+    # Create storage buses, links and stores
+    # Add the storage bus to the PyPSA network
+    n.add(
+        "Bus",
+        df.index,
+        suffix=dsr_carrier_suffix,
+        carrier=dsr_carrier_suffix.strip(),
+        x=n.buses.loc[df.index].x,
+        y=n.buses.loc[df.index].y,
+        country=n.buses.loc[df.index].country,
+    )
+
+    # Add the DSR link from AC bus to DSR bus to the PyPSA network
+    n.add(
+        "Link",
+        df.index,
+        suffix=dsr_carrier_suffix,
+        bus0=df.index + load_bus_suffix,
+        bus1=df.index + dsr_carrier_suffix,
+        p_nom=df.p_nom.abs(),
+        p_max_pu=p_max_pu,
+        efficiency=1.0,
+        carrier=f"{dsr_carrier_suffix.strip()} shift",
+    )
+
+    # Add the DSR link from DSR bus to AC bus to the PyPSA network
+    n.add(
+        "Link",
+        df.index,
+        suffix=f"{dsr_carrier_suffix} reverse",
+        bus0=df.index + dsr_carrier_suffix,
+        bus1=df.index + load_bus_suffix,
+        p_nom=df.p_nom.abs(),
+        p_max_pu=p_max_pu,
+        efficiency=1.0,
+        carrier=f"{dsr_carrier_suffix.strip()} reverse",
+    )
+
+    # Add the DSR store to the PyPSA network
+    n.add(
+        "Store",
+        df.index,
+        suffix=dsr_carrier_suffix,
+        bus=df.index + dsr_carrier_suffix,
+        e_nom=storage_capacity,
+        e_cyclic=True,
+        carrier=dsr_carrier_suffix.strip(),
+        e_max_pu=e_max_pu,
+    )
+
+    logger.info(f"Added PyPSA components for {key} sector to perform DSR")
+
+
+def add_DSR(
+    n: pypsa.Network,
+    year: int,
+    dsr: dict[str, str],
+    dsr_hours_dict: dict[str, list],
+    ev_availability_profile: pd.DataFrame,
+    load_bus_suffixes: dict[str, str],
+    flex_carrier_suffixes: dict[str, str],
+):
+    """
+    Add DSR components for residential, i&c and i&c heat sectors to PyPSA network
+
+    Parameters
+    ----------
+        n : pypsa.Network
+            Network to finalize
+        year: int
+            Year used in the modelling
+        dsr: dict[str, str]
+            Dictionary containing DSR flexibility data for baseline and electrified heat
+        dsr_hours_dict: dict[str,list]
+            Hours during which demand-side management can occur
+        ev_availability_profile : pd.DataFrame
+            DataFrame containing EV availability profile indexed by time and bus
+        load_bus_suffixes: dict[str, str]
+            Suffixes to append to load buses for each flexibility type
+        flex_carrier_suffixes : dict[str, str]
+            Suffixes to append to flexibility carriers for each flexibility type
+
+    """
+    # Iterate through each demand key in the DSR dictionary
+    for file, path in dsr.items():
+        dsr_type = re.match("regional_(.*)_dsr_inc_eur", file).groups()[0]
+        df_dsr = _load_regional_data(path, year)
+
+        dsr_hours = dsr_hours_dict[f"{dsr_type}_dsr"]
+
+        # Calculate DSR duration in hours
+        if dsr_hours[0] < dsr_hours[1]:
+            # e.g., dsr_hours = [17,20] -> indicates 5pm of day 1 to 8 pm of day 1
+            dsr_duration = dsr_hours[1] - dsr_hours[0] + 1
+        else:
+            # e.g., dsr_hours = [8,6] -> indicates 8am of day 1 to 6am of day 2
+            dsr_duration = dsr_hours[1] + (24 - dsr_hours[0]) + 1
+        logger.info(f"DSR duration for {dsr_type} is {dsr_duration} hours per day")
+
+        # Create DSR profile, storage capacity, e_min_pu and e_max_pu based on demand type
+        dsr_profile = _get_dsr_profile(n, df_dsr, dsr_hours, dsr_type)
+        storage_capacity = df_dsr.p_nom.abs() * (dsr_duration)
+        e_max_pu = dsr_profile.loc[:, df_dsr.index]
+        p_max_pu = (
+            1.0
+            if dsr_type.lower() != "ev"
+            else ev_availability_profile.loc[:, df_dsr.index]
+        )
+
+        _add_dsr_pypsa_components(
+            n,
+            df_dsr,
+            dsr_type,
+            storage_capacity,
+            e_max_pu,
+            p_max_pu,
+            load_bus_suffixes,
+            flex_carrier_suffixes,
+        )
 
 
 def finalise_composed_network(
@@ -681,6 +782,78 @@ def finalise_composed_network(
     meta["composed"] = True
     n.consistency_check()
     return n
+
+
+def attach_dc_interconnectors(
+    n: pypsa.Network,
+    interconnectors_path: str,
+    year: int,
+    interconnectors_availability_path: str,
+) -> None:
+    """
+    Attach DC interconnector links to the network with fixed capacities.
+
+    Removes existing DC links between GB and neighboring countries, then adds
+    new links based on the interconnectors CSV file for the specified year.
+
+    Args:
+        n (pypsa.Network): The PyPSA network
+        interconnectors_path (str): Path to interconnectors CSV file
+        year (int): Year for which to load interconnector capacities
+        interconnectors_availability_path (str): Path to interconnectors availability CSV file
+    """
+    # Load interconnector data
+    interconnectors = pd.read_csv(
+        interconnectors_path,
+        dtype={"bus0": str, "bus1": str},
+        index_col=["project", "year"],
+    )
+    interconnectors_this_year = interconnectors.xs(year, level="year")
+
+    if interconnectors_this_year.empty:
+        logger.warning(f"No interconnector data found for year {year}")
+        return
+
+    # Find DC links connecting GB to neighbors (bidirectional)
+    existing_dc_links = n.links[
+        (n.links.carrier == "DC")
+        & (
+            (n.links.bus0.str.startswith("GB") & ~n.links.bus1.str.startswith("GB"))
+            | (n.links.bus1.str.startswith("GB") & ~n.links.bus0.str.startswith("GB"))
+        )
+    ]
+
+    # Remove existing DC interconnectors
+    if not existing_dc_links.empty:
+        removed_links = existing_dc_links.index.tolist()
+        n.remove("Link", removed_links)
+        logger.info(
+            f"Removed {len(removed_links)} existing DC interconnector links: {removed_links}"
+        )
+    else:
+        logger.info("No existing DC interconnector links found to remove")
+    availability_df = pd.read_csv(
+        interconnectors_availability_path, index_col=0
+    ).squeeze()
+    hourly_availability_df = _monthly_to_hourly_profile(availability_df, n.snapshots)
+    p_max_pu = pd.concat(
+        [hourly_availability_df.rename(i) for i in interconnectors_this_year.index],
+        axis=1,
+    )
+    # Add the links
+    # Replace the default `p_min_pu` (-1, used to enforce bidirectionality) with the negative of `p_max_pu`.
+    n.add(
+        "Link",
+        interconnectors_this_year.index,
+        **interconnectors_this_year.drop(columns="p_min_pu"),
+        p_max_pu=p_max_pu,
+        p_min_pu=-1 * p_max_pu,
+    )
+
+    logger.info(
+        f"Added {len(interconnectors_this_year)} DC interconnector links with total capacity "
+        f"{interconnectors_this_year['p_nom'].sum():.1f} MW for year {year}"
+    )
 
 
 def attach_chp_constraints(n: pypsa.Network, p_min_pu: pd.DataFrame) -> None:
@@ -771,65 +944,327 @@ def attach_wind_and_solar(
 
             ds = ds.stack(bus_bin=["bus", "bin"])
 
-            supcar = car.split("-", 2)[0]
-            capital_cost = costs.at[supcar, "capital_cost"]
-
             buses = ds.indexes["bus_bin"].get_level_values("bus")
             bus_bins = ds.indexes["bus_bin"].map(flatten)
-
-            p_nom_max = ds["p_nom_max"].to_pandas()
-            p_nom_max.index = p_nom_max.index.map(flatten)
 
             p_max_pu = ds["profile"].to_pandas()
             p_max_pu.columns = p_max_pu.columns.map(flatten)
 
-            if not ppl.query("carrier == @supcar").empty:
-                caps = ppl.query("carrier == @supcar").groupby("bus").p_nom.sum()
+            if not ppl.query("carrier == @car").empty:
+                caps = ppl.query("carrier == @car").groupby("bus").p_nom.sum()
                 caps = caps.reindex(buses).fillna(0)
                 caps = pd.Series(data=caps.values, index=bus_bins)
             else:
                 caps = pd.Series(index=bus_bins).fillna(0)
-
             n.add(
                 "Generator",
                 bus_bins,
-                suffix=" " + supcar,
+                suffix=" " + car,
                 bus=buses,
-                carrier=supcar,
+                carrier=car,
                 p_nom=caps,
-                p_nom_min=caps,
-                p_nom_extendable=car in extendable_carriers["Generator"],
-                p_nom_max=p_nom_max,
-                marginal_cost=costs.at[supcar, "marginal_cost"],
-                capital_cost=capital_cost,
-                efficiency=costs.at[supcar, "efficiency"],
+                p_nom_min=0,
+                p_nom_extendable=car in extendable_carriers,
+                p_nom_max=np.inf,
+                marginal_cost=costs.loc[car, "marginal_cost"],
+                capital_cost=costs.loc[car, "capital_cost"],
+                efficiency=costs.loc[car, "efficiency"],
                 p_max_pu=p_max_pu,
-                lifetime=costs.at[supcar, "lifetime"],
+                lifetime=costs.loc[car, "lifetime"],
             )
 
 
-def _prepare_costs(
+def add_storage(n: pypsa.Network, ppl: pd.DataFrame) -> None:
+    """
+    Add non-PHS storage to the network.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        The PyPSA network to attach the battery storage to.
+    ppl : pd.DataFrame
+        DataFrame containing the power plant data.
+    """
+
+    for carr in ppl.query("set == 'Store' and carrier != 'PHS'").carrier.unique():
+        ppl_storage = ppl[ppl.carrier == carr]
+
+        n.add("Carrier", carr)
+        n.add(
+            "StorageUnit",
+            ppl_storage.index,
+            bus=ppl_storage.bus,
+            carrier=carr,
+            p_nom=ppl_storage.p_nom,
+            p_nom_extendable=False,
+            marginal_cost=ppl_storage.marginal_cost,
+            capital_cost=ppl_storage.capital_cost,
+            lifetime=ppl_storage.lifetime,
+            efficiency_store=ppl_storage.efficiency**0.5,
+            efficiency_dispatch=ppl_storage.efficiency**0.5,
+            max_hours=ppl_storage.max_hours,
+            cyclic_state_of_charge=True,
+        )
+
+
+def add_H2(
+    n: pypsa.Network,
     ppl: pd.DataFrame,
     year: int,
-) -> pd.DataFrame:
-    """
-    Prepare costs DataFrame from powerplant data.
-    """
-    costs = ppl[ppl.build_year == year]
-    costs = costs[~costs.set_index("carrier").index.duplicated(keep="first")].set_index(
-        "carrier"
+    enable_eur_h2_bus: bool,
+    regional_H2_demand_annual_inc_eur: str,
+    regional_non_networked_electrolysis_demand_annual_inc_eur: str,
+    regional_H2_storage_capacity_inc_eur_inc_tech_data: str,
+    regional_grid_electrolysis_capacities_inc_eur_inc_tech_data: str,
+    electrolysis_efficiency: str,
+) -> None:
+    if enable_eur_h2_bus:
+        filter = None
+        add_query = ""
+    else:
+        filter = "^GB .*"
+        add_query = " and country == 'GB'"
+    demand = _load_regional_data(regional_H2_demand_annual_inc_eur, year, filter)
+    demand_fixed = _load_regional_data(
+        regional_non_networked_electrolysis_demand_annual_inc_eur, year, filter
     )
-    costs = costs[
-        [
-            "set",
-            "capital_cost",
-            "marginal_cost",
-            "lifetime",
-            "efficiency",
-            "CO2 intensity",
-        ]
-    ]
-    return costs
+    storage_caps = _load_powerplants(
+        regional_H2_storage_capacity_inc_eur_inc_tech_data, year, filter
+    )
+    electrolysis_caps = _load_powerplants(
+        regional_grid_electrolysis_capacities_inc_eur_inc_tech_data, year, filter
+    )
+    electrolysis_efficiency_float = (
+        pd.read_csv(electrolysis_efficiency, index_col="year").squeeze().loc[year]
+    )
+
+    n.add("Carrier", "H2")
+    all_h2_nodes = n.buses.query("carrier == 'AC'" + add_query).index
+    n.add(
+        "Bus",
+        all_h2_nodes,
+        suffix=" Grid H2",
+        carrier="H2",
+        unit="MWh_LHV",
+        country=n.buses.loc[all_h2_nodes].country,
+    )
+
+    n.add(
+        "Load",
+        demand.index,
+        suffix=" Grid H2 demand",
+        bus=demand.index + " Grid H2",
+        carrier="H2",
+        p_set=demand.p_set / n.snapshot_weightings.objective.sum(),
+    )
+    n.add(
+        "Load",
+        demand_fixed.index,
+        suffix=" Electricity for off-grid electrolysis",
+        bus=demand_fixed.index + " Grid H2",
+        carrier="AC",
+        p_set=demand_fixed.p_set / n.snapshot_weightings.objective.sum(),
+    )
+
+    n.add("Carrier", "H2 Electrolysis")
+    n.add(
+        "Link",
+        electrolysis_caps.index,
+        bus1=electrolysis_caps.bus + " Grid H2",
+        bus0=electrolysis_caps.bus,
+        p_nom=electrolysis_caps.p_nom,
+        carrier="H2 Electrolysis",
+        efficiency=electrolysis_efficiency_float,
+        marginal_cost=electrolysis_caps.marginal_cost,
+        capital_cost=electrolysis_caps.capital_cost,
+        lifetime=electrolysis_caps.lifetime,
+    )
+
+    n.add("Carrier", "H2 Store")
+    n.add(
+        "Store",
+        storage_caps.index,
+        bus=storage_caps.bus + " Grid H2",
+        e_nom=storage_caps.e_nom,
+        e_cyclic=True,
+        carrier="H2 Store",
+        marginal_cost=storage_caps.marginal_cost,
+        capital_cost=storage_caps.capital_cost,
+        lifetime=storage_caps.lifetime,
+    )
+
+    if not (
+        h2_gen := ppl.query("carrier in ['hydrogen-turbine', 'hydrogen-fuel-cell']")
+    ).empty:
+        h2_gen_buses = h2_gen.bus.unique()
+        n.add(
+            "Bus",
+            h2_gen_buses,
+            suffix=" blended H2",
+            carrier="H2",
+            country=n.buses.loc[h2_gen_buses].country,
+        )
+        h2_gen_linked_buses = all_h2_nodes.intersection(h2_gen_buses)
+        n.add(
+            "Link",
+            h2_gen_linked_buses,
+            suffix=" H2 turbine feed",
+            bus0=h2_gen_linked_buses + " Grid H2",
+            bus1=h2_gen_linked_buses + " blended H2",
+            carrier="H2",
+            p_nom=np.inf,
+        )
+        n.add("Carrier", "purchased H2")
+        n.add(
+            "Generator",
+            h2_gen_buses,
+            suffix=" purchased H2",
+            bus=h2_gen_buses + " blended H2",
+            carrier="purchased H2",
+            marginal_cost=h2_gen.groupby("bus").fuel.mean().loc[h2_gen_buses],
+            p_nom=np.inf,
+        )
+
+    if not (fuel_cells := ppl.query("carrier == 'hydrogen-fuel-cell'")).empty:
+        n.add("Carrier", "H2 fuel cell")
+        n.add(
+            "Link",
+            fuel_cells.index,
+            bus0=fuel_cells.bus + " blended H2",
+            bus1=fuel_cells.bus,
+            p_nom=fuel_cells.p_nom,
+            carrier="H2 Fuel Cell",
+            marginal_cost=fuel_cells.VOM,
+            efficiency=fuel_cells.efficiency,
+            capital_cost=fuel_cells.capital_cost,
+            lifetime=fuel_cells.lifetime,
+        )
+
+    if not (turbines := ppl.query("carrier == 'hydrogen-turbine'")).empty:
+        n.add("Carrier", "H2 Turbine")
+        n.add(
+            "Link",
+            turbines.index,
+            bus0=turbines.bus + " blended H2",
+            bus1=turbines.bus,
+            carrier="H2 Turbine",
+            p_nom=turbines.p_nom,
+            marginal_cost=turbines.VOM,
+            efficiency=turbines.efficiency,
+            capital_cost=turbines.capital_cost,
+            lifetime=turbines.lifetime,
+        )
+
+
+def _monthly_to_hourly_profile(
+    monthly_profile: pd.Series,
+    hourly_index: pd.DatetimeIndex,
+) -> pd.Series:
+    """
+    Convert a monthly profile to an hourly profile by repeating each month's value for its number of hours.
+
+    Args:
+        hourly_index (pd.DatetimeIndex): DatetimeIndex with hourly timestamps for the entire year.
+        monthly_profile (pd.Series): Series with 12 values representing monthly data.
+
+    Returns:
+        pd.Series: Series with hourly data for the entire year.
+    """
+    hourly_profile = pd.Series(
+        monthly_profile.reindex(hourly_index.month).values, index=hourly_index
+    )
+    return hourly_profile
+
+
+def add_generator_availability(
+    n: pypsa.Network,
+    enable_eur_generator_unavailability: bool,
+    generator_availability_path: str,
+) -> None:
+    """
+    Add generator availability profiles to the network.
+
+    Args:
+        n (pypsa.Network): The PyPSA network to modify.
+        enable_eur_generator_unavailability (bool): Whether to extend unavailability data to European regions.
+        generator_availability_path (str): Path to generator availability CSV file.
+    """
+    carrier_availability = pd.read_csv(
+        generator_availability_path, index_col=["carrier", "month"]
+    ).squeeze()
+    add_query = "" if enable_eur_generator_unavailability else " and country == 'GB'"
+    relevant_buses = n.buses.query("carrier == 'AC'" + add_query).index
+    gen_availability = (
+        carrier_availability.reset_index()
+        .merge(
+            n.generators[n.generators.bus.isin(relevant_buses)].reset_index(),
+            on="carrier",
+        )
+        .pivot(index="month", columns="name", values="availability_fraction")
+    )
+    p_max_pu = gen_availability.apply(
+        _monthly_to_hourly_profile, hourly_index=n.snapshots
+    )
+    _add_timeseries_data_to_network(
+        n.generators_t, p_max_pu, "p_max_pu", conflicts="mul"
+    )
+
+
+def add_load_shedding(n: pypsa.Network, voll: float) -> None:
+    """
+    Add a load shedding generator to the network.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        The PyPSA network to attach the load shedding to.
+    voll : float
+        Value of lost load (VOLL) in EUR/MWh. If zero, load shedding is not added.
+    """
+    if voll > 0:
+        n.add("Carrier", "Load Shedding")
+        buses = n.buses.query("carrier=='AC'").index
+        n.add(
+            "Generator",
+            buses,
+            suffix=" Load Shedding",
+            marginal_cost=voll,
+            carrier="Load Shedding",
+            bus=buses,
+            p_nom=np.inf,
+        )
+        logger.info("Added load shedding generators to all AC buses")
+    else:
+        logger.info("VOLL is zero or False; load shedding not added to the network")
+
+
+def aggregate_time(n: pypsa.Network, time_aggregation: list[dict]) -> pypsa.Network:
+    """
+    Aggregate time steps in the network using the specified time aggregation method.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        The PyPSA network to aggregate.
+    time_aggregation : list of dict
+        List of dictionaries specifying the time aggregation method and parameters.
+
+    Returns
+    -------
+    pypsa.Network
+        The aggregated PyPSA network.
+    """
+    if not time_aggregation:
+        logger.info("No time aggregation specified; returning original network")
+        return n
+    m = n.copy()
+    for agg in time_aggregation:
+        logger.info(f"Aggregating time steps using method: {agg['method']}")
+        m = getattr(m.cluster.temporal, agg["method"])(**agg["parameters"])
+    logger.info(
+        f"Time aggregation complete. Original snapshots: {len(n.snapshots)}, Aggregated snapshots: {len(m.snapshots)}"
+    )
+    return m
 
 
 def compose_network(
@@ -837,20 +1272,29 @@ def compose_network(
     output_path: str,
     costs_path: str,
     powerplants_path: str,
-    hydro_capacities_path: str | None,
+    hydro_capacities_path: str,
     chp_p_min_pu_path: str,
+    interconnectors_path: str,
+    interconnectors_availability_path: str,
+    generator_availability_path: str,
     renewable_profiles: dict[str, str],
     countries: list[str],
     costs_config: dict[str, Any],
+    voll: float,
     electricity_config: dict[str, Any],
-    clustering_config: dict[str, Any],
     renewable_config: dict[str, Any],
-    demands: dict[str, list[str]],
-    eur_demand: str,
-    year: int,
-    enable_chp: bool,
+    demands: dict[str, str],
     ev_data: dict[str, str],
-    ev_params: dict[str, float],
+    dsr: dict[str, str],
+    H2_data: dict[str, Any],
+    enable_chp: bool,
+    enable_eur_h2_bus: bool,
+    enable_eur_generator_unavailability: bool,
+    dsr_hours_dict: dict[str, list],
+    load_bus_suffixes: dict[str, str],
+    flex_carrier_suffixes: dict[str, str],
+    time_aggregation: list[dict],
+    year: int,
 ) -> None:
     """
     Main composition function to create GB market model network.
@@ -865,12 +1309,12 @@ def compose_network(
         Path to costs CSV file
     powerplants_path : str
         Path to powerplants CSV file
-    hydro_capacities_path : str or None
+    hydro_capacities_path : str
         Path to hydro capacities CSV file
     chp_p_min_pu_path : str
         Path to CHP minimum operation profile CSV file
-    line_s_max_pu_path : str
-        Path to line s_max_pu profile CSV file
+    interconnectors_path : str
+        Path to interconnectors CSV file with DC link capacities
     renewable_profiles : dict
         Mapping of carrier names to profile file paths
     heat_demand_path : str
@@ -879,39 +1323,42 @@ def compose_network(
         List of country codes to include
     costs_config : dict
         Costs configuration dictionary
+    voll : float
+        Value of lost load in £/MWh
     electricity_config : dict
         Electricity configuration dictionary
     clustering_config : dict
         Clustering configuration dictionary
     renewable_config : dict
         Renewable configuration dictionary
-    demand: list[str]
-        List of paths to the demand data for each demand type
-    clustered_demand_profile: list[str]
-        List of paths to the clustered shape profile for each demand type
-    demand_types: list[str]
-        List of str for demand types
-    year: int
-        Modelling year
+    demands: dict[str, str]
+        Dictionary mapping demand types to paths for the demand data
+    ev_data : dict[str, str]
+        Dictionary containing EV flexibility data
+    dsr : dict[str, str]
+        Dictionary containing DSR flexibility data for baseline and electrified heat
+    dsr_hours_dict: dict[str, list]
+        DSR hours for each demand type
+    load_bus_suffixes : dict[str, str]
+        Suffixes to append to load buses for each demand type
+    flex_carrier_suffixes : dict[str, str]
+        Suffixes to append to flexibility carriers for each demand type
     enable_chp : bool
         Whether to enable CHP constraints
-    ev_data : dict[str, str]
-        Dictionary containing EV demand and flexibility data
-    ev_params : dict[str, float]
-        Dictionary containing EV profile adjustment parameters
+    enable_eur_h2_bus : bool
+        Whether to enable the H2 bus (incl. electrolysis to generate H2, H2 demand, and storage) for European countries.
+    year: int
+        Modelling year
     """
     network = pypsa.Network(network_path)
-    max_hours = electricity_config["max_hours"]
-    context = create_context(
-        network_path, costs_path, countries, costs_config, max_hours
-    )
+    context = create_context(network_path, costs_path, countries, costs_config)
     add_gb_components(network, context)
 
     # Load FES powerplants data (already enriched with costs from create_powerplants_table)
     ppl = _load_powerplants(powerplants_path, year)
 
     # Define costs file
-    costs = _prepare_costs(ppl, year)
+    costs = ppl[ppl.build_year == year].groupby("carrier").first()
 
     _integrate_renewables(
         network,
@@ -931,9 +1378,11 @@ def compose_network(
         ppl,
         conventional_carriers,
         extendable_carriers={"Generator": []},
+        renewable_carriers=set(electricity_config["renewable_carriers"]),
         conventional_params={},
         conventional_inputs={},
         unit_commitment=None,
+        fuel_price=None,
     )
 
     # Add simplified CHP constraints if enabled
@@ -944,13 +1393,47 @@ def compose_network(
         )
         attach_chp_constraints(network, chp_p_min_pu)
 
-    add_load(network, demands, eur_demand, year)
+    add_load(network, demands, load_bus_suffixes)
 
-    add_EVs(network, ev_data, ev_params, year)
+    ev_availability_profile = pd.read_csv(
+        ev_data["avail_profile_s_clustered"], index_col=0, parse_dates=True
+    )
+
+    add_DSR(
+        network,
+        year,
+        dsr,
+        dsr_hours_dict,
+        ev_availability_profile,
+        load_bus_suffixes,
+        flex_carrier_suffixes,
+    )
+
+    add_EV_V2G(
+        network,
+        year,
+        ev_data["regional_ev_v2g_inc_eur"],
+        ev_data["regional_ev_v2g_storage_inc_eur"],
+        ev_availability_profile,
+    )
+
+    add_H2(network, ppl, year, enable_eur_h2_bus, **H2_data)
+
+    attach_dc_interconnectors(
+        network, interconnectors_path, year, interconnectors_availability_path
+    )
+
+    add_storage(network, ppl)
+
+    add_generator_availability(
+        network, enable_eur_generator_unavailability, generator_availability_path
+    )
+    add_load_shedding(network, voll)
 
     finalise_composed_network(network, context)
 
-    network.export_to_netcdf(output_path)
+    network_agg = aggregate_time(network, time_aggregation)
+    network_agg.export_to_netcdf(output_path)
 
 
 if __name__ == "__main__":
@@ -961,39 +1444,14 @@ if __name__ == "__main__":
 
     configure_logging(snakemake)
     set_scenario_config(snakemake)
+    log_suffix = "-" + "_".join(snakemake.wildcards) if snakemake.wildcards else ""
+    logger = logging.getLogger(Path(__file__).stem + log_suffix)
 
     # Extract renewable profiles from inputs
     renewable_carriers = snakemake.params.electricity["renewable_carriers"]
     renewable_profile_keys = [f"profile_{carrier}" for carrier in renewable_carriers]
     renewable_profiles = {key: snakemake.input[key] for key in renewable_profile_keys}
-    demands = {
-        k.replace("demand_", ""): v
-        for k, v in snakemake.input.items()
-        if k.startswith("demand_")
-    }
-    ev_data = {
-        "ev_demand_annual": snakemake.input.ev_demand_annual,
-        "ev_demand_shape": snakemake.input.ev_demand_shape,
-        "ev_demand_peak": snakemake.input.ev_demand_peak,
-        "ev_storage_capacity": snakemake.input.ev_storage_capacity,
-        "ev_smart_charging": snakemake.input.regional_fes_ev_dsm,
-        "ev_v2g": snakemake.input.regional_fes_ev_v2g,
-        "ev_dsm_profile": snakemake.input.ev_dsm_profile,
-    }
-    ev_params = {
-        "relative_peak_tolerance": snakemake.params.ev_profile_config[
-            "relative_peak_tolerance"
-        ],
-        "relative_energy_tolerance": snakemake.params.ev_profile_config[
-            "relative_energy_tolerance"
-        ],
-        "upper_optimization_bound": snakemake.params.ev_profile_config[
-            "upper_optimization_bound"
-        ],
-        "lower_optimization_bound": snakemake.params.ev_profile_config[
-            "lower_optimization_bound"
-        ],
-    }
+
     compose_network(
         network_path=snakemake.input.network,
         output_path=snakemake.output.network,
@@ -1002,15 +1460,24 @@ if __name__ == "__main__":
         hydro_capacities_path=snakemake.input.hydro_capacities,
         renewable_profiles=renewable_profiles,
         chp_p_min_pu_path=snakemake.input.chp_p_min_pu,
-        eur_demand=snakemake.input.eur_demand,
+        interconnectors_path=snakemake.input.interconnectors_p_nom,
+        interconnectors_availability_path=snakemake.input.interconnectors_availability,
+        generator_availability_path=snakemake.input.generator_availability,
         countries=snakemake.params.countries,
         costs_config=snakemake.params.costs_config,
+        voll=snakemake.params.voll,
         electricity_config=snakemake.params.electricity,
-        clustering_config=snakemake.params.clustering,
         renewable_config=snakemake.params.renewable,
-        demands=demands,
-        year=int(snakemake.wildcards.year),
+        demands=_input_list_to_dict(snakemake.input.demands, parent=True),
+        ev_data=_input_list_to_dict(snakemake.input.ev_data),
+        dsr=_input_list_to_dict(snakemake.input.dsr),
+        H2_data=_input_list_to_dict(snakemake.input.H2_data),
         enable_chp=snakemake.params.enable_chp,
-        ev_data=ev_data,
-        ev_params=ev_params,
+        enable_eur_h2_bus=snakemake.params.enable_eur_h2_bus,
+        enable_eur_generator_unavailability=snakemake.params.enable_eur_generator_unavailability,
+        dsr_hours_dict=snakemake.params.dsr_hours_dict,
+        load_bus_suffixes=snakemake.params.load_bus_suffixes,
+        flex_carrier_suffixes=snakemake.params.flex_carrier_suffixes,
+        time_aggregation=snakemake.params.time_aggregation,
+        year=int(snakemake.wildcards.year),
     )

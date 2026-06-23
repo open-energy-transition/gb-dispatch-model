@@ -9,15 +9,179 @@
 Release Notes
 ##########################################
 
-Upcoming Release
-================
+v0.3.1 (2026-06-02)
+===================
 
-* Add demands to pypsa Network (#102, #70).
+This is a patch release with minor dependency and documentation updates.
+
+This version was synchronised with the upstream PyPSA-Eur repository on 2026-03-19.
+
+* Add `aiohttp` as explicit dependency.
+* Update lockfile to ensure latest `pdfminer-six` version is installed.
+* Update docs to better reflect disk space requirements.
+
+v0.3.0 (2026-05-27)
+===================
+
+This includes several additions to the documentation, fixes to energy demand in the workflow, new naming convention for PyPSA network generator and storage components, and updated dependencies to mitigate security vulnerabilities.
+
+This version was synchronised with the upstream PyPSA-Eur repository on 2026-03-19.
+
+Documentation
+-------------
+
+* Update FAQs (#285, #289).
+* Add documentation for Demand and DSR implementation in the GB dispatch model (#295)
+* Add line/link components documentation (#316).
+* Add storage components documentation (#315).
+* Add generation components documentation (#308).
+* Add heat subsystem documentation (#293)
+* Add ``pixi`` task to generate filtered snakemake DAGs for use in documenting gb-dispatch-model subsystems.
+* Add EV subsystem documentation (#279).
+* Add hydrogen subsystem documentation (#280).
+
+Workflow
+--------
+
+* Calculate all storage unit max hours from FES workbook (#299)
+* Add `CCS` carrier "set" to differentiate technologies with/without carbon capture and storage.
+* Use `ror` carrier instead of `hydro` for "Hydro" FES technology (#314)
+* Refactor configuration for mapping of FES technologies to PyPSA network carriers.
+* Add 'extra' technologies represented in ES1 sheet of the FES workbook to the model (#310)
+* Share bid/offer multipliers between like carriers (e.g. fuel cost of future hydrogen turbines will use the current CCGT multiplier).
+* Update European future electrolysis-derived hydrogen demand to be based on the TYNDP model outputs.
+  This decreases overall electrolysis electricity demand in Europe but also redistributes the demand between countries, with some increasing compared to previously.
+* Add blue hydrogen as a costed source of supply for hydrogen turbines/fuel cells (#301).
+* Make hydrogen subsystem & generator unavailability profiles optional for non-GB regions (#306).
+* Add redispatch objective function penalty to mitigate unrealistic system revenue within redispatch, in which components with a favourable bid/offer spread can be offset against each other (#304).
+* Fix demand profile scaling to correctly match annual FES demands.
+  This increases heat, EV, and baseline electricity demand in all model regions (GB & EUR) compared to the previous version.
+* Move resistive heating demand to the heat demand bus, rather than having it rolled in with baseline electricity demand.
+* Fix total electricity demand in GB to match the total demand given in the FES by filling the difference with a constant baseload demand and a variable T&D loss profile (matching the profile shape of all other demands combined).
+  This increases total GB demand compared to the previous version.
+* Get electrolysis efficiency directly from comparison of flows in and out of networked electrolysis defined in the FES workbook.
+  This increases electrolysis efficiency compared to the previous version.
+* Update source of hydrogen demand to use networked electrolysis hydrogen demand directly, rather than the leftover hydrogen demand after considering all other sources of hydrogen supply (e.g. blue H2).
+  This increases GB hydrogen demand compared to the previous version.
+* Fix technology efficiencies being erroneously set to 100% in network composition.
+
+Dependencies
+------------
+
+* Python package updates to address security vulnerabilities (#322).
+  - Removed `jupyter` package, updated `urllib3` to 2.7.0 and diskcache to `5.6.3`
+  - The list of fixed vulnerabilities can be found in the PR linked above.
+* Remove unused environment set-up files inherited from upstream (`dockerfile`, `envs/`) (#318).
+* Add HiGHS HiPO solver to `pixi` dependencies and to the solver config options.
+
+v0.2.2 (2026-03-24)
+===================
+
+This is a minor release that mostly includes workflow fixes and improved configuration validation.
+
+This version was synchronised with the upstream PyPSA-Eur repository on 2026-03-19.
+
+* Fix missing lines in boundary crossings by using extended PyPSA base network for crossing identification.
+* Add option to scale boundary capabilities to reflect seasonal variations (#267).
+* Add option to subset FES scenarios to run.
+* Add FAQs to the docs (#221).
+* Update all dependencies defined in `pixi.lock` without changing version pinning in `pixi.toml`.
+* Switch off optimisation "noisy costs" to avoid large negative contributions to the objective function value from bidirectional links.
+* Account for snapshot weighting and in redispatch version of the storage unit energy balance constraint.
+* Add data cleaning section into the docs, to describe some of our data processing steps in more detail.
+* Automate custom busmaps for correctly connecting offshore wind farm buses with their appropriate onshore regions.
+* Correctly align line/link flow directions when applying the boundary constraints (#259).
+* Use historical gas prices to compute bid/offer multipliers (#257).
+* Fix unexpected connection between two GB regions caused by a new offshore virtual bus that was not accounted for in `data/gb-model/custom_busmap/*.csv` (#258).
+
+v0.2.1 (2026-03-05)
+===================
+
+This is a minor release that mostly includes workflow fixes and improved configuration validation.
+
+This version was synchronised with the upstream PyPSA-Eur repository on 2026-02-26.
+
+* Create GSP shapefile using GSP polygon, coordinate and FES workbook data (#251).
+* Disallow nuclear from being redispatched (#201).
+* Add missing carrier for non-networked electrolysis demand (#242).
+* Capitalise all EV carriers (#243).
+* Fix interconnector capacity plan to align with FES2024 results (with high degree of subjectivity on project choice) (#232).
+* Automate ETYS boundary line/link crossings.
+* Update config filenames. `config/config.gb.2024.yaml` defines the FES2024 configuration; `config/config.default.gb.yaml` is automatically generated and should not be edited directly (#235).
+* Add config validation and associated documentation for the additional configuration required for the gb-dispatch-model (#235).
+* Switch regions `GB 30` and `GB 31` and rename new `GB 31` to `GB NI` to more explicitly represent the Northern Ireland region.
+* Set line capacities to large number for constrained network to make sure only boundary capabilities are limiting (#241).
+* New config option to enable aggregating the PyPSA network time dimensions, to reduce solve times (#229).
+* Created new OSM pre-built network, available at https://zenodo.org/records/18712831, to include updates made in upstream PyPSA-Eur (incl. ignoring unbuilt lines) (#237).
+* Fix reaching Elexon API request limit when running snakemake with multiple cores by forcing all cores to be used for the data fetching rule.
+* Adding `async` for API request that fetches the mapping of Elexon BMU units to a fueltype (#225).
+* Allow for boundary capabilities to increase in line with outputs from an ETYS report + from manual additions (configurable, defaults to True) (#219, #239).
+* Account for time aggregation in the nuclear annual operation custom constraints (#233)
+
+v0.2.0 (2026-02-13)
+===================
+
+This release of the GB dispatch model is configured for use with FES2024 data.
+Due to the differences in data structure compared to FES2021, it is not possible to use this version for FES years prior to 2023.
+Instead, development for <= FES2022 should branch off from v0.1.0.
+
+This version was synchronised with the upstream PyPSA-Eur repository on 2026-02-10.
+
+* Publish documentation on readthedocs.org.
+* Calculate bid/offer multipliers using data from Elexon (#161, #209).
+* Add BritNed as an existing interconnector in default config (#210).
+* Use correct currency (GBP, not EUR) in docs.
+* Clean SPDX copyright text where an outdated repository name was being used.
+* Add docs page detailing our dispatch/redispatch methodology (#158).
+* Update custom busmap definition to have one per configured run name (``data/gb-model/custom-busmap.csv`` -> ``data/gb-model/custom-busmap/<run-name>.csv``) (#207).
+* Extend workflow to run all FES scenarios in parallel (#215).
+* Fix monthly outage calculations by using the `entsoe-py` package to collect outages and DUKES data to define current capacities (#204).
+* Impose nuclear capacity factor range to enforce nuclear power plant usage where it would otherwise have unrealistically low generation / high dispatchability (#201 and #202).
+* Fix storage flows in redispatch (both for the original asset and the ramp up/down assets) (#196).
+* Use `Generator` component for all ramp up/down assets to simplify optimisation problem.
+* Update to FES2024, with the side effect of fixing load shedding issues (#163, #155, #156).
+
+v0.1.0 (2026-01-23)
+===================
+
+This is the initial release of the GB dispatch model, configured for use with FES2021 data.
+It was synchronised with the upstream PyPSA-Eur repository on 2026-01-12.
+
+* Calculate total constraint costs as a sum of all redispatch runs (#189).
+* * Update to PyPSA ``>=v1`` (#160).
+* Remove KVL constraints from unconstrained GB-EUR model and set transmission losses to 0 (#186).
+* Identify marginal generator in Europe when non-neighbouring countries are part of the network (#179).
+* Add system representation graphic and details to the documentation (#157).
+* Use heat pump uptake trend to define shape of heating mix technological change (#130).
+* Avoid double counting the impact of heat demand on both baseline electricity and heat demand profile shapes.
+* Move resistive heating profile impact to baseline electricity (since FES heating demand only covers heat pump electricity consumption).
+* Replaced EUR buses with a single EUR bus for faster re-dispatch solve (#174)
+* Set bus_id for virtual buses using line_id to ensure stable custom busmap mapping (#166)
+* Enable custom busmap to prevent incorrect clustering of offshore buses (#159)
+* Add interconnector bids and offers to constrained network (#153)
+* Calculate interconnector bids and offers (#151)
+* Add config option to set load shedding to the most expensive powerplant plus a small delta.
+* Enable custom busmap to prevent incorrect clustering of offshore buses (#159)
+* Fix H2 demands in Europe using TYNDP H2 NT scenario demands (#152)
+* Add bid/offers for generators (#147)
+* Distribute all loads into their own buses with independently linked DSR stores
+* Add residential heat demand DSR, including district heating flexibility (as it cannot be separated)
+* Process low carbon register CfD strike prices for use in redispatch
+* Define independent DSR hours for each demand type (#144)
+* Disassociate EV DSR and EV V2G components (#140)
+* Add DC links into boundary constraints (#136)
+* Added flexibility to the baseline electricity and electrified i&c heat demand through demand-side management (#133).
+* Added generator and interconnector availability fraction as `p_max_pu` timeseries parameter in the network.
+* Fixed missing European neighbour data in EV datasets (#123).
+* Add interconnectors to network.
+* Add boundary capability constraints to GB model (#131).
+* Merge Shetland (region 30) and Northern Ireland (region 31) to other regions (#117).
+* Add demands to pypsa Network (#102, #70, #120).
 * Limit GB model to ``clustered`` clusters.
 * Add EV to pypsa Network (#114)
 * Tablulated regional unmanaged EV charging demand data (#112).
 * Add demands to pypsa Network (#102)
-* Added ETYS report boundary capabilities extractor & scaled line `s_nom` to match these values (#9).
+* Added ETYS report boundary capabilities extractor & linked PyPSA bus-pair lines to these boundaries (#9).
 * Added config version for updating the system boundaries to the subset defined in the ETYS report.
 * Prepared unmanaged EV charging demand profile shape based on traffic data (#104).
 * Tabulated regional EV storage data (#101).
