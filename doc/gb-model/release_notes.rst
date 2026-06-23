@@ -9,6 +9,11 @@
 Release Notes
 ##########################################
 
+Unreleased
+==========
+
+* Add map plot rule `plot_regions_and_network`.
+
 v0.3.1 (2026-06-02)
 ===================
 

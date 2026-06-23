@@ -17,6 +17,7 @@ include: "gb-model/heat.smk"
 include: "gb-model/hydrogen.smk"
 include: "gb-model/dispatch.smk"
 include: "gb-model/redispatch.smk"
+include: "gb-model/analysis.smk"
 
 
 rule compose_network:

@@ -1,12 +1,13 @@
-# SPDX-FileCopyrightText: Contributors to PyPSA-Eur <https://github.com/pypsa/pypsa-eur>
+# SPDX-FileCopyrightText: gb-dispatch-model contributors
 #
 # SPDX-License-Identifier: MIT
 """
-Plot ETYS boundary capabilities with interactive map.
+Plot regions, ETYS boundary capabilities, and underlying network with interactive map.
 
 Creates an interactive Plotly map showing:
 - Regional boundaries with capacity annotations
 - OSM transmission infrastructure (lines, substations, DC links)
+- Current and planned interconnectors with build years
 - Interactive slider to highlight individual boundaries
 - Toggleable OSM infrastructure layers
 """
@@ -15,10 +16,15 @@ import geopandas as gpd
 import pandas as pd
 import plotly.colors as pc
 import plotly.graph_objects as go
+import pypsa
 import shapely
 
+from scripts.gb_model.transmission.create_interconnectors_table import (
+    projects_to_pypsa_links,
+)
 
-def get_voltage_color(voltage):
+
+def get_voltage_color(voltage: float) -> str:
     """Return color for voltage level."""
     color_map = {
         400: "#8B0000",
@@ -34,35 +40,76 @@ def get_voltage_color(voltage):
     return "#CCCCCC"
 
 
-def load_osm_infrastructure(
-    lines_path, buses_path, links_path, gb_shapes, allowed_voltages
-):
-    """Load and filter OSM infrastructure data for GB."""
-    osm_lines = gpd.read_file(lines_path)
-    osm_buses = gpd.read_file(buses_path)
-    osm_links = gpd.read_file(links_path)
+def load_network_data(
+    network: pypsa.Network, gb_shapes: gpd.GeoDataFrame, allowed_voltages: set
+) -> dict[str, gpd.GeoDataFrame]:
+    """Load and filter OSM infrastructure data for GB, which has already been loaded into a PyPSA network."""
 
     # Filter for GB
-    osm_buses_gb = osm_buses[osm_buses["country"] == "GB"].copy()
-    gb_bus_ids = set(osm_buses_gb["bus_id"])
-    osm_lines_gb = osm_lines[
-        osm_lines["bus0"].isin(gb_bus_ids) | osm_lines["bus1"].isin(gb_bus_ids)
-    ].copy()
-    osm_links_gb = gpd.sjoin(gb_shapes, osm_links, how="right").dropna(subset=["name"])
+    buses_gb = _prep_static_table(network.buses[network.buses["country"] == "GB"])
+    buses_gb = gpd.sjoin(buses_gb, gb_shapes[["geometry"]], how="left").dropna(
+        subset=["index_right"]
+    )
+    lines_gb = _prep_static_table(
+        network.lines.query("bus0 in @buses_gb.index and bus1 in @buses_gb.index")
+    )
+    links_gb = _prep_static_table(
+        network.links.query("bus0 in @buses_gb.index and bus1 in @buses_gb.index")
+    )
 
     # Filter by voltage
-    osm_lines_gb = osm_lines_gb[osm_lines_gb["voltage"].isin(allowed_voltages)]
-    osm_buses_gb = osm_buses_gb[osm_buses_gb["voltage"].isin(allowed_voltages)]
+    lines_gb = lines_gb.query("v_nom in @v", local_dict={"v": allowed_voltages})
+    buses_gb = buses_gb.query("v_nom in @v", local_dict={"v": allowed_voltages})
 
     # Convert to lat/lon
-    return {
-        "lines": osm_lines_gb.to_crs("EPSG:4326"),
-        "buses": osm_buses_gb.to_crs("EPSG:4326"),
-        "links": osm_links_gb.to_crs("EPSG:4326"),
+    return {"lines": lines_gb, "buses": buses_gb, "links": links_gb}
+
+
+def _prep_static_table(df: pd.DataFrame) -> gpd.GeoDataFrame:
+    """Prepare static table for plotting."""
+    df = df.copy()
+    df["geometry"] = gpd.GeoSeries.from_wkt(df["geometry"])
+    return gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
+
+
+def load_interconnector_data(
+    regions: gpd.GeoDataFrame,
+    interconnector_options: list[dict],
+    interconnector_plan: dict[str, dict[int, list[str]]],
+    year_range: tuple[int, int],
+) -> gpd.GeoDataFrame:
+    """Load and filter interconnector data for GB."""
+    # Map interconnector projects to PyPSA links
+    all_interconnector_plan = {
+        year: plan
+        for year, plan in interconnector_plan["HT"].items()
+        if year < year_range[0]
     }
+    all_interconnector_plan[int(year_range[0])] = sorted(
+        set()
+        .union([i["name"] for i in interconnector_options])
+        .difference(*all_interconnector_plan.values())
+    )
+    interconnector_links = projects_to_pypsa_links(
+        interconnector_options,
+        all_interconnector_plan,
+        regions,
+        [year_range[0], year_range[0]],
+        regions.crs.to_string(),
+    )
+    for scenario, plan in interconnector_plan.items():
+        interconnector_links[f"{scenario}_year"] = interconnector_links.project.map(
+            lambda x: next(
+                (year for year, projects in plan.items() if x in projects), None
+            )
+        )
+
+    return interconnector_links
 
 
-def extract_geometry_coords(geometry):
+def extract_geometry_coords(
+    geometry: shapely.geometry.base.BaseGeometry,
+) -> tuple[list[float], list[float]]:
     """Extract lon/lat coordinates from LineString or MultiLineString."""
     all_lons, all_lats = [], []
     linestrings = (
@@ -79,7 +126,9 @@ def extract_geometry_coords(geometry):
     return all_lons, all_lats
 
 
-def compute_annotation_position(lons, lats):
+def compute_annotation_position(
+    lons: list[float], lats: list[float]
+) -> tuple[float, float]:
     """Compute annotation position: end of line or center if circular."""
     valid_lons = [x for x in lons if x is not None]
     valid_lats = [y for y in lats if y is not None]
@@ -95,8 +144,26 @@ def compute_annotation_position(lons, lats):
     return valid_lons[-1], valid_lats[-1]
 
 
-def prepare_boundary_data(lines_plot):
-    """Prepare boundary line data with geometries and annotations."""
+def prepare_boundary_data(lines_plot: gpd.GeoDataFrame) -> list[dict]:
+    """
+    Prepare boundary line data with geometries and annotations.
+
+    Parameters
+    ----------
+    lines_plot: gpd.GeoDataFrame
+        GeoDataFrame containing boundary lines with 'Boundary_n' and 'capability_mw' columns.
+
+    Returns
+    -------
+    list of dict
+        Each dict contains:
+        - 'name': Boundary name
+        - 'capacity': Boundary capacity in MW
+        - 'lon': List of longitudes for the line geometry
+        - 'lat': List of latitudes for the line geometry
+        - 'centroid_lon': Longitude for annotation placement
+        - 'centroid_lat': Latitude for annotation placement
+    """
     line_data = []
     for boundary_name in lines_plot["Boundary_n"].unique():
         boundary_rows = lines_plot[lines_plot["Boundary_n"] == boundary_name]
@@ -126,19 +193,31 @@ def prepare_boundary_data(lines_plot):
     return line_data
 
 
-def load_boundary_data(shapes_file, etys_caps_file, boundaries_file):
-    """Load data for boundary visualization."""
-    shapes = (
-        gpd.read_file(shapes_file)
-        .query("country == 'GB'")
-        .query("TO_region != 'N-IRL'")
-    )
-    etys_caps = pd.read_csv(etys_caps_file)
-    lines = gpd.read_file(boundaries_file).to_crs(shapes.crs)
-    lines = lines[lines["Boundary_n"].isin(etys_caps["boundary_name"])]
+def load_boundary_data(
+    gb_shapes: gpd.GeoDataFrame, etys_caps: pd.DataFrame, boundaries: gpd.GeoDataFrame
+) -> dict:
+    """
+    Load data for boundary visualization.
+
+    Parameters
+    ----------
+    gb_shapes: gpd.GeoDataFrame
+
+        GeoDataFrame containing GB shapes.
+    etys_caps: pd.DataFrame
+        DataFrame containing ETYS boundary capabilities.
+    boundaries: gpd.GeoDataFrame
+        GeoDataFrame containing boundary geometries.
+
+    Returns
+    -------
+    dict
+        Dictionary containing shapes for plotting, color mapping, number of regions, line data, and map center coordinates.
+    """
+    lines = boundaries[boundaries["Boundary_n"].isin(etys_caps["boundary_name"])]
 
     shapes_plot = (
-        shapes.to_crs("EPSG:4326")
+        gb_shapes.to_crs("EPSG:4326")
         .reset_index(drop=False)
         .rename(columns={"index": "fid"})
     )
@@ -168,10 +247,19 @@ def load_boundary_data(shapes_file, etys_caps_file, boundaries_file):
     }
 
 
-def add_osm_lines_trace(fig, osm_lines):
-    """Add OSM transmission line traces grouped by voltage."""
-    for voltage in sorted(osm_lines["voltage"].dropna().unique(), reverse=True):
-        group = osm_lines[osm_lines["voltage"] == voltage]
+def add_lines_trace(fig: go.Figure, lines: pd.DataFrame):
+    """
+    Add OSM transmission line traces grouped by voltage.
+
+    Parameters
+    ----------
+    fig: plotly.graph_objects.Figure
+        The Plotly figure to which the traces will be added.
+    lines: pd.DataFrame
+        DataFrame containing line geometries and voltage levels.
+    """
+    for voltage in sorted(lines["v_nom"].dropna().unique(), reverse=True):
+        group = lines[lines["v_nom"] == voltage]
         all_lons, all_lats = [], []
 
         for _, row in group.iterrows():
@@ -186,11 +274,10 @@ def add_osm_lines_trace(fig, osm_lines):
                 mode="lines",
                 line=dict(color=get_voltage_color(voltage), width=2.5),
                 opacity=0.6,
-                name=f"Lines {int(voltage)}kV",
-                legendgroup="osm_lines",
-                legendgrouptitle_text="OSM Lines"
-                if voltage
-                == sorted(osm_lines["voltage"].dropna().unique(), reverse=True)[0]
+                name=f"AC {int(voltage)}kV",
+                legendgroup="lines",
+                legendgrouptitle_text="Transmission Lines"
+                if voltage == sorted(lines["v_nom"].dropna().unique(), reverse=True)[0]
                 else None,
                 showlegend=True,
                 visible="legendonly",
@@ -200,10 +287,19 @@ def add_osm_lines_trace(fig, osm_lines):
         )
 
 
-def add_osm_buses_trace(fig, osm_buses):
-    """Add OSM substation traces grouped by voltage."""
-    for voltage in sorted(osm_buses["voltage"].dropna().unique(), reverse=True):
-        group = osm_buses[osm_buses["voltage"] == voltage]
+def add_buses_trace(fig: go.Figure, buses: gpd.GeoDataFrame):
+    """
+    Add OSM substation traces grouped by voltage.
+
+    Parameters
+    ----------
+    fig: plotly.graph_objects.Figure
+        The Plotly figure to which the traces will be added.
+    buses: geopandas.GeoDataFrame
+        GeoDataFrame containing bus geometries and voltage levels.
+    """
+    for voltage in sorted(buses["v_nom"].dropna().unique(), reverse=True):
+        group = buses[buses["v_nom"] == voltage]
         lons = [p.x for p in group.geometry]
         lats = [p.y for p in group.geometry]
 
@@ -216,11 +312,10 @@ def add_osm_buses_trace(fig, osm_buses):
                     size=8 if voltage >= 275 else 6, color=get_voltage_color(voltage)
                 ),
                 opacity=0.7,
-                name=f"Substations {int(voltage)}kV",
-                legendgroup="osm_buses",
-                legendgrouptitle_text="OSM Substations"
-                if voltage
-                == sorted(osm_buses["voltage"].dropna().unique(), reverse=True)[0]
+                name=f"{int(voltage)}kV",
+                legendgroup="buses",
+                legendgrouptitle_text="Buses (substations, offshore wind farms, etc.)"
+                if voltage == sorted(buses["v_nom"].dropna().unique(), reverse=True)[0]
                 else None,
                 showlegend=True,
                 visible="legendonly",
@@ -230,13 +325,34 @@ def add_osm_buses_trace(fig, osm_buses):
         )
 
 
-def add_osm_links_trace(fig, osm_links):
-    """Add OSM DC links trace (all voltages combined)."""
-    if osm_links.empty:
+def add_links_trace(
+    fig: go.Figure,
+    internal_links: pd.DataFrame,
+    interconnector_data: pd.DataFrame,
+    start_year: int,
+    interconnector_plan: dict,
+):
+    """
+    Add DC links trace (all voltages combined).
+
+    Parameters
+    ----------
+    fig: plotly.graph_objects.Figure
+        The Plotly figure to which the traces will be added.
+    internal_links: pd.DataFrame
+        DataFrame containing internal GB DC links.
+    interconnector_data: pd.DataFrame
+        DataFrame containing interconnector data.
+    start_year: int
+        The starting year for the dispatch runs (one year after the FES year).
+    interconnector_plan: dict
+        Dictionary containing the interconnector plan for different scenarios.
+    """
+    if internal_links.empty and interconnector_data.empty:
         return
 
     all_lons, all_lats = [], []
-    for _, row in osm_links.iterrows():
+    for _, row in internal_links.iterrows():
         lons, lats = extract_geometry_coords(row.geometry)
         all_lons.extend(lons)
         all_lats.extend(lats)
@@ -248,14 +364,45 @@ def add_osm_links_trace(fig, osm_links):
             mode="lines",
             line=dict(color="#9400D3", width=3),
             opacity=0.8,
-            name="DC Links",
-            legendgroup="osm_links",
+            name="Internal GB HVDC",
+            legendgroup="lines",
             showlegend=True,
             visible="legendonly",
-            hovertext="DC link",
+            hovertext="Internal GB HVDC line",
             hoverinfo="text",
         )
     )
+    legend = True
+    for _, row in interconnector_data.iterrows():
+        lons, lats = extract_geometry_coords(row.geometry)
+        hovertext = f"{row['project']} ({row['p_nom'] / 1000:.0f} GW)"
+        if row["build_year"] < start_year:
+            hovertext += f"<br>Already constructed prior to {start_year}"
+        else:
+            for scenario in interconnector_plan.keys():
+                if pd.notna(row[f"{scenario}_year"]):
+                    hovertext += (
+                        f"<br>{scenario} pathway build year: {row[f'{scenario}_year']}"
+                    )
+                else:
+                    hovertext += f"<br>{scenario} pathway: Not built"
+
+        fig.add_trace(
+            go.Scattermap(
+                lon=lons,
+                lat=lats,
+                mode="lines",
+                line=dict(color="#D3007F", width=3),
+                opacity=0.8,
+                name="HVDC interconnectors",
+                legendgroup="lines",
+                showlegend=legend,
+                visible="legendonly",
+                hovertext=hovertext,
+                hoverinfo="text",
+            )
+        )
+        legend = False  # Only show legend for the first interconnector trace
 
 
 def add_boundary_traces(fig, line_data):
@@ -319,13 +466,11 @@ def add_choropleth_trace(fig, data):
     )
 
 
-def create_slider_steps(line_data, num_osm_traces, num_boundary_lines):
+def create_slider_steps(line_data, num_traces, num_boundary_lines):
     """Create slider steps for boundary highlighting."""
     all_unique_lines = ["None"] + [ld["name"] for ld in line_data]
-    boundary_trace_indices = list(
-        range(num_osm_traces, num_osm_traces + num_boundary_lines)
-    )
-    annotation_trace_idx = num_osm_traces + num_boundary_lines
+    boundary_trace_indices = list(range(num_traces, num_traces + num_boundary_lines))
+    annotation_trace_idx = num_traces + num_boundary_lines
     slider_steps = []
 
     for line_name in all_unique_lines:
@@ -386,44 +531,49 @@ if __name__ == "__main__":
 
     # Extract parameters
     allowed_voltages = set(snakemake.params.voltages)
+    regions = gpd.read_file(snakemake.input.shapes)
 
-    # Load data
-    gb_shapes = gpd.read_file(snakemake.input.shapes)
-    osm_data = load_osm_infrastructure(
-        snakemake.input.lines,
-        snakemake.input.buses,
-        snakemake.input.links,
-        gb_shapes,
-        allowed_voltages,
+    gb_shapes = regions.query("country == 'GB' and TO_region != 'N-IRL'")
+    network = pypsa.Network(snakemake.input.network)
+    network_data = load_network_data(network, gb_shapes, allowed_voltages)
+    interconnector_data = load_interconnector_data(
+        regions,
+        snakemake.params.interconnector_options,
+        snakemake.params.interconnector_plan,
+        snakemake.params.year_range,
     )
-
-    boundary_data = load_boundary_data(
-        snakemake.input.shapes,
-        snakemake.input.etys_caps,
-        snakemake.input.boundaries,
-    )
+    etys_caps = pd.read_csv(snakemake.input.etys_caps)
+    boundaries = gpd.read_file(snakemake.input.boundaries).to_crs(gb_shapes.crs)
+    boundary_data = load_boundary_data(gb_shapes, etys_caps, boundaries)
 
     # Count traces
-    num_osm_traces = (
-        len(osm_data["lines"]["voltage"].dropna().unique())
-        + len(osm_data["buses"]["voltage"].dropna().unique())
-        + (1 if not osm_data["links"].empty else 0)
+    num_traces = (
+        len(network_data["lines"]["v_nom"].dropna().unique())
+        + len(network_data["buses"]["v_nom"].dropna().unique())
+        + (1 if not network_data["links"].empty else 0)
+        + len(interconnector_data)
     )
 
     # Create figure and add traces
     fig = go.Figure()
-    add_osm_lines_trace(fig, osm_data["lines"])
-    add_osm_buses_trace(fig, osm_data["buses"])
-    add_osm_links_trace(fig, osm_data["links"])
+    add_choropleth_trace(fig, boundary_data)
+    add_lines_trace(fig, network_data["lines"])
+    add_buses_trace(fig, network_data["buses"])
+    add_links_trace(
+        fig,
+        network_data["links"],
+        interconnector_data,
+        snakemake.params.year_range[0],
+        snakemake.params.interconnector_plan,
+    )
 
     line_data = boundary_data["line_data"]
     add_boundary_traces(fig, line_data)
-    add_choropleth_trace(fig, boundary_data)
 
     num_boundary_lines = len(line_data)
 
     # Create slider
-    slider_steps = create_slider_steps(line_data, num_osm_traces, num_boundary_lines)
+    slider_steps = create_slider_steps(line_data, num_traces, num_boundary_lines)
 
     # Configure layout
     fig.update_layout(

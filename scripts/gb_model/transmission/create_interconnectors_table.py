@@ -83,9 +83,8 @@ def projects_to_pypsa_links(
         .set_index("name")
         .rename_axis(index="project")
     )
-
     df["bus0"] = map_points_to_regions(
-        df, gdf_regions, "lat", "lon", "EPSG:4326", target_crs
+        df, gdf_regions, "lat", "lon", "EPSG:4326", target_crs, 0
     )["name"]
     country_codes = {x: coco.convert(x, to="ISO2") for x in df["neighbour"].unique()}
     df["bus1"] = df["neighbour"].replace(country_codes)
