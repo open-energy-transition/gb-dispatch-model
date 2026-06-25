@@ -57,15 +57,11 @@ def calc_bid_offer_multipliers(
     # -ve pairId's indicate bids and +ve pairId's indicate offers
     # The bid / offer price can vary with the pairId - for simplicity an average of the prices over the pair id's is used here
     mask = [pd.Grouper(key="settlementDate", freq="QE"), "carrier"]
-    df_bod_mean['bidPrice'] = (
-        df_bid_offer.query("bidOfferPairId < 0")
-        .groupby(mask)["bidPrice"]
-        .mean()
+    df_bod_mean["bidPrice"] = (
+        df_bid_offer.query("bidOfferPairId < 0").groupby(mask)["bidPrice"].mean()
     )
-    df_bod_mean['offerPrice'] = (
-        df_bid_offer.query("bidOfferPairId > 0")
-        .groupby(mask)["offerPrice"]
-        .mean()
+    df_bod_mean["offerPrice"] = (
+        df_bid_offer.query("bidOfferPairId > 0").groupby(mask)["offerPrice"].mean()
     )
     df_bod_mean = pd.DataFrame(df_bod_mean)
     df_bod_mean.reset_index(inplace=True)
