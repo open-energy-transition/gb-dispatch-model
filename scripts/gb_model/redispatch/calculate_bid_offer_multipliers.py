@@ -50,16 +50,36 @@ def calc_bid_offer_multipliers(
             for path in bid_offer_costs_path
         ]
     )
-    df_bid_offer["year"] = df_bid_offer["settlementDate"].dt.year
-    df_bid_offer["quarter"] = df_bid_offer["settlementDate"].dt.month.replace(
+
+    df_bod_mean = {}
+
+    # BidOfferPairId is an indication of the bandwidth within which a BMunit can increase / decrease it's power output.
+    # -ve pairId's indicate bids and +ve pairId's indicate offers
+    # The bid / offer price can vary with the pairId - for simplicity an average of the prices over the pair id's is used here
+    mask = [pd.Grouper(key="settlementDate", freq="QE"), "carrier"]
+    df_bod_mean['bidPrice'] = (
+        df_bid_offer.query("bidOfferPairId < 0")
+        .groupby(mask)["bidPrice"]
+        .mean()
+    )
+    df_bod_mean['offerPrice'] = (
+        df_bid_offer.query("bidOfferPairId > 0")
+        .groupby(mask)["offerPrice"]
+        .mean()
+    )
+    df_bod_mean = pd.DataFrame(df_bod_mean)
+    df_bod_mean.reset_index(inplace=True)
+
+    df_bod_mean["year"] = df_bod_mean["settlementDate"].dt.year
+    df_bod_mean["quarter"] = df_bod_mean["settlementDate"].dt.month.replace(
         {3: 1, 6: 2, 9: 3, 12: 4}
     )
-    df_bid_offer = df_bid_offer.reset_index().set_index(["carrier", "year", "quarter"])
+    df_bod_mean = df_bod_mean.reset_index().set_index(["carrier", "year", "quarter"])
 
     df_cost_filtered = df_cost.query("set in @set", local_dict={"set": DEFAULT_SETS})
 
     # Join bid offer quarterly dataframe with cost dataframe
-    df_multipliers = df_bid_offer.join(
+    df_multipliers = df_bod_mean.join(
         df_cost_filtered.set_index(["carrier", "year", "quarter"])
     )
 

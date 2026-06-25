@@ -70,7 +70,7 @@ rule fetch_bid_offer_data_elexon:
     input:
         bmu_fuel_map_path="data/gb-model/BMUFuelType.xlsx",
     output:
-        csv=resources("gb-model/bids_and_offers/Elexon/{bod_year}.csv"),
+        csv="data/gb-model/Elexon/{bod_year}.csv",
     resources:
         # Used to avoid the same rule running simultaneously (and exceeding max concurrent requests).
         parallel_elexon_download=1,
@@ -94,7 +94,7 @@ rule calculate_bid_offer_multipliers:
         fes_carbon_costs=resources("gb-model/fes-costing/AS.7 (Carbon Cost).csv"),
         powerplants=resources("gb-model/{fes_scenario}/fes_powerplants.csv"),
         bid_offer_data=expand(
-            resources("gb-model/bids_and_offers/Elexon/{bod_year}.csv"),
+            "data/gb-model/Elexon/{bod_year}.csv",
             bod_year=config["redispatch"]["elexon"]["years"],
         ),
         historical_fuel_price="data/gb-model/downloaded/dukes_fuel_prices.xlsx",
