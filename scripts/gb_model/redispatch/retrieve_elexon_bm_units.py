@@ -89,10 +89,7 @@ def fetch_BM_units(
         # URL to fetch BM unit data
         url = f"{base_url}/reference/bmunits/all"
 
-        
-        df_bmu = fetch_api_request_data(
-            url, retrieval_message="BMU Unit Data"
-        )
+        df_bmu = fetch_api_request_data(url, retrieval_message="BMU Unit Data")
     else:
         df_bmu = pd.read_excel(bmu_fuel_map_path).rename(
             columns={"NESO BMU ID": "nationalGridBmUnit", "REG FUEL TYPE": "fuelType"}
@@ -118,8 +115,5 @@ if __name__ == "__main__":
         api_bmu_fuel_map=snakemake.params.api_bmu_fuel_map,
     )
 
-
     bmu_units.to_csv(snakemake.output.csv)
-    logger.info(
-        f"Saved BMU units to {snakemake.output.csv}"
-    )
+    logger.info(f"Saved BMU units to {snakemake.output.csv}")
