@@ -12,6 +12,7 @@ Release Notes
 Unreleased
 ==========
 
+* Move Elexon bids and offer data download to data/ folder (#340).
 * Add map plot rule `plot_regions_and_network`.
 
 v0.3.1 (2026-06-02)
