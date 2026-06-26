@@ -71,9 +71,7 @@ async def fetch_api_request_data(
     return df
 
 
-async def get_historical_bod(
-    base_url: str, year: int
-) -> pd.DataFrame:
+async def get_historical_bod(base_url: str, year: int) -> pd.DataFrame:
     """
     Fetch bid / offer data for an entire year by querying day by day
 
@@ -148,7 +146,6 @@ if __name__ == "__main__":
     )
     global SEM
     SEM = asyncio.Semaphore(max_concurrent_requests)
-
 
     df_bod = asyncio.run(
         get_historical_bod(

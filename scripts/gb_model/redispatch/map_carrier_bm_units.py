@@ -17,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def map_carrier_bm_units(
-    bm_units_path: str,
-    technology_mapping: dict[str,str]
+    bm_units_path: str, technology_mapping: dict[str, str]
 ) -> pd.DataFrame:
     """
     Get mapping of BM units to fuel types (carriers)
@@ -31,7 +30,7 @@ def map_carrier_bm_units(
         CSV path for BMunits
     """
 
-    df_bmu=pd.read_csv(bm_units_path)
+    df_bmu = pd.read_csv(bm_units_path)
 
     # Map BM unit fuel types to PyPSA carriers
     df_bmu["carrier"] = df_bmu["fuelType"].map(technology_mapping)
@@ -56,17 +55,13 @@ if __name__ == "__main__":
     configure_logging(snakemake)
     set_scenario_config(snakemake)
 
-
     bmu_carrier_map = map_carrier_bm_units(
         bm_units_path=snakemake.input.bm_units_path,
         technology_mapping=snakemake.params.technology_mapping,
     )
 
-    df_bod=pd.read_csv(snakemake.input.bod_path)
+    df_bod = pd.read_csv(snakemake.input.bod_path)
     df_bod["carrier"] = df_bod["nationalGridBmUnit"].map(bmu_carrier_map)
 
-
     df_bod.to_csv(snakemake.output.csv)
-    logger.info(
-        f"Exported carrier mapped bids/offer data to {snakemake.output.csv}"
-    )
+    logger.info(f"Exported carrier mapped bids/offer data to {snakemake.output.csv}")
