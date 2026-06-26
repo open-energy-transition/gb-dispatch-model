@@ -77,8 +77,6 @@ def fetch_BM_units(
     ----------
     base_url: str
         Base URL for the Elexon BMRS API
-    technology_mapping: dict[str, str]
-        Map Elexon carrier types to PyPSA carrier types
     bmu_fuel_map_path: str
         CSV path for mapping of BMU units to their fueltype
     api_bmu_fuel_map: bool

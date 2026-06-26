@@ -8,7 +8,7 @@ Boundary constrained redispatch run rules.
 
 
 localrules:
-    fetch_bid_offer_data_elexon,
+    retrieve_bid_offer_data_elexon,
 
 
 rule process_CfD_strike_prices:
@@ -58,7 +58,7 @@ rule prepare_future_etys_caps:
         scripts("gb_model/redispatch/prepare_future_etys_caps.py")
 
 
-rule fetch_bid_offer_data_elexon:
+rule retrieve_bid_offer_data_elexon:
     message:
         "Get bid/offer data from Elexon"
     params:
@@ -71,9 +71,9 @@ rule fetch_bid_offer_data_elexon:
         # Used to avoid the same rule running simultaneously (and exceeding max concurrent requests).
         parallel_elexon_download=1,
     log:
-        logs("fetch_bid_offer_data_elexon_{bod_year}.log"),
+        logs("retrieve_bid_offer_data_elexon_{bod_year}.log"),
     script:
-        scripts("gb_model/redispatch/fetch_bid_offer_data_elexon.py")
+        scripts("gb_model/redispatch/retrieve_bid_offer_data_elexon.py")
 
 
 rule retrieve_elexon_bm_units:
