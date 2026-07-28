@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-tutorial: false
+tutorial: true
 
 run:
   name: "avanguard-test-sector-overnight"
@@ -23,8 +23,8 @@ scenario:
 countries: ['BE']
 
 snapshots:
-  start: "2013-01-01"
-  end: "2014-01-01"
+  start: "2013-03-01"
+  end: "2013-03-31"
   inclusive: left
 
 electricity:
@@ -38,11 +38,13 @@ electricity:
   renewable_carriers: [solar, solar-hsat, onwind, offwind-ac, offwind-dc, offwind-float]
 
 atlite:
-  default_cutout: "europe-2013-sarah3-era5"
+  default_cutout: be-03-2013-era5
   cutouts:
-    "europe-2013-sarah3-era5":
+    be-03-2013-era5:
+      module: era5
       x: [4., 15.]
-      'y': [46., 56.]
+      y: [46., 56.]
+      time: ["2013-03-01", "2013-03-31"]
 
 renewable:
   offwind-ac:
