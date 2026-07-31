@@ -231,6 +231,6 @@ aiohttp = ">=3.13.5"
 
 [environments]
 doc = { features = ["doc"], no-default-feature = true }
-gb-model = ["gb-model", "test"] # for ease, we include test deps in our working environment
+gb-model = ["gb-model", "test", "dev"] # for ease, we include test/dev deps (e.g. pylint) in our working environment
 test = ["test", "dev"]
 dev = ["dev"]
