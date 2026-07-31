@@ -4,7 +4,7 @@
 
 import json
 import re
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 
 import yaml
@@ -72,7 +72,7 @@ def _schema_rows(props, depth=0):
     return rows
 
 
-@lru_cache(maxsize=None)
+@cache
 def _schema(source="schema.default.json"):
     path = SCHEMA_PATH if source == "schema.default.json" else ROOT / "config" / source
     return json.loads(path.read_text())
@@ -86,9 +86,11 @@ def _resolve(data, path):
 
 
 def _split_path(node, path, children_of):
-    """Split a dotted ``path`` into keys, preferring the longest literal key match at
+    """
+    Split a dotted ``path`` into keys, preferring the longest literal key match at
     each level so property names that themselves contain a dot (e.g. ``dukes-5.11``)
-    aren't mistaken for a nested path."""
+    aren't mistaken for a nested path.
+    """
     segments = path.split(".")
     parts = []
     i = 0
@@ -140,13 +142,17 @@ def define_env(env):
 
     @env.macro
     def yaml_snippet(source, start, end, prepend=None):
-        """Return the raw text of ``source`` between the lines containing ``start`` and
+        """
+        Return the raw text of ``source`` between the lines containing ``start`` and
         ``end`` (both exclusive), mirroring a RST ``literalinclude`` with
-        ``:start-after:``/``:end-before:`` markers."""
+        ``:start-after:``/``:end-before:`` markers.
+        """
         path = ROOT / "config" / source
         lines = path.read_text().splitlines()
         start_idx = next(i for i, line in enumerate(lines) if start in line)
-        end_idx = next(i for i, line in enumerate(lines) if end in line and i > start_idx)
+        end_idx = next(
+            i for i, line in enumerate(lines) if end in line and i > start_idx
+        )
         body = "\n".join(lines[start_idx + 1 : end_idx])
         return f"{prepend}\n{body}" if prepend else body
 
@@ -158,7 +164,8 @@ def define_env(env):
             return _dump(data)
 
         parts_list = [
-            _split_path(data, p, lambda n: n if isinstance(n, dict) else {}) for p in paths
+            _split_path(data, p, lambda n: n if isinstance(n, dict) else {})
+            for p in paths
         ]
 
         if len(paths) == 1:

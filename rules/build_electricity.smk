@@ -719,28 +719,6 @@ def input_custom_busmap(w):
 
 
 rule cluster_network:
-    message:
-        "Clustering network to {wildcards.clusters} clusters"
-    params:
-        countries=config_provider("countries"),
-        mode=config_provider("clustering", "mode"),
-        administrative=config_provider("clustering", "administrative"),
-        cluster_network=config_provider("clustering", "cluster_network"),
-        aggregation_strategies=config_provider(
-            "clustering", "aggregation_strategies", default={}
-        ),
-        focus_weights=config_provider("clustering", "focus_weights", default=None),
-        renewable_carriers=config_provider("electricity", "renewable_carriers"),
-        conventional_carriers=config_provider(
-            "electricity", "conventional_carriers", default=[]
-        ),
-        max_hours=config_provider("electricity", "max_hours"),
-        length_factor=config_provider("lines", "length_factor"),
-        cluster_mode=config_provider("clustering", "mode"),
-        copperplate_regions=config_provider("clustering", "copperplate_regions"),
-        overwrite_custom_onshore_clusters=config_provider(
-            "clustering", "overwrite_custom_onshore_clusters"
-        ),
     input:
         unpack(input_custom_busmap),
         network=resources("networks/base_s.nc"),
