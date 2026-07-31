@@ -133,6 +133,11 @@ args = ["dir"]
 
 [feature.doc.dependencies]
 atlite = "==0.4.1"
+# Pin below the eccodes 2.x rewrite (which added the highlevel._bufr module).
+# Newer eccodes triggers a griffe AliasResolutionError on its `from eccodes.eccodes
+# import *` wildcard re-export, which crashes `mkdocs build` once any doc page
+# references a script that imports atlite (which pulls in eccodes transitively).
+python-eccodes = "<2"
 cartopy = "==0.25.0"
 dask = "==2025.11.0"
 descartes = "==1.1.0"

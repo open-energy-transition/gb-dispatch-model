@@ -232,5 +232,4 @@ Follow the links below to get more information about the base PyPSA-Eur configur
 - [solving](../configuration.md#solving_cf)
 - [data](../configuration.md#data_cf)
 - [overpass_api](../configuration.md#overpass_api_cf)
-- [secrets](../configuration.md#secrets_cf)
 - [plotting](../configuration.md#plotting_cf)
