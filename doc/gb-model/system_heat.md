@@ -1,18 +1,11 @@
-..
-  SPDX-FileCopyrightText: Contributors to gb-dispatch-model <https://github.com/open-energy-transition/gb-dispatch-model>
+<!-- SPDX-FileCopyrightText: Contributors to gb-dispatch-model <https://github.com/open-energy-transition/gb-dispatch-model> -->
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-  SPDX-License-Identifier: CC-BY-4.0
-
-.. _system-heat:
-
-############
-Heat System
-############
+# Heat System {#system-heat}
 
 This page provides an overview of the electrified heating system representation in the GB dispatch model, including the data sources, components, configuration, and implementation.
 
-Overview
-========
+## Overview
 
 The electrified heating system in the model is represented with three primary technologies:
 
@@ -22,51 +15,45 @@ The electrified heating system in the model is represented with three primary te
 
 Various heating technologies such as district heating, hybrid systems (ASHP with hydrogen boiler, biofuel boiler or resistive heater), and storage heating are consolidated and mapped to one of these three primary technologies for model representation.
 This approach allows the model to capture the essential electrification pathways.
-The technology splits are sourced from the Future Energy Scenario (FES) workbook and their mapping is detailed in the :ref:`configuration <system-heat_config>`.
+The technology splits are sourced from the Future Energy Scenario (FES) workbook and their mapping is detailed in the [configuration](#system-heat_config).
 
-Heat System Structure
----------------------
+### Heat System Structure
 
 The heat system is organized by two main demand sectors as follows:
 
 1. **Residential heat** - Space heating and domestic hot water for households
 2. **Industrial & Commercial (I&C) heat** - Space heating and process heat for commercial and industrial buildings (referred to by the services sector in PyPSA-Eur)
 
-Model representation
---------------------
+### Model representation
 
 The heat system is represented in the model with the following components:
 
-.. graphviz::
+```mermaid
+flowchart LR
+    AC_bus((AC Bus)):::acbus
+    Sector_heat_bus((Sector heat Bus)):::sector
+    Sector_heat_DSR_bus((Sector heat DSR Bus)):::sector
+    heat_load["Sector heat Load<br/>(unmanaged)"]:::peach
+    sector_heat_dsr_store[Sector heat DSR Store]:::lemon
 
-  digraph Flow {
-      rankdir=LR;   // Left to Right
+    AC_bus -->|"unmanaged load link"| Sector_heat_bus
+    Sector_heat_bus --> heat_load
+    Sector_heat_bus -->|charge| Sector_heat_DSR_bus
+    Sector_heat_DSR_bus -->|discharge| Sector_heat_bus
+    Sector_heat_DSR_bus <--> sector_heat_dsr_store
 
-      node [shape=box, style=filled];
-
-      AC_bus [label="AC Bus", fillcolor="#B3D9FF", shape=ellipse, width=2, height=1.5, fixedsize=true];
-      Sector_heat_bus [label="Sector heat Bus", fillcolor="#FFD1DC", shape=ellipse, width=1.8, height=1.2, fixedsize=true];
-      Sector_heat_DSR_bus [label="Sector heat DSR Bus", fillcolor="#FFD1DC", shape=ellipse, width=1.8, height=1.2, fixedsize=true];
-      heat_load [label="Sector heat Load\n(unmanaged)", fillcolor="#FFDAB9"];
-      sector_heat_dsr_store [label="Sector heat DSR Store", fillcolor="#FFFACD"];
-
-      AC_bus -> Sector_heat_bus [label="unmanaged load link"];
-      Sector_heat_bus -> heat_load;
-      Sector_heat_bus -> Sector_heat_DSR_bus [label="charge"];
-      Sector_heat_DSR_bus -> Sector_heat_bus [label="discharge"];
-      Sector_heat_DSR_bus -> sector_heat_dsr_store [dir=both];
-  }
-
+    classDef acbus fill:#B3D9FF,stroke:#333
+    classDef sector fill:#FFD1DC,stroke:#333
+    classDef peach fill:#FFDAB9,stroke:#333
+    classDef lemon fill:#FFFACD,stroke:#333
+```
 
 The Sector refers to either `Residential` or `I&C` depending on the demand sector being modeled.
 The AC bus represents the electrical grid connection for the heat system, while the Sector Heat and Sector Heat DSR represent the heat demand and demand-side response capabilities respectively.
 
+## Data Sources
 
-Data Sources
-=============
-
-Great Britain Data
-------------------
+### Great Britain Data
 
 The GB data for the model is sourced as follows:
 
@@ -76,15 +63,14 @@ The GB data for the model is sourced as follows:
 
 3. **FES FLX1 (Flexibility)**: Annual DSR capacity for residential and I&C sectors by scenario and year (in GW, converted to MW)
 
+### European Data
 
-European Data
--------------
 For countries outside of Great Britain, the model obtains the data from the FES workbook **ES2 (European Electricity Supply Table)**. The table provides annual electricity installed capacity and annual demand assumptions for each technology category by country.
 
 The heat demands for the European countries are calculated by scaling the annual electricity demands to match the annual heat demands as a share of the total electricity demand in GB (based on data from `energy_totals.csv`).
 
-PyPSA-Eur Data
-----------------
+### PyPSA-Eur Data
+
 Apart from the data from FES workbook, the model also uses baseline COP profiles, district heating shares and hourly heat demand profiles from the PyPSA-Eur workflow.
 
 The COP profiles provides population-weighted COP values for ASHP and GSHP across different nodes in the network.
@@ -96,10 +82,7 @@ The district heating shares are applied only for GB nodes in the network and are
 The hourly heat demand profiles are built using representative heat demand profiles from `BDEW`.
 Due to the absence of profile information in the FES workbook, this profile information is used to model heat demand profiles in the gb-dispatch-model after scaling.
 
-.. _heat_system_components:
-
-System Components
-=================
+## System Components {#heat_system_components}
 
 The heat system model includes the following key buses:
 
@@ -126,56 +109,46 @@ The store is modelled using the PyPSA component type `Store`.
 
 Finally, the **Sector heat Load** represents the total heat demand for the sector (residential or I&C) that must be met by the electricity supplied through the AC bus and managed through the Sector heat bus and Sector heat DSR bus. This load is modelled using the PyPSA component type `Load`.
 
-Detailed descriptions of these components and their interactions are provided in the :ref:`system-demand_and_dsr` section.
+Detailed descriptions of these components and their interactions are provided in the [Baseline demand & demand-side response (DSR)](system_demand_and_dsr.md#system-demand_and_dsr) section.
 
-.. _system-heat_config:
-
-Configuration
-=============
+## Configuration {#system-heat_config}
 
 The configuration maps FES heating technology categories to model representations in the config file `config.gb.2024.yaml`:
 
-.. literalinclude:: ../../config/config.gb.2024.yaml
-   :language: yaml
-   :start-after: # [doc:heat-tech-start]
-   :end-before: # [doc:heat-tech-end]
-
+```yaml
+{{ yaml_snippet("config.gb.2024.yaml", "doc:heat-tech-start", "doc:heat-tech-end") }}
+```
 
 Heat pump source availability is configured per geographic location type in the config file `config.default.yaml`:
 
+```yaml
+{{ yaml_snippet("config.default.yaml", "doc:heat-pump-sources-start", "doc:heat-pump-sources-end") }}
+```
 
-.. literalinclude:: ../../config/config.default.yaml
-   :language: yaml
-   :start-after: # [doc:heat-pump-sources-start]
-   :end-before: # [doc:heat-pump-sources-end]
+## Implementation Steps
 
+### Data Processing Workflow
 
-Implementation Steps
-=====================
-
-Data Processing Workflow
-------------------------
-
-The heat system is built through a pipeline implemented across ``rules/gb-model/heat.smk`` and ``rules/gb-model/demand_and_dsr.smk``:
+The heat system is built through a pipeline implemented across `rules/gb-model/heat.smk` and `rules/gb-model/demand_and_dsr.smk`:
 
 The rulegraph for the heat system is illustrated below, showing the key processing steps and their dependencies:
 
-.. image:: img/heat_workflow.svg
-   :align: center
+![](img/heat_workflow.svg)
 
-.. note::
-   The graph above was generated using::
+!!! note
+    The graph above was generated using:
 
-      pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/residential_heat_demand/2030.csv \
-      resources/GB/gb-model/HT/iandc_heat_demand/2030.csv \
-      -w fes_scenario -w year \
-      -f rules/gb-model/heat.smk \
-      -s 10,8" \
-      "doc/gb-model/img/heat_workflow.svg"
+    ```console
+    pixi run filtered_rulegraph \
+    "resources/GB/gb-model/HT/residential_heat_demand/2030.csv \
+    resources/GB/gb-model/HT/iandc_heat_demand/2030.csv \
+    -w fes_scenario -w year \
+    -f rules/gb-model/heat.smk \
+    -s 10,8" \
+    "doc/gb-model/img/heat_workflow.svg"
+    ```
 
-The ``filtered_rulegraph`` task allows us to trim the full DAG to heat system related rules only.
-
+The `filtered_rulegraph` task allows us to trim the full DAG to heat system related rules only.
 
 The heat system pipeline was built based on several key processing steps as follows:
 
@@ -184,21 +157,16 @@ The heat system pipeline was built based on several key processing steps as foll
 3. **resistive_heater_demand_profile**: Creates technology-specific demand profiles for resistive heating by removing future resistive heating demand from historical electrified heat demand.
 4. **heat_demand_electricity_load_profile**: Generates hourly heat demand profiles by technology and sector for each node in the network and also accounts for the COP of heat pump technologies to convert heat demand into equivalent electricity demand.
 
-.. _system-heat-assumptions:
-
-Key Assumptions
----------------
+### Key Assumptions {#system-heat-assumptions}
 
 - The model maps all heating technologies to three primary categories (resistive, ASHP, GSHP) for simplicity, which may not capture all nuances of specific technologies provided in the FES workbook.
 - The share of district heating is assumed from what is provided in the PyPSA-Eur workflow.
 - District heating electricity demand is assumed to be auxiliary demand from district system, not the electricity required for heating.
-- the ``ASHP + resistive heating hybrid`` technology is categorised as ASHP since that is what is required to match the regionalised heat pump electricity demand in sheet ``BB1`` to the per-technology total demand in sheet ``ED3``.
+- the `ASHP + resistive heating hybrid` technology is categorised as ASHP since that is what is required to match the regionalised heat pump electricity demand in sheet `BB1` to the per-technology total demand in sheet `ED3`.
 
+!!! info "See also"
+    **Related Documentation**:
 
-.. seealso::
-
-   **Related Documentation**:
-
-   - :doc:`system_demand_and_dsr` - Demand-side response (DSR) workflow details
-   - :ref:`data_sources_gb` - FES and other data sources
-   - :ref:`model_config_gb` - Full configuration reference
+    - [Baseline demand & demand-side response (DSR)](system_demand_and_dsr.md) - Demand-side response (DSR) workflow details
+    - [Data Sources](data_sources.md#data_sources_gb) - FES and other data sources
+    - [Configuration](configuration.md#model_config_gb) - Full configuration reference

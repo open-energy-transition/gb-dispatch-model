@@ -72,9 +72,10 @@ def _schema_rows(props, depth=0):
     return rows
 
 
-@lru_cache(maxsize=1)
-def _schema():
-    return json.loads(SCHEMA_PATH.read_text())
+@lru_cache(maxsize=None)
+def _schema(source="schema.default.json"):
+    path = SCHEMA_PATH if source == "schema.default.json" else ROOT / "config" / source
+    return json.loads(path.read_text())
 
 
 def _resolve(data, path):
@@ -82,6 +83,30 @@ def _resolve(data, path):
     for part in path:
         node = node[part]
     return node
+
+
+def _split_path(node, path, children_of):
+    """Split a dotted ``path`` into keys, preferring the longest literal key match at
+    each level so property names that themselves contain a dot (e.g. ``dukes-5.11``)
+    aren't mistaken for a nested path."""
+    segments = path.split(".")
+    parts = []
+    i = 0
+    while i < len(segments):
+        children = children_of(node)
+        matched = None
+        for j in range(len(segments), i, -1):
+            candidate = ".".join(segments[i:j])
+            if candidate in children:
+                matched = candidate
+                i = j
+                break
+        if matched is None:
+            matched = segments[i]
+            i += 1
+        parts.append(matched)
+        node = children.get(matched, {})
+    return parts
 
 
 def define_env(env):
@@ -99,10 +124,10 @@ def define_env(env):
         return _cache[source]
 
     @env.macro
-    def schema_table(path):
+    def schema_table(path, source="schema.default.json"):
         """Render the config schema at ``path`` as a Property/Type/Default/Description table."""
-        node = _schema()
-        for part in path.split("."):
+        node = _schema(source)
+        for part in _split_path(node, path, lambda n: n.get("properties", {})):
             node = node["properties"][part]
         props = node.get("properties", {})
         if not props:
@@ -114,13 +139,27 @@ def define_env(env):
         return header + "\n" + "\n".join(_schema_rows(props))
 
     @env.macro
+    def yaml_snippet(source, start, end, prepend=None):
+        """Return the raw text of ``source`` between the lines containing ``start`` and
+        ``end`` (both exclusive), mirroring a RST ``literalinclude`` with
+        ``:start-after:``/``:end-before:`` markers."""
+        path = ROOT / "config" / source
+        lines = path.read_text().splitlines()
+        start_idx = next(i for i, line in enumerate(lines) if start in line)
+        end_idx = next(i for i, line in enumerate(lines) if end in line and i > start_idx)
+        body = "\n".join(lines[start_idx + 1 : end_idx])
+        return f"{prepend}\n{body}" if prepend else body
+
+    @env.macro
     def yaml_section(*paths, source="config", with_key=True):
         data = _load(source)
 
         if not paths:
             return _dump(data)
 
-        parts_list = [p.split(".") for p in paths]
+        parts_list = [
+            _split_path(data, p, lambda n: n if isinstance(n, dict) else {}) for p in paths
+        ]
 
         if len(paths) == 1:
             parts = parts_list[0]

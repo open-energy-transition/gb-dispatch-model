@@ -1,18 +1,11 @@
-..
-  SPDX-FileCopyrightText: Contributors to gb-dispatch-model <https://github.com/open-energy-transition/gb-dispatch-model>
+<!-- SPDX-FileCopyrightText: Contributors to gb-dispatch-model <https://github.com/open-energy-transition/gb-dispatch-model> -->
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-  SPDX-License-Identifier: CC-BY-4.0
-
-.. _system-hydrogen:
-
-##########################################
-Hydrogen Subsystem
-##########################################
+# Hydrogen Subsystem {#system-hydrogen}
 
 This page describes the hydrogen subsystem, its data sources, components, configuration, and implementation.
 
-Overview
-========
+## Overview
 
 The hydrogen subsystem in gb-dispatch-model represents the interaction between electricity and hydrogen systems in Great Britain and connected European countries.
 Unlike other loads in the model which represent electrical demand from various sectors, hydrogen is modelled as a distinct energy carrier with its own bus, storage, and conversion technologies.
@@ -28,45 +21,42 @@ Additionally, the model accounts for *islanded electrolysis*—off-grid hydrogen
 
 This modelling approach allows hydrogen to act as both a flexible load on the electricity system (through electrolysis) and a potential backup generation source (through fuel cells and turbines).
 
-.. graphviz::
+```mermaid
+flowchart LR
+    AC_bus((AC Bus)):::acbus
+    h2_bus((Grid H2 Bus)):::h2
+    blended_h2_bus((Blended H2 Bus)):::h2
 
-   digraph {
-      rankdir=LR;
-      node [shape=box, style=filled];
+    electrolyser["Grid<br/>Electrolysis"]:::green
+    fuel_cell[Fuel Cell]:::pink
+    h2_purchased["Purchased H2"]:::purple
+    h2_turbine[H2 Turbine]:::pink
+    h2_store[H2 Storage]:::lemon
+    h2_demand[H2 Demand]:::peach
+    non_grid_elec["Non-networked<br/>Electrolysis"]:::plum
 
-      // Main components
-      AC_bus [label="AC Bus", fillcolor="#B3D9FF", shape=ellipse, width=2, height=1.5, fixedsize=true];
-      h2_bus [label="Grid H2 Bus", fillcolor="#CCFFFF", shape=ellipse, width=2, height=1.5, fixedsize=true];
-      blended_h2_bus [label="Blended H2 Bus", fillcolor="#CCFFFF", shape=ellipse, width=2, height=1.5, fixedsize=true];
+    AC_bus -->|"Grid-connected"| electrolyser --> h2_bus
+    h2_bus --> blended_h2_bus
+    h2_purchased --> blended_h2_bus
+    blended_h2_bus --> fuel_cell --> AC_bus
+    blended_h2_bus --> h2_turbine --> AC_bus
+    h2_bus <--> h2_store
+    h2_bus --> h2_demand
+    AC_bus -->|"Off-grid demand"| non_grid_elec
 
-      // Hydrogen system components
-      electrolyser [label="Grid\nElectrolysis", fillcolor="#90EE90"];
-      fuel_cell [label="Fuel Cell", fillcolor="#FFB6C1"];
-      h2_purchased [label="Purchased H2", fillcolor="#ea75ff"];
-      h2_turbine [label="H2 Turbine", fillcolor="#FFB6C1"];
-      h2_store [label="H2 Storage", fillcolor="#FFFACD"];
-      h2_demand [label="H2 Demand", fillcolor="#FFDAB9"];
-      non_grid_elec [label="Non-networked\nElectrolysis", fillcolor="#DDA0DD"];
+    classDef acbus fill:#B3D9FF,stroke:#333
+    classDef h2 fill:#CCFFFF,stroke:#333
+    classDef green fill:#90EE90,stroke:#333
+    classDef pink fill:#FFB6C1,stroke:#333
+    classDef purple fill:#ea75ff,stroke:#333
+    classDef lemon fill:#FFFACD,stroke:#333
+    classDef peach fill:#FFDAB9,stroke:#333
+    classDef plum fill:#DDA0DD,stroke:#333
+```
 
-      // Connections
-      AC_bus -> electrolyser -> h2_bus [label="Grid-connected"];
-      h2_bus -> blended_h2_bus
-      h2_purchased -> blended_h2_bus
-      blended_h2_bus -> fuel_cell -> AC_bus;
-      blended_h2_bus -> h2_turbine -> AC_bus;
-      h2_bus -> h2_store [dir=both];
-      h2_bus -> h2_demand;
-      AC_bus -> non_grid_elec [label="Off-grid demand"];
-   }
+## Data Sources {#hydrogen-data-sources}
 
-
-.. _hydrogen-data-sources:
-
-Data Sources
-============
-
-Great Britain Data
-----------------------
+### Great Britain Data
 
 All GB hydrogen system data is derived from the Future Energy Scenarios (FES) workbook, primarily from:
 
@@ -82,8 +72,7 @@ The FES 2024 provides annual data for multiple scenarios (Electric Engagement, H
 
 All FES energy data is provided in TWh and converted to MWh for PyPSA (multiply by 1,000,000).
 
-**European Data**
------------------
+### European Data
 
 Since we have no information on whether or not the FES European model generation capacity is designed to be able to meet electrolysis demand (European demand is given as a single, total value),
 our default approach is to ignore the hydrogen subsystem in European countries.
@@ -94,22 +83,16 @@ If you configure the model to include the hydrogen subsystem in European countri
 1. **TYNDP (Ten-Year Network Development Plan) Model Outputs**: Future hydrogen supply by electrolysis for European countries
 2. **Hydrogen Europe annual report**: Current European hydrogen consumption by country
 
-   - Data provided in tonnes per year (T/Y)
-   - Converted to MWh using lower heating value: 1 tonne H₂ ≙  33.33 MWh
+    - Data provided in tonnes per year (T/Y)
+    - Converted to MWh using lower heating value: 1 tonne H₂ ≙ 33.33 MWh
 
 This synthesis approach maintains relative patterns from GB FES data (ratios between demand, storage, and electrolysis) while matching European-specific total demand projections.
 
-.. _hydrogen-components:
+## System Components {#hydrogen-components}
 
-System Components
-=================
+### Hydrogen Demand {#hydrogen-demand}
 
-.. _hydrogen-demand:
-
-Hydrogen Demand
----------------
-
-**PyPSA Component**: ``Load`` attached to the hydrogen bus
+**PyPSA Component**: `Load` attached to the hydrogen bus
 
 Net hydrogen demand represents the total hydrogen consumption minus total hydrogen supply from all sources except grid electrolysis. Grid electrolysis is modelled separately and endogenously, so it does not appear in the supply data.
 
@@ -125,9 +108,9 @@ The hydrogen demand includes:
 
 The demand is calculated as:
 
-.. math::
-
-   \text{Net H}_2 \text{ Demand} = \sum \text{All Demand} - \sum \text{All Unmodelled Supply}
+$$
+\text{Net H}_2 \text{ Demand} = \sum \text{All Demand} - \sum \text{All Unmodelled Supply}
+$$
 
 where supply sources might include hydrogen from steam methane reforming, biomass gasification, or imports, but exclude grid electrolysis which is optimized by the model.
 
@@ -144,18 +127,13 @@ Hydrogen demand is assumed to be flat across the year.
 For GB, national hydrogen demand data is disaggregated to regions based on the spatial pattern of hydrogen electrolysis capacity from the FES BB1 sheet.
 For European countries, demand is assigned at the country level based on TYNDP and historical consumption data.
 
-
-.. _hydrogen-electrolysis:
-
-Hydrogen Electrolysis
----------------------
+### Hydrogen Electrolysis {#hydrogen-electrolysis}
 
 Electrolysis converts electricity to hydrogen using water.
 
-Grid-connected Electrolysis
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#### Grid-connected Electrolysis
 
-**PyPSA Component**: ``Link`` from AC bus to hydrogen bus
+**PyPSA Component**: `Link` from AC bus to hydrogen bus
 
 Grid-connected electrolysers are directly connected to the electricity network and can be optimally dispatched in the model.
 This provides flexibility to produce hydrogen when electricity is cheap or abundant (e.g., during high renewable generation periods).
@@ -167,18 +145,15 @@ Where regional assignments are missing, capacities are distributed proportionall
 
 **Efficiency**:
 
-Electrolyser efficiency is derived from `PyPSA technology-data <https://github.com/PyPSA/technology-data>`_ (2035 cost year), representing the energy conversion from electricity to hydrogen (lower heating value basis).
+Electrolyser efficiency is derived from [PyPSA technology-data](https://github.com/PyPSA/technology-data) (2035 cost year), representing the energy conversion from electricity to hydrogen (lower heating value basis).
 
 **Operation**:
 
 Grid-connected electrolysers are fully flexible with no minimum load constraints, meaning they can be dispatched at any level from 0% to 100% of capacity in any timestep.
 
-.. _hydrogen-electrolysis-non-grid:
+#### Non-networked Electrolysis {#hydrogen-electrolysis-non-grid}
 
-Non-networked Electrolysis
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-**PyPSA Component**: Additional electricity ``Load`` on the AC bus
+**PyPSA Component**: Additional electricity `Load` on the AC bus
 
 Non-networked (or "off-grid") electrolysis represents hydrogen production from dedicated renewable generators that are not connected to the main electricity grid.
 These could be remote wind farms or solar installations directly coupled to electrolysers.
@@ -188,21 +163,17 @@ The hydrogen produced does not appear in the model's hydrogen system but is acco
 
 **Calculation**:
 
-Non-networked electrolysis electricity demand is calculated by dividing the hydrogen production capacity by an assumed electrolysis efficiency (configurable using config option ``fes.hydrogen.electrolysis_efficiency``, default 0.7):
+Non-networked electrolysis electricity demand is calculated by dividing the hydrogen production capacity by an assumed electrolysis efficiency (configurable using config option `fes.hydrogen.electrolysis_efficiency`, default 0.7):
 
-.. math::
-
-   \text{Electricity Demand} = \frac{\text{H}_2 \text{ Production}}{\text{Efficiency}}
+$$
+\text{Electricity Demand} = \frac{\text{H}_2 \text{ Production}}{\text{Efficiency}}
+$$
 
 For GB, this national electricity demand is disaggregated to regions based on the spatial pattern of hydrogen electrolysis capacity, then added to the baseline electricity load in each region.
 
+### Hydrogen Storage {#hydrogen-storage}
 
-.. _hydrogen-storage:
-
-Hydrogen Storage
-----------------
-
-**PyPSA Component**: ``Store`` attached to the hydrogen bus
+**PyPSA Component**: `Store` attached to the hydrogen bus
 
 Hydrogen storage provides temporal flexibility to balance hydrogen production and demand.
 Storage can be in underground caverns (salt caverns, depleted gas fields), surface tanks, or other infrastructure.
@@ -216,39 +187,29 @@ The model assumes that storage can be charged and discharged without capacity co
 **Dispatch Constraints**:
 
 The storage level at the end of each modelled year is set equal to the level at the start of that year.
-This cyclic constraint prevents unrealistic depletion of storage within each year, but may create artificial constraints on storage use in the final timesteps of each year (see :ref:`faq_gb`).
+This cyclic constraint prevents unrealistic depletion of storage within each year, but may create artificial constraints on storage use in the final timesteps of each year (see [FAQ](faq.md#faq_gb)).
 
-.. _hydrogen-conversion:
-
-Hydrogen to Electricity Conversion
------------------------------------
+### Hydrogen to Electricity Conversion {#hydrogen-conversion}
 
 Conversion of hydrogen back to electricity provides dispatchable backup generation that can support the grid during periods of low renewable generation or high demand.
 These electricity generation devices can consume hydrogen generated by electrolysis in the same region or can purchase hydrogen at the market price set by the FES costing workbook.
-Therefore, they are connected to a "blended" hydrogen PyPSA ``Bus``.
+Therefore, they are connected to a "blended" hydrogen PyPSA `Bus`.
 
-.. _hydrogen-fuel-cells:
+#### Fuel Cells {#hydrogen-fuel-cells}
 
-Fuel Cells
-^^^^^^^^^^
-
-**PyPSA Component**: ``Link`` from blended hydrogen bus to AC bus
+**PyPSA Component**: `Link` from blended hydrogen bus to AC bus
 
 Fuel cells convert hydrogen to electricity through an electrochemical reaction without combustion.
 
 **Capacity**:
 
-.. note::
-   FES 2024 BB1 contains **zero fuel cell capacity for all years**.
-   Fuel cells are not included in the FES hydrogen infrastructure model outputs.
+!!! note
+    FES 2024 BB1 contains **zero fuel cell capacity for all years**.
+    Fuel cells are not included in the FES hydrogen infrastructure model outputs.
 
+#### Hydrogen Turbines {#hydrogen-turbines}
 
-.. _hydrogen-turbines:
-
-Hydrogen Turbines
-^^^^^^^^^^^^^^^^^
-
-**PyPSA Component**: ``Link`` from blended hydrogen bus to AC bus
+**PyPSA Component**: `Link` from blended hydrogen bus to AC bus
 
 Hydrogen turbines are modified natural gas turbines that can burn pure hydrogen or hydrogen blends.
 They combust hydrogen to drive a turbine and generate electricity.
@@ -257,79 +218,63 @@ They combust hydrogen to drive a turbine and generate electricity.
 
 Like fuel cells, hydrogen turbine capacity is based on FES model outputs.
 
-.. _hydrogen-configuration:
+## Configuration {#hydrogen-configuration}
 
-Configuration
-=============
-
-The hydrogen subsystem is configured through the ``fes.hydrogen`` section of the configuration file.
+The hydrogen subsystem is configured through the `fes.hydrogen` section of the configuration file.
 
 **Data Selection**:
 
 The data selection filters define which rows from the FES WS1 sheet are included in each category.
 Filters are dictionaries matching FES column names to values (case-insensitive).
 
-From ``config/config.gb.2024.yaml``:
+From `config/config.gb.2024.yaml`:
 
-.. literalinclude:: ../../config/config.gb.2024.yaml
-   :language: yaml
-   :start-after: # [doc:hydrogen-config-start]
-   :end-before: # [doc:hydrogen-config-end]
-   :prepend: fes:
+```yaml
+{{ yaml_snippet("config.gb.2024.yaml", "doc:hydrogen-config-start", "doc:hydrogen-config-end", prepend="fes:") }}
+```
 
+## Implementation Notes {#hydrogen-implementation-notes}
 
-.. _hydrogen-implementation-notes:
+### Data Processing Workflow {#system-hydrogen-workflow}
 
-Implementation Notes
-====================
+The hydrogen system is built through a multi-stage data processing pipeline implemented in `rules/gb-model/hydrogen.smk`:
 
-.. _system-hydrogen-workflow:
+![](img/hydrogen_workflow.svg)
 
-Data Processing Workflow
-------------------------
+!!! note
+    The graph above was generated using:
 
-The hydrogen system is built through a multi-stage data processing pipeline implemented in ``rules/gb-model/hydrogen.smk``:
+    ```console
+    pixi run filtered_rulegraph \
+    "resources/GB/gb-model/HT/regional_H2_demand_annual_inc_eur.csv \
+    resources/GB/gb-model/HT/regional_non_networked_electrolysis_demand_annual_inc_eur.csv \
+    resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv \
+    resources/GB/gb-model/HT/regional_grid_electrolysis_capacities_inc_eur_inc_tech_data.csv \
+    -w fes_scenario -w year \
+    -f rules/gb-model/hydrogen.smk \
+    -s 10,8" \
+    "doc/gb-model/img/hydrogen_workflow.svg"
+    ```
 
-.. image:: img/hydrogen_workflow.svg
-   :align: center
+    The `filtered_rulegraph` task allows us to trim the full DAG to hydrogen-related rules only.
 
-.. note::
-   The graph above was generated using::
-
-      pixi run filtered_rulegraph \
-      "resources/GB/gb-model/HT/regional_H2_demand_annual_inc_eur.csv \
-      resources/GB/gb-model/HT/regional_non_networked_electrolysis_demand_annual_inc_eur.csv \
-      resources/GB/gb-model/HT/regional_H2_storage_capacity_inc_eur_inc_tech_data.csv \
-      resources/GB/gb-model/HT/regional_grid_electrolysis_capacities_inc_eur_inc_tech_data.csv \
-      -w fes_scenario -w year \
-      -f rules/gb-model/hydrogen.smk \
-      -s 10,8" \
-      "doc/gb-model/img/hydrogen_workflow.svg"
-
-   The ``filtered_rulegraph`` task allows us to trim the full DAG to hydrogen-related rules only.
-
-.. _system-hydrogen-assumptions:
-
-Key Assumptions
----------------
+### Key Assumptions {#system-hydrogen-assumptions}
 
 - **Temporal Profile**: Hydrogen demand is assumed constant across the year due to lack of hourly data
 - **Regionalization**: National hydrogen data is distributed spatially using hydrogen electrolysis capacity as a reference pattern
 - **European Scaling**: European hydrogen infrastructure is synthesised by applying GB demand-to-infrastructure ratios
-- **Off-grid Electrolysis**: Converted to electricity demand using configurable efficiency (``fes.hydrogen.electrolysis_efficiency``, default 0.7)
+- **Off-grid Electrolysis**: Converted to electricity demand using configurable efficiency (`fes.hydrogen.electrolysis_efficiency`, default 0.7)
 - **Technology Data**: Derived from PyPSA technology-data (2035 cost year) for all hydrogen components
 
+!!! info "See also"
+    **Related Documentation**:
 
-.. seealso::
+    - [Hydrogen](system_overview.md#system-hydrogen-summary) - Hydrogen in the broader system representation
+    - [Data Sources](data_sources.md#data_sources_gb) - FES and other data sources
+    - [Configuration](configuration.md#model_config_gb) - Full configuration reference
 
-   **Related Documentation**:
+    **External Resources**:
 
-   - :ref:`system-hydrogen-summary` - Hydrogen in the broader system representation
-   - :ref:`data_sources_gb` - FES and other data sources
-   - :ref:`model_config_gb` - Full configuration reference
-
-   **External Resources**:
-
-   - `FES 2024 Data Workbook <https://www.neso.energy/publications/future-energy-scenarios-fes>`_ - Primary data source
-   - `TYNDP 2024 <https://tyndp.entsoe.eu/>`_ - European hydrogen demand projections
-   - `PyPSA technology-data <https://github.com/PyPSA/technology-data>`_ - Technology costs and parameters
+    - [FES 2024 Data Workbook](https://www.neso.energy/publications/future-energy-scenarios-fes) - Primary data source
+    - [TYNDP 2024](https://tyndp.entsoe.eu/) - European hydrogen demand projections
+    - [PyPSA technology-data](https://github.com/PyPSA/technology-data) - Technology costs and parameters

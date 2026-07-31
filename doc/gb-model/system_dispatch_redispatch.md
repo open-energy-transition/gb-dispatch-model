@@ -1,16 +1,9 @@
-..
-  SPDX-FileCopyrightText: Contributors to gb-dispatch-model <https://github.com/open-energy-transition/gb-dispatch-model>
+<!-- SPDX-FileCopyrightText: Contributors to gb-dispatch-model <https://github.com/open-energy-transition/gb-dispatch-model> -->
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-  SPDX-License-Identifier: CC-BY-4.0
+# Dispatch and Redispatch Modelling {#system-dispatch_redispatch}
 
-.. _system-dispatch_redispatch:
-
-##########################################
-Dispatch and Redispatch Modelling
-##########################################
-
-Overview
-========
+## Overview
 
 The GB model implements a two-stage optimization approach to capture realistic electricity market operations and network constraints:
 
@@ -19,83 +12,75 @@ The GB model implements a two-stage optimization approach to capture realistic e
 
 This approach reflects real GB electricity market operations where the initial, day-ahead market dispatch is followed by a balancing market to resolve transmission constraints.
 
-.. graphviz::
-   :caption: Dispatch and Redispatch Process Flow
+```mermaid
+flowchart TD
+    fes_data["FES outputs<br/>(asset & flex capacities,<br/>annual demand, marginal costs)"]:::input
+    network_data["Network Data<br/>(transmission lines)"]:::input
+    timeseries_data["Profiles<br/>(renewables capacity factors,<br/>demand profiles)"]:::input
+    strike_prices["CfD Strike Prices<br/>(Low carbon contracts)"]:::input
+    multipliers["Bid/Offer multipliers"]:::input
+    boundary_caps["ETYS Boundary<br/>Capabilities"]:::input
 
-   digraph dispatch_flow {
-      rankdir=TB;
-      node [shape=box, style="rounded,filled"];
+    compose["Compose Network<br/>(attach generators, loads,<br/>interconnectors, CHP)"]:::process
+    unconstrained["Unconstrained Dispatch<br/>(minimize system cost,<br/>no boundary constraints)"]:::optimise
+    calc_bids["Calculate Bid/Offer<br/>Profiles<br/>(interconnectors,<br/>generators)"]:::process
+    prepare_constrained["Prepare Constrained<br/>Network<br/>(apply bid/offer costs)"]:::process
+    constrained["Constrained Redispatch<br/>(minimize redispatch cost,<br/>respect ETYS boundaries)"]:::optimise
+    calc_cost["Calculate Constraint<br/>Costs<br/>(difference in dispatch)"]:::process
 
-      // Input nodes
-      fes_data [label="FES outputs\n(asset & flex capacities,\nannual demand, marginal costs)", fillcolor="#E8F4F8", shape=box];
-      network_data [label="Network Data\n(transmission lines)", fillcolor="#E8F4F8", shape=box];
-      timeseries_data [label="Profiles\n(renewables capacity factors,\ndemand profiles)", fillcolor="#E8F4F8"];
-      strike_prices [label="CfD Strike Prices\n(Low carbon contracts)", fillcolor="#E8F4F8"];
-      multipliers [label="Bid/Offer multipliers", fillcolor="#E8F4F8"];
-      boundary_caps [label="ETYS Boundary\nCapabilities", fillcolor="#E8F4F8"];
+    unconstrained_result["Unconstrained Results<br/>(optimal dispatch,<br/>prices)"]:::output
+    constrained_result["Constrained Results<br/>(feasible dispatch,<br/>redispatch costs)"]:::output
+    constraint_cost["Total Constraint<br/>Cost"]:::output
 
-      // Process nodes
-      compose [label="Compose Network\n(attach generators, loads,\ninterconnectors, CHP)", fillcolor="#D4E6F1", fontsize=11];
-      unconstrained [label="Unconstrained Dispatch\n(minimize system cost,\nno boundary constraints)", fillcolor="#AED6F1", fontsize=11];
-      calc_bids [label="Calculate Bid/Offer\nProfiles\n(interconnectors,\ngenerators)", fillcolor="#D4E6F1", fontsize=11];
-      prepare_constrained [label="Prepare Constrained\nNetwork\n(apply bid/offer costs)", fillcolor="#D4E6F1", fontsize=11];
-      constrained [label="Constrained Redispatch\n(minimize redispatch cost,\nrespect ETYS boundaries)", fillcolor="#AED6F1", fontsize=11];
-      calc_cost [label="Calculate Constraint\nCosts\n(difference in dispatch)", fillcolor="#D4E6F1", fontsize=11];
+    fes_data --> compose
+    network_data --> compose
+    timeseries_data --> compose
 
-      // Output nodes
-      unconstrained_result [label="Unconstrained Results\n(optimal dispatch,\nprices)", fillcolor="#C8E6C9"];
-      constrained_result [label="Constrained Results\n(feasible dispatch,\nredispatch costs)", fillcolor="#C8E6C9"];
-      constraint_cost [label="Total Constraint\nCost", fillcolor="#C8E6C9"];
+    compose -->|"no boundary constraints"| unconstrained
+    unconstrained --> unconstrained_result
 
-      // Flow
-      fes_data -> compose;
-      network_data -> compose;
-      timeseries_data -> compose;
+    unconstrained_result --> calc_bids
+    strike_prices --> calc_bids
+    multipliers --> calc_bids
+    calc_bids --> prepare_constrained
 
-      compose -> unconstrained [label="  no boundary\n  constraints", fontsize=10];
-      unconstrained -> unconstrained_result;
+    compose -->|"base network"| prepare_constrained
+    unconstrained_result --> prepare_constrained
 
-      unconstrained_result -> calc_bids;
-      strike_prices -> calc_bids;
-      multipliers -> calc_bids;
-      calc_bids -> prepare_constrained;
+    prepare_constrained -->|"with bid/offer costs"| constrained
+    boundary_caps -->|"ETYS constraints"| constrained
 
-      compose -> prepare_constrained [label="  base network", fontsize=10];
-      unconstrained_result -> prepare_constrained;
+    constrained --> constrained_result
+    constrained_result --> calc_cost
+    calc_cost --> constraint_cost
 
-      prepare_constrained -> constrained [label="  with bid/offer\n  costs", fontsize=10];
-      boundary_caps -> constrained [label="  ETYS\n  constraints", fontsize=10];
+    classDef input fill:#E8F4F8,stroke:#333
+    classDef process fill:#D4E6F1,stroke:#333
+    classDef optimise fill:#AED6F1,stroke:#333
+    classDef output fill:#C8E6C9,stroke:#333
+```
 
-      constrained -> constrained_result;
-      constrained_result -> calc_cost;
-      calc_cost -> constraint_cost;
-   }
+## Process
 
-Process
-=======
+### Stage 1: Unconstrained (day-ahead) dispatch
 
-Stage 1: Unconstrained (day-ahead) dispatch
--------------------------------------------
-
-.. image:: img/dispatch.drawio.svg
-    :class: full-width
-    :align: center
+![](img/dispatch.drawio.svg){: .full-width}
 
 The unconstrained dispatch represents the economically optimal dispatch without considering internal GB transmission constraints.
 By default, we optimise with a perfect foresight at an hourly resolution for individual years.
 
 **Objective**: Minimize total system cost
 
-.. math::
-
-    \min \sum_{t,g} MC_g \cdot p_{g,t} + \sum_{t,s} MC_s \cdot p_{s,t}
+$$
+\min \sum_{t,g} MC_g \cdot p_{g,t} + \sum_{t,s} MC_s \cdot p_{s,t}
+$$
 
 Where:
 
-- :math:`MC_g` - Marginal cost of generator g (GBP/MWh)
-- :math:`MC_s` - Marginal cost of storage unit s (GBP/MWh)
-- :math:`p_{g,t}` - Power output of generator g at time t
-- :math:`p_{s,t}` - Power output of storage unit s at time t
+- $MC_g$ - Marginal cost of generator g (GBP/MWh)
+- $MC_s$ - Marginal cost of storage unit s (GBP/MWh)
+- $p_{g,t}$ - Power output of generator g at time t
+- $p_{s,t}$ - Power output of storage unit s at time t
 
 **Constraints**:
 
@@ -119,12 +104,9 @@ Two changes to the default PyPSA-Eur constraints are made during the unconstrain
 - Nodal electricity prices
 - Interconnector flows
 
-Stage 2: Constrained (balancing market) redispatch
---------------------------------------------------
+### Stage 2: Constrained (balancing market) redispatch
 
-.. image:: /gb-model/img/redispatch.drawio.svg
-    :class: full-width
-    :align: center
+![](img/redispatch.drawio.svg){: .full-width}
 
 The constrained redispatch modifies the unconstrained dispatch to respect ETYS (Electricity Ten Year Statement) boundary capabilities, as well as individual line limits of the GB high-voltage transmission network.
 By default, we optimise with a perfect foresight at an hourly resolution for individual years.
@@ -135,38 +117,37 @@ By default, we optimise with a perfect foresight at an hourly resolution for ind
 
    The initial dispatch profiles for generators, GB → neighbour interconnectors, and storage units are all fixed to their optimal values from stage 1.
    We also impose limits on intra-GB transmission using GB Electricity Ten-Year Statement (ETYS) boundary constraints, defined below.
-   Generators (except nuclear power), interconnectors, and storage units can deviate from their optimal dispatch via virtual ``up`` and ``down`` generators that we create for each asset.
-   ``down`` generators can only remove energy from the system, ``up`` generators can only add energy to it.
+   Generators (except nuclear power), interconnectors, and storage units can deviate from their optimal dispatch via virtual `up` and `down` generators that we create for each asset.
+   `down` generators can only remove energy from the system, `up` generators can only add energy to it.
    To these virtual generators we then apply redispatch (bid/offer) costs.
 
-   .. note::
-
-        This process requires updates to core PyPSA-Eur storage constraints to (a) fix their optimal dispatch correctly and (b) include the virtual generators in the storage energy balance constraint.
+   !!! note
+       This process requires updates to core PyPSA-Eur storage constraints to (a) fix their optimal dispatch correctly and (b) include the virtual generators in the storage energy balance constraint.
 
 2. **Bid/Offer Costs Applied**
 
    Generators that deviate from unconstrained dispatch incur bid (decrease) or offer (increase) costs based on technology-specific multipliers.
    The modified marginal cost becomes:
 
-   .. math::
-
-       MC'_g = \begin{cases}
-       MC_g \times offer\_multiplier & \text{if increase from unconstrained} \\
-       MC_g \times bid\_multiplier & \text{if decrease from unconstrained} \\
-       \end{cases}
+   $$
+   MC'_g = \begin{cases}
+   MC_g \times offer\_multiplier & \text{if increase from unconstrained} \\
+   MC_g \times bid\_multiplier & \text{if decrease from unconstrained} \\
+   \end{cases}
+   $$
 
 3. **ETYS Boundary Constraints**
 
    Transmission boundaries between ETYS regions are constrained to their capabilities:
 
-   .. math::
-
-       \sum_{line \in boundary} flow_{line} \leq capability_{boundary}
+   $$
+   \sum_{line \in boundary} flow_{line} \leq capability_{boundary}
+   $$
 
    Several transmission lines cross each boundary.
    Some lines cross several boundaries, such as offshore HVDC lines that connect northern Scotland with central England.
    The boundary capabilities are scaled in shoulder and summer seasons to reflect the impact of thermal limits on the lines crossing those boundaries.
-   This scaling is configurable and based initially on values defined by NESO in table 2.3 of their `network options assessment methodology <https://www.neso.energy/document/285321/download>`_.
+   This scaling is configurable and based initially on values defined by NESO in table 2.3 of their [network options assessment methodology](https://www.neso.energy/document/285321/download).
 
    By default, transmission lines are not otherwise constrained to their individual physical capacities.
    This behaviour can be changed in the configuration so that individual transmission line capacities, as calculated by the PyPSA-Eur workflow, can *also* constrain intra-GB flows.
@@ -183,19 +164,18 @@ By default, we optimise with a perfect foresight at an hourly resolution for ind
 
 **Objective**: Minimize redispatch cost
 
-.. math::
-
-    \min \sum_{t,g} MC'_g \cdot (p_{g,t} - p^{unconstrained}_{g,t}) + RP \cdot |(p_{g,t} - p^{unconstrained}_{g,t})|
+$$
+\min \sum_{t,g} MC'_g \cdot (p_{g,t} - p^{unconstrained}_{g,t}) + RP \cdot |(p_{g,t} - p^{unconstrained}_{g,t})|
+$$
 
 Where:
 
-- :math:`RP` - The :ref:`redispatch penalty cost <system-redispatch-penalty>`.
+- $RP$ - The [redispatch penalty cost](#system-redispatch-penalty).
 
-Bid/Offer Profile Calculation
-------------------------------
+### Bid/Offer Profile Calculation
 
-.. seealso::
-    For details on the different system components defined here, see: :ref:`system-overview_gb`.
+!!! info "See also"
+    For details on the different system components defined here, see: [System Overview](system_overview.md#system-overview_gb).
 
 **Conventional Generators**
 
@@ -238,7 +218,7 @@ As with storage units, we assume DSR aggregators would be receiving revenue from
 **Interconnectors**:
 
 Interconnector bid/offer costs are given as an hourly timeseries profile, derived from the unconstrained dispatch.
-There are six options available to interconnectors during redispatch, as outlined in `the National Grid Long-term Market and Constraint Modelling methodology document <https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf>`_.
+There are six options available to interconnectors during redispatch, as outlined in [the National Grid Long-term Market and Constraint Modelling methodology document](https://www.nationalgrid.com/sites/default/files/documents/Long-term%20Market%20and%20Network%20Constraint%20Modelling.pdf).
 
 1. Currently importing into GB and offering to import more.
 2. Currently importing into GB and bidding to import less or switch to exporting.
@@ -251,35 +231,35 @@ These can be collapsed into four profiles as we consider (1) & (3) and (4) & (6)
 
 - **Offering to increase imports**: Treated as generator offering power
 
-  .. math::
-
-      Cost_{offer}^{import+} = |\lambda_{GB} - \lambda_{neighbor}| + offer_{neighbor} \cdot (1 + \eta_{loss})
+  $$
+  Cost_{offer}^{import+} = |\lambda_{GB} - \lambda_{neighbor}| + offer_{neighbor} \cdot (1 + \eta_{loss})
+  $$
 
 - **Bidding to decrease imports**: Treated as generator bidding to reduce
 
-  .. math::
-
-      Cost_{bid}^{import-} = \lambda_{GB} - \lambda_{neighbor} \cdot (1 + \eta_{loss}) - bid_{neighbor} \cdot (1 + \eta_{loss})
+  $$
+  Cost_{bid}^{import-} = \lambda_{GB} - \lambda_{neighbor} \cdot (1 + \eta_{loss}) - bid_{neighbor} \cdot (1 + \eta_{loss})
+  $$
 
 - **Offering to decrease exports**: Treated as generator offering power
 
-  .. math::
-
-      Cost_{offer}^{export-} = \lambda_{neighbor} \cdot (1 - \eta_{loss}) - \lambda_{GB} - offer_{neighbor} \cdot (1 - \eta_{loss})
+  $$
+  Cost_{offer}^{export-} = \lambda_{neighbor} \cdot (1 - \eta_{loss}) - \lambda_{GB} - offer_{neighbor} \cdot (1 - \eta_{loss})
+  $$
 
 - **Bidding to increase exports**: Treated as generator bidding to reduce
 
-  .. math::
-
-      Cost_{bid}^{export+} = |\lambda_{GB} - \lambda_{neighbor}| - bid_{neighbor} \cdot (1 - \eta_{loss})
+  $$
+  Cost_{bid}^{export+} = |\lambda_{GB} - \lambda_{neighbor}| - bid_{neighbor} \cdot (1 - \eta_{loss})
+  $$
 
 Where:
 
-- :math:`\lambda_{GB}` - GB marginal price (GBP/MWh)
-- :math:`\lambda_{neighbor}` - Neighbor's marginal price (GBP/MWh)
-- :math:`offer_{neighbor}` - Neighbor's marginal plant offer cost (GBP/MWh)
-- :math:`bid_{neighbor}` - Neighbor's marginal plant bid cost (GBP/MWh)
-- :math:`\eta_{loss}` - Interconnector loss rate (fraction)
+- $\lambda_{GB}$ - GB marginal price (GBP/MWh)
+- $\lambda_{neighbor}$ - Neighbor's marginal price (GBP/MWh)
+- $offer_{neighbor}$ - Neighbor's marginal plant offer cost (GBP/MWh)
+- $bid_{neighbor}$ - Neighbor's marginal plant bid cost (GBP/MWh)
+- $\eta_{loss}$ - Interconnector loss rate (fraction)
 
 The neighbours marginal plant is selected as the plant anywhere in Europe with marginal cost closest to the neighbour's marginal price.
 This is because any plant could be setting the marginal price, via intra-European interconnectors.
@@ -287,10 +267,7 @@ The bid/offer costs of this plant are calculated as in GB, using the same multip
 However, since we do not have information on renewables subsidy mechanisms in each European country, if a low-carbon plant is setting the price, we do not set bids/offers to a strike price but rather to the plant's marginal cost.
 This can mean that there are times with negligible bid/offer costs on the European side of the interconnector.
 
-.. _system-redispatch-penalty:
-
-Redispatch penalty
-------------------
+### Redispatch penalty {#system-redispatch-penalty}
 
 The redispatch costs are sometimes formed in such a way that the system benefits financially from bidding off with one generator and bidding on with another an equal amount.
 This happens in particular with interconnectors, in periods where it is cheaper to import more electricity than, say, ramp down a CCGT plant.
@@ -303,64 +280,52 @@ PyPSA network statistics (e.g., `opex`, `revenue`, `market_value`) will not incl
 
 The value of the penalty is configurable, to allow for it to be tweaked to be just large enough to mitigate excess redispatching but small enough not to cause numerical instability in the optimisation.
 
-Analysing results
------------------
+### Analysing results
 
-Result files can be found in the ``results`` directory.
+Result files can be found in the `results` directory.
 Each year in the horizon of interest is optimised separately and a file for each year is stored in the following directory structure:
 
-.. code::
+```
+results/{run}/networks/
+├── unconstrained_clustered/              # Stage 1 results
+│   └── {year}.nc
+└── constrained_clustered/                # Stage 2 results
+    └── {year}.nc
+```
 
-    results/{run}/networks/
-    ├── unconstrained_clustered/              # Stage 1 results
-    │   └── {year}.nc
-    └── constrained_clustered/                # Stage 2 results
-        └── {year}.nc
+In addition, once all runs have completed, a `results/{run}/constraint_costs.csv` will be available, which gives a single value constraint cost for the entire modelling horizon, plus the final year's cost duplicated N times to simulate costs until the end of current infrastructure asset lifetimes.
 
-In addition, once all runs have completed, a ``results/{run}/constraint_costs.csv`` will be available, which gives a single value constraint cost for the entire modelling horizon, plus the final year's cost duplicated N times to simulate costs until the end of current infrastructure asset lifetimes.
+## Configuration {#redispatch-configuration}
 
-.. _redispatch-configuration:
+The workflow is configured under `redispatch` in the model configuration.
 
-Configuration
-=============
+```yaml
+{{ yaml_snippet("config.gb.2024.yaml", "doc:redispatch-start", "doc:redispatch-end") }}
+```
 
-The workflow is configured under ``redispatch`` in the model configuration.
+## Implementation Notes {#redispatch-implementation-notes}
 
-.. literalinclude:: ../../config/config.gb.2024.yaml
-   :language: yaml
-   :start-after: # [doc:redispatch-start]
-   :end-before: # [doc:redispatch-end]
+### Data Processing Workflow
 
+The redispatch workflow is built through `rules/gb-model/redispatch.smk`.
 
-.. _redispatch-implementation-notes:
+![](img/redispatch_workflow.svg)
 
-Implementation Notes
-====================
+!!! note
+    The graph above was generated using:
 
-Data Processing Workflow
-------------------------
+    ```console
+    pixi run filtered_rulegraph \
+    "results/GB/networks/HT/constrained_clustered/2040.nc \
+    -w fes_scenario -w year \
+    -c compose_network \
+    -f rules/gb-model/redispatch.smk -s 11,8" \
+    "doc/gb-model/img/redispatch_workflow.svg"
+    ```
 
-The redispatch workflow is built through ``rules/gb-model/redispatch.smk``.
+    The `filtered_rulegraph` task allows us to trim the full DAG to the redispatch-related workflow slice while retaining the upstream steps that build the PyPSA network.
 
-.. image:: img/redispatch_workflow.svg
-    :align: center
-
-.. note::
-    The graph above was generated using::
-
-        pixi run filtered_rulegraph \
-        "results/GB/networks/HT/constrained_clustered/2040.nc \
-        -w fes_scenario -w year \
-        -c compose_network \
-        -f rules/gb-model/redispatch.smk -s 11,8" \
-        "doc/gb-model/img/redispatch_workflow.svg"
-
-    The ``filtered_rulegraph`` task allows us to trim the full DAG to the redispatch-related workflow slice while retaining the upstream steps that build the PyPSA network.
-
-.. _system-redispatch-assumptions:
-
-Key Assumptions
----------------
+### Key Assumptions {#system-redispatch-assumptions}
 
 - Storage is redispatched at the short-run marginal cost since the storage opportunity cost is reflected in the overall optimisation.
 - Historical redispatch is suitable for defining bid/offer multipliers of conventional generators
