@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: CC-BY-4.0
 
-site_name: PyPSA-Eur
-site_url: https://pypsa-eur.readthedocs.io
-repo_url: https://github.com/pypsa/pypsa-eur
-repo_name: pypsa/pypsa-eur
+site_name: gb-dispatch-model
+site_url: https://gb-dispatch-model.readthedocs.io
+repo_url: https://github.com/open-energy-transition/gb-dispatch-model
+repo_name: open-energy-transition/pypsa-eur/gb-dispatch-model
 
 docs_dir: doc
 
@@ -32,76 +32,81 @@ theme:
     text: Overpass
 
 nav:
-- Home:
-  - Home: index.md
-  - Getting Started:
-    - Introduction: introduction.md
-    - Installation: installation.md
-    - "Tutorial: Electricity-Only": tutorial.md
-    - "Tutorial: Sector-Coupled": tutorial_sector.md
-  - References:
-    - Release Notes: release_notes.md
-    - Licenses: licenses.md
-    - Validation: validation.md
-    - Limitations: limitations.md
-    - Support: support.md
-    - FAQ: faq.md
-    - Publications: publications.md
+- Home: gb-model/index.md
 
-- Design:
-  - Spatial Resolution: spatial_resolution.md
-  - Supply and Demand: supply_demand.md
-  - Foresight Options: foresight.md
-  - Techno-Economic Assumptions: costs.md
-  - OETC Integration: oetc.md
+- Getting Started:
+  - Introduction: gb-model/introduction.md
+  - Installation: gb-model/installation.md
+  - Run the workflow: gb-model/run.md
+  - FAQ: gb-model/faq.md
+
+- System Representation:
+  - System Overview: gb-model/system_overview.md
+  - Dispatch and Redispatch: gb-model/system_dispatch_redispatch.md
+  - Generation Components: gb-model/system_generators.md
+  - Transmission Components: gb-model/system_transmission.md
+  - Storage Components: gb-model/system_storage.md
+  - Demand & DSR: gb-model/system_demand_and_dsr.md
+  - Heat System: gb-model/system_heat.md
+  - Hydrogen Subsystem: gb-model/system_hydrogen.md
+  - Electric Vehicle Subsystem: gb-model/system_ev.md
 
 - Configuration:
-  - Wildcards: wildcards.md
-  - Configuration: configuration.md
+  - Wildcards: gb-model/wildcards.md
+  - Configuration: gb-model/configuration.md
 
-- Data Sources:
-  - Data Sources: data_sources.md
-  - Base Network: data-base-network.md
-  - Cutouts: data-cutouts.md
-  - Data Repositories: data-repos.md
+- Development:
+  - Technical Implementation: gb-model/implementation.md
+  - Data Cleaning: gb-model/data_cleaning.md
 
-- Rules Overview:
-  - Retrieving Data: retrieve.md
-  - Building Electricity Networks: preparation.md
-  - Building Sector-Coupled Networks: sector.md
-  - Solving Networks: solving.md
-  - Plotting and Summaries: plotting.md
+- References:
+  - Release Notes: gb-model/release_notes.md
+  - Data Sources: gb-model/data_sources.md
 
-- Contributing:
-  - contributing.md
-  - Validation Development: validation_dev.md
+- PyPSA-Eur:
+  - Home:
+    - Home: index.md
+    - Getting Started:
+      - Introduction: introduction.md
+      - Installation: installation.md
+      - "Tutorial: Electricity-Only": tutorial.md
+      - "Tutorial: Sector-Coupled": tutorial_sector.md
+    - References:
+      - Release Notes: release_notes.md
+      - Licenses: licenses.md
+      - Validation: validation.md
+      - Limitations: limitations.md
+      - Support: support.md
+      - FAQ: faq.md
+      - Publications: publications.md
 
-- GB Model:
-  - Overview: gb-model/index.md
-  - Getting Started:
-    - Introduction: gb-model/introduction.md
-    - Installation: gb-model/installation.md
-    - Run the workflow: gb-model/run.md
-    - FAQ: gb-model/faq.md
-  - System Representation:
-    - System Overview: gb-model/system_overview.md
-    - Dispatch and Redispatch: gb-model/system_dispatch_redispatch.md
-    - Generation Components: gb-model/system_generators.md
-    - Transmission Components: gb-model/system_transmission.md
-    - Storage Components: gb-model/system_storage.md
-    - Demand & DSR: gb-model/system_demand_and_dsr.md
-    - Heat System: gb-model/system_heat.md
-    - Hydrogen Subsystem: gb-model/system_hydrogen.md
-    - Electric Vehicle Subsystem: gb-model/system_ev.md
+  - Design:
+    - Spatial Resolution: spatial_resolution.md
+    - Supply and Demand: supply_demand.md
+    - Foresight Options: foresight.md
+    - Techno-Economic Assumptions: costs.md
+    - OETC Integration: oetc.md
+
   - Configuration:
-    - Wildcards: gb-model/wildcards.md
-    - Configuration: gb-model/configuration.md
-  - Development:
-    - Technical Implementation: gb-model/implementation.md
-    - Data Cleaning: gb-model/data_cleaning.md
-  - References:
-    - Release Notes: gb-model/release_notes.md
-    - Data Sources: gb-model/data_sources.md
+    - Wildcards: wildcards.md
+    - Configuration: configuration.md
+
+  - Data Sources:
+    - Data Sources: data_sources.md
+    - Base Network: data-base-network.md
+    - Cutouts: data-cutouts.md
+    - Data Repositories: data-repos.md
+
+  - Rules Overview:
+    - Retrieving Data: retrieve.md
+    - Building Electricity Networks: preparation.md
+    - Building Sector-Coupled Networks: sector.md
+    - Solving Networks: solving.md
+    - Plotting and Summaries: plotting.md
+
+  - Contributing:
+    - contributing.md
+    - Validation Development: validation_dev.md
 
 
 plugins:

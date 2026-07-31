@@ -1,4 +1,4 @@
-<!-- SPDX-FileCopyrightText: Contributors to gb-dispatch-model <https://github.com/open-energy-transition/gb-dispatch-model> -->
+<!-- SPDX-FileCopyrightText: gb-dispatch-model contributors -->
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
 # Technical Implementation {#implementation}

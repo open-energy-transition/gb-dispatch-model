@@ -1,4 +1,4 @@
-<!-- SPDX-FileCopyrightText: Contributors to gb-dispatch-model -->
+<!-- SPDX-FileCopyrightText: gb-dispatch-model contributors -->
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
 # Run the workflow {#run_gb}
