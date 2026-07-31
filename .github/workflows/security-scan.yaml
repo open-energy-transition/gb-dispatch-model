@@ -31,7 +31,7 @@ jobs:
       if: github.ref == 'refs/heads/master'
       uses: anchore/sbom-action@v0.24.0
       with:
-        path: ".pixi/envs/default"
+        path: ".pixi/envs/gb-model"
         output-file: sbom.spdx.json
         dependency-snapshot: true
 
@@ -39,7 +39,7 @@ jobs:
       id: scan
       uses: anchore/scan-action@v7.4.0
       with:
-        path: ".pixi/envs/default"
+        path: ".pixi/envs/gb-model"
         fail-build: false
         severity-cutoff: high
         add-cpes-if-none: true
