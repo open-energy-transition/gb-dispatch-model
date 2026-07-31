@@ -21,22 +21,6 @@ include: "gb-model/analysis.smk"
 
 
 rule compose_network:
-    params:
-        countries=config["countries"],
-        costs_config=config["costs"],
-        electricity=config["electricity"],
-        clustering=config["clustering"],
-        renewable=config["renewable"],
-        voll=config["fes_costs"]["voll"],
-        enable_chp=config["chp"]["enable"],
-        enable_eur_h2_bus=config["fes"]["hydrogen"]["enable_eur_h2_bus"],
-        enable_eur_generator_unavailability=config["entsoe_unavailability"][
-            "extend_to_eur_regions"
-        ],
-        dsr_hours_dict=config["fes"]["gb"]["flexibility"]["dsr_hours"],
-        load_bus_suffixes=config["fes"]["gb"]["demand"]["bus_suffix"],
-        flex_carrier_suffixes=config["fes"]["gb"]["flexibility"]["carrier_suffix"],
-        time_aggregation=config["time_aggregation"],
     input:
         unpack(input_profile_tech),
         demands=expand(
@@ -96,11 +80,27 @@ rule compose_network:
         network=resources("networks/{fes_scenario}/composed_{clusters}/{year}.nc"),
     log:
         logs("compose_network_{clusters}_{fes_scenario}_{year}.log"),
-    resources:
-        mem_mb=4000,
     wildcard_constraints:
         # We only accept clustered clusters
         clusters="clustered",
+    resources:
+        mem_mb=4000,
+    params:
+        countries=config["countries"],
+        costs_config=config["costs"],
+        electricity=config["electricity"],
+        clustering=config["clustering"],
+        renewable=config["renewable"],
+        voll=config["fes_costs"]["voll"],
+        enable_chp=config["chp"]["enable"],
+        enable_eur_h2_bus=config["fes"]["hydrogen"]["enable_eur_h2_bus"],
+        enable_eur_generator_unavailability=config["entsoe_unavailability"][
+            "extend_to_eur_regions"
+        ],
+        dsr_hours_dict=config["fes"]["gb"]["flexibility"]["dsr_hours"],
+        load_bus_suffixes=config["fes"]["gb"]["demand"]["bus_suffix"],
+        flex_carrier_suffixes=config["fes"]["gb"]["flexibility"]["carrier_suffix"],
+        time_aggregation=config["time_aggregation"],
     script:
         scripts("gb_model/compose_network.py")
 

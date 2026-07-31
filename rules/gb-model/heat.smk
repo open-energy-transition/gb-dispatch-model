@@ -8,11 +8,6 @@ Building heat demand and demand-side response rules.
 
 
 rule process_cop_profiles:
-    message:
-        "Process COP profile for {wildcards.year} obtained from existing PyPSA-Eur rules"
-    params:
-        year=lambda wildcards: wildcards.year,
-        heat_pump_sources=config["sector"]["heat_pump_sources"],
     input:
         cop_profile=resources("cop_profiles_base_s_clustered_{year}.nc"),
         clustered_pop_layout=resources("pop_layout_base_s_clustered.csv"),
@@ -21,18 +16,16 @@ rule process_cop_profiles:
         csv=resources("gb-model/cop/{year}.csv"),
     log:
         logs("process_cop_profiles_clustered_{year}.log"),
+    params:
+        year=lambda wildcards: wildcards.year,
+        heat_pump_sources=config["sector"]["heat_pump_sources"],
+    message:
+        "Process COP profile for {wildcards.year} obtained from existing PyPSA-Eur rules"
     script:
         scripts("gb_model/heat/process_cop_profiles.py")
 
 
 rule process_fes_heat_technologies:
-    message:
-        "Process the share of electrified heating technologies from FES workbook"
-    params:
-        year_range=config["redispatch"]["year_range_incl"],
-        electrified_heating_technologies=config["fes"]["gb"]["demand"]["heat"][
-            "electrified_heating_technologies"
-        ],
     input:
         fes_heat_technology_data=resources(f"gb-model/fes/ED3.csv"),
     output:
@@ -42,13 +35,18 @@ rule process_fes_heat_technologies:
         services=resources("gb-model/{fes_scenario}/iandc_heat_demand_annual.csv"),
     log:
         logs("process_fes_heat_technologies_{fes_scenario}.log"),
+    params:
+        year_range=config["redispatch"]["year_range_incl"],
+        electrified_heating_technologies=config["fes"]["gb"]["demand"]["heat"][
+            "electrified_heating_technologies"
+        ],
+    message:
+        "Process the share of electrified heating technologies from FES workbook"
     script:
         scripts("gb_model/heat/process_fes_heat_technologies.py")
 
 
 rule resistive_heater_demand_profile:
-    message:
-        "Process historical and future resistive heat demand profile for {wildcards.year}"
     input:
         energy_totals=resources("pop_weighted_energy_totals_s_clustered.csv"),
         heat_demand_shape=resources("hourly_heat_demand_total_base_s_clustered.nc"),
@@ -67,13 +65,13 @@ rule resistive_heater_demand_profile:
         ),
     log:
         logs("resistive_heater_demand_profile_{fes_scenario}_{year}.log"),
+    message:
+        "Process historical and future resistive heat demand profile for {wildcards.year}"
     script:
         scripts("gb_model/heat/resistive_heater_demand_profile.py")
 
 
 rule heat_demand_electricity_load_profile:
-    message:
-        "Scale PyPSA-Eur {wildcards.sector} heat demand profiles to create heat bus electricity load profiles for future year {wildcards.year}"
     input:
         demand=resources("hourly_heat_demand_total_base_s_clustered.nc"),
         cop_profile=resources("gb-model/cop/{year}.csv"),
@@ -85,5 +83,7 @@ rule heat_demand_electricity_load_profile:
         csv=resources("gb-model/{fes_scenario}/{sector}_heat_demand/{year}.csv"),
     log:
         logs("heat_demand_s_clustered_{fes_scenario}_{sector}_{year}.log"),
+    message:
+        "Scale PyPSA-Eur {wildcards.sector} heat demand profiles to create heat bus electricity load profiles for future year {wildcards.year}"
     script:
         scripts("gb_model/heat/heat_demand_electricity_load_profile.py")
