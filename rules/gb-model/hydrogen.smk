@@ -8,11 +8,6 @@ Hydrogen subsystem (demand, storage, electrolysis, fuel cells / turbine) rules.
 
 
 rule create_hydrogen_data_tables:
-    message:
-        "Process net hydrogen demand data, off-grid electrolysis electricity demand, and storage demand from FES workbook into CSV format"
-    params:
-        year_range=config["redispatch"]["year_range_incl"],
-        data_selection=config["fes"]["hydrogen"]["data_selection"],
     input:
         whole_system_data=resources("gb-model/fes/WS1.csv"),
     output:
@@ -26,13 +21,16 @@ rule create_hydrogen_data_tables:
         ),
     log:
         logs("create_hydrogen_data_tables_{fes_scenario}.log"),
+    params:
+        year_range=config["redispatch"]["year_range_incl"],
+        data_selection=config["fes"]["hydrogen"]["data_selection"],
+    message:
+        "Process net hydrogen demand data, off-grid electrolysis electricity demand, and storage demand from FES workbook into CSV format"
     script:
         scripts("gb_model/hydrogen/create_hydrogen_data_tables.py")
 
 
 rule create_grid_electrolysis_table:
-    message:
-        "Process hydrogen electrolysis data from FES workbook into CSV format"
     input:
         regional_gb_data=resources("gb-model/{fes_scenario}/regional_gb_data.csv"),
     output:
@@ -41,30 +39,30 @@ rule create_grid_electrolysis_table:
         ),
     log:
         logs("create_grid_electrolysis_table_{fes_scenario}.log"),
+    message:
+        "Process hydrogen electrolysis data from FES workbook into CSV format"
     script:
         scripts("gb_model/hydrogen/create_grid_electrolysis_table.py")
 
 
 rule add_eur_H2_demand:
-    message:
-        "Add European H2 demand based on historical data combined with TYNDP future scenario demands"
     input:
         gb_demand=resources("gb-model/{fes_scenario}/regional_H2_demand_annual.csv"),
         eur_demand_tyndp="data/gb-model/tyndp_h2_demand.csv",
         eur_demand_today="data/gb-model/downloaded/eur_H2_demand_today.xlsx",
-    params:
-        countries=config["countries"],
     output:
         csv=resources("gb-model/{fes_scenario}/regional_H2_demand_annual_inc_eur.csv"),
     log:
         logs("add_eur_H2_demand_{fes_scenario}.log"),
+    params:
+        countries=config["countries"],
+    message:
+        "Add European H2 demand based on historical data combined with TYNDP future scenario demands"
     script:
         scripts("gb_model/hydrogen/add_eur_H2_demand.py")
 
 
 rule synthesise_eur_H2_data:
-    message:
-        "Synthesise European H2 {wildcards.h2_dataset} data using GB data"
     input:
         h2_demand=resources(
             "gb-model/{fes_scenario}/regional_H2_demand_annual_inc_eur.csv"
@@ -76,5 +74,7 @@ rule synthesise_eur_H2_data:
         logs("synthesise_eur_H2_data_{fes_scenario}_{h2_dataset}.log"),
     wildcard_constraints:
         h2_dataset="non_networked_electrolysis_demand_annual|H2_storage_capacity|grid_electrolysis_capacities",
+    message:
+        "Synthesise European H2 {wildcards.h2_dataset} data using GB data"
     script:
         scripts("gb_model/hydrogen/synthesise_eur_H2_data.py")
