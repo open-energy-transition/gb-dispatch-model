@@ -196,14 +196,14 @@ pytest = ">=8.4.2"
 
 [feature.gb-model.tasks.gb-test]
 cmd = """
-	snakemake gb_all -n {{ smk_config }} &&
-	snakemake gb_all -n --configfile config/config.gb.etys-subset.yaml {{ smk_config }} &&
+	snakemake -n {{ smk_config }} &&
+	snakemake -n --configfile config/config.gb.etys-subset.yaml {{ smk_config }} &&
 	echo "All GB tests completed successfully."
     """
 args = [{"arg" = "smk_config", "default" = "--forceall --rerun-incomplete"}]
 
 [feature.gb-model.tasks.model]
-cmd = "snakemake gb_all"
+cmd = "snakemake"
 
 [feature.gb-model.tasks.compose_networks]
 cmd = "snakemake gb_compose_all"
