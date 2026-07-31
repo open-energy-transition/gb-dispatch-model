@@ -30,6 +30,8 @@ run:
     policy: false
     exclude: []
   use_shadow_directory: false
+  default_target_rule: gb_all
+
 
 # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#foresight
 foresight: overnight
@@ -1106,6 +1108,11 @@ clustering:
     remove_stubs_across_borders: false
   cluster_network:
     algorithm: kmeans
+    # GB's custom busmap intentionally merges offshore wind stub buses (DC) into
+    # their nearest onshore region (AC) - see doc/gb-model/data_cleaning.md.
+    # Splitting those merged clusters by carrier breaks the shared bus-name
+    # index between regions_onshore_base_s_*.geojson and regions_offshore_base_s_*.geojson.
+    allow_ac_dc_mixing_in_bus_clusters: true
     hac_features:
     - wnd100m
     - influx_direct
@@ -1135,7 +1142,8 @@ adjustments:
 solving:
   options:
     clip_p_max_pu: 0.01
-    load_shedding: false
+    load_shedding:
+      enable: false
     curtailment_mode: false
     noisy_costs: true
     skip_iterations: true
@@ -1270,6 +1278,8 @@ solving:
 
 # docs in https://gb-dispatch-model.readthedocs.io/en/latest/configuration.html#data
 data:
+  version_files:
+  - data/versions.csv
   hotmaps_industrial_sites:
     source: archive
     version: latest
