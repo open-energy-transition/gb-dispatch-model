@@ -1,112 +1,51 @@
-..
-  SPDX-FileCopyrightText: Contributors to PyPSA-Eur <https://github.com/pypsa/pypsa-eur>
-  SPDX-FileCopyrightText: gb-dispatch-model contributors
+<!-- SPDX-FileCopyrightText: Contributors to PyPSA-Eur <https://github.com/pypsa/pypsa-eur> -->
+<!-- SPDX-FileCopyrightText: gb-dispatch-model contributors -->
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-  SPDX-License-Identifier: CC-BY-4.0
+# gb-dispatch-model: Great Britain dispatch model built on the PyPSA-Eur workflow
 
-##################################################################################
-gb-dispatch-model: Great Britain dispatch model built on the PyPSA-Eur workflow
-##################################################################################
+## About
 
-About
-=====
+gb-dispatch-model is an extension of [PyPSA-Eur](../index.md), used to quantify dispatch decisions in Great Britain under the conditions set out by the UK Future Energy Scenarios.
 
-gb-dispatch-model is an extension of `PyPSA-Eur <../pypsa_eur.html>`_., used to quantify dispatch decisions in Great Britain under the conditions set out by the UK Future Energy Scenarios.
+## Quick start
 
-Quick start
-===========
-
-First, follow our :ref:`installation steps <installation_gb>`.
+First, follow our [installation steps](installation.md#installation_gb).
 
 You can then run the full workflow by calling:
 
-.. code:: bash
-
-   pixi run model
+```bash
+pixi run model
+```
 
 This will run all the data processing and dispatch (unconstrained) + redispatch (constrained) optimisation steps using the default GB configuration.
 
 The optimisation steps are the most resource intensive parts of the process.
 To run only the data processing steps, call:
 
-.. code:: bash
-
-   pixi run compose_networks
+```bash
+pixi run compose_networks
+```
 
 To run the optimisation steps but with a simplified network (namely, with a coarser time dimension to create a smaller optimisation problem), call:
 
-.. code:: bash
+```bash
+pixi run model --configfile 'config/config.gb.time-segment.yaml'
+```
 
-   pixi run model --configfile 'config/config.gb.time-segment.yaml'
+You can further aggregate the time dimension by updating the content of `config/config.gb.time-segment.yaml`, considering the available [PyPSA options](https://docs.pypsa.org/latest/examples/time-series-aggregation).
 
-You can further aggregate the time dimension by updating the content of ``config/config.gb.time-segment.yaml``, considering the available `PyPSA options <https://docs.pypsa.org/latest/examples/time-series-aggregation>`_.
-
-Workflow
-========
+## Workflow
 
 The full workflow rulegraph is shown below.
 Open the image in a new tab/window to view it in more detail.
 
-.. image:: img/workflow.svg
-    :class: full-width
-    :align: center
+![](img/workflow.svg){: .full-width}
 
-.. note::
+!!! note
     The graph above was generated using
-    ``snakemake --rulegraph -F gb_all | sed -n "/digraph/,/}/p" | dot -Tsvg -o doc/gb-model/img/workflow.svg``
+    `snakemake --rulegraph -F gb_all | sed -n "/digraph/,/}/p" | dot -Tsvg -o doc/gb-model/img/workflow.svg`
 
-Operating Systems
-=================
+## Operating Systems
 
 The gb-dispatch-model workflow is continuously tested for Linux, macOS and Windows.
-
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: Getting Started
-
-   introduction
-   installation
-   run
-   faq
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: System representation
-
-   system_overview
-   system_dispatch_redispatch
-   system_generators
-   system_transmission
-   system_storage
-   system_demand_and_dsr
-   system_heat
-   system_hydrogen
-   system_ev
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: Configuration
-
-   wildcards
-   configuration
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: Development
-
-   implementation
-   data_cleaning
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: References
-
-   release_notes
-   data_sources
-   ../pypsa_eur
