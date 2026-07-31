@@ -244,7 +244,8 @@ low_carbon_register:
 solving:
   options:
     clip_p_max_pu: 1.e-2
-    load_shedding: false
+    load_shedding:
+      enable: false
     curtailment_mode: false
     noisy_costs: false
     skip_iterations: true
