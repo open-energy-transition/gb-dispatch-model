@@ -144,11 +144,11 @@ By default, we optimise with a perfect foresight at an hourly resolution for ind
 
     Several transmission lines cross each boundary.
     Some lines cross several boundaries, such as offshore HVDC lines that connect northern Scotland with central England.
-    The boundary capabilities are scaled in shoulder and summer seasons to reflect the impact of thermal limits on the lines crossing those  boundaries.
-    This scaling is configurable and based initially on values defined by NESO in table 2.3 of their [network options assessment methodology](https:// www.neso.energy/document/285321/download).
+    The boundary capabilities are scaled in shoulder and summer seasons to reflect the impact of thermal limits on the lines crossing those boundaries.
+    This scaling is configurable and based initially on values defined by NESO in table 2.3 of their [network options assessment methodology](https://www.neso.energy/document/285321/download).
 
     By default, transmission lines are not otherwise constrained to their individual physical capacities.
-    This behaviour can be changed in the configuration so that individual transmission line capacities, as calculated by the PyPSA-Eur workflow, can  *also* constrain intra-GB flows.
+    This behaviour can be changed in the configuration so that individual transmission line capacities, as calculated by the PyPSA-Eur workflow, can *also* constrain intra-GB flows.
 
 4. **Rest of Europe**
 
@@ -158,7 +158,7 @@ By default, we optimise with a perfect foresight at an hourly resolution for ind
     That is, if it is exporting at full capacity in the optimal dispatch, it can feasibly redispatch to importing at full capacity.
     We assume that the rest of Europe can absorb this change without a change of redispatch costs along the interconnectors.
 
-    Since we only care about the redispatch costs on the interconnectors, we simplify the rest of Europe at this stage to a single node with an  infinite store that can inject/remove any quantity of energy from the system at zero additional cost.
+    Since we only care about the redispatch costs on the interconnectors, we simplify the rest of Europe at this stage to a single node with an infinite store that can inject/remove any quantity of energy from the system at zero additional cost.
 
 **Objective**: Minimize redispatch cost
 
