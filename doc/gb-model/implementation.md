@@ -17,17 +17,17 @@ The powerplants data flows through two main stages:
 
 1. **Capacity Aggregation** (`create_powerplants_table.py`)
 
-   - Processes FES workbook data (GB regions)
-   - Processes European supply data (neighboring countries)
-   - Maps technology names to PyPSA carriers
-   - Aggregates capacities by bus, year, carrier, and set
+    - Processes FES workbook data (GB regions)
+    - Processes European supply data (neighboring countries)
+    - Maps technology names to PyPSA carriers
+    - Aggregates capacities by bus, year, carrier, and set
 
 2. **Cost Enrichment** (`create_powerplants_table.py`)
 
-   - Joins technology cost data (efficiency, VOM, fuel costs, etc.)
-   - Calculates marginal costs
-   - Fills missing values with sensible defaults
-   - Creates unique generator indices
+    - Joins technology cost data (efficiency, VOM, fuel costs, etc.)
+    - Calculates marginal costs
+    - Fills missing values with sensible defaults
+    - Creates unique generator indices
 
 ### Output Format
 
