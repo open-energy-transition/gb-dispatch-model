@@ -184,7 +184,7 @@ Target coordinate reference system (e.g., `EPSG:27700`).
 {{ yaml_section("redispatch", source="config.default.gb.yaml") }}
 ```
 
-## `time_aggregation`
+## `time_aggregation` {#time_aggregation_cf}
 
 List of time aggregation configurations to apply sequentially. If multiple configurations are provided, they will be applied in the order they appear in the list. See [PyPSA documentation](https://docs.pypsa.org/latest/api/networks/cluster/#pypsa.Network.cluster.temporal) for details on the available time aggregation methods and their parameters.
 

@@ -8,11 +8,11 @@ rule [solve_network][]  by using the collection rules `solve_elec_networks`
 or `solve_sector_networks`. Moreover, networks can be solved for dispatch-only
 analyses on an already solved network with [solve_operations_network][].
 
-## Rule `solve_network` {#solve}
+## Rule `solve_network` {#solve_network}
 
 ::: solve_network
 
-## Rule `solve_operations_network` {#solve_operations}
+## Rule `solve_operations_network` {#solve_operations_network}
 
 ::: solve_operations_network
 

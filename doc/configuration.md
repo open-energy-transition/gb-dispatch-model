@@ -108,7 +108,7 @@ It is common conduct to analyse energy system optimisation models for **multiple
 e.g. assessing their sensitivity towards changing the temporal and/or geographical resolution or investigating how
 investment changes as more ambitious greenhouse-gas emission reduction targets are applied.
 
-The `run` section is used for running and storing scenarios with different configurations which are not covered by [wildcards](#wildcards).
+The `run` section is used for running and storing scenarios with different configurations which are not covered by [wildcards](wildcards.md#wildcards).
 It determines the path at which resources, networks and results are stored.
 Therefore the user can run different configurations within the same directory.
 
@@ -125,7 +125,7 @@ Configuration for top level `run` settings.
 
 ## `foresight` {#foresight_cf}
 
-[planning_horizons](#planning_horizons) in scenario has to be set.
+[planning_horizons](wildcards.md#planning_horizons) in scenario has to be set.
 
 Configuration for `foresight` settings.
 
@@ -140,13 +140,13 @@ Configuration for `foresight` settings.
 
 !!! note
     If you use myopic or perfect foresight, the planning horizon in
-    [planning_horizons](#planning_horizons) in scenario has to be set.
+    [planning_horizons](wildcards.md#planning_horizons) in scenario has to be set.
 
 
 ## `scenario` {#scenario}
 
 The `scenario` section is an extraordinary section of the config file
-that is strongly connected to the [wildcards](#wildcards) and is designed to
+that is strongly connected to the [wildcards](wildcards.md#wildcards) and is designed to
 facilitate running multiple scenarios through a single command
 
 

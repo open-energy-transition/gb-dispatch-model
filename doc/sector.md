@@ -14,15 +14,15 @@ Having downloaded the necessary data,
 - [add_brownfield][] builds and stores the base network with all buses, HVAC lines and HVDC links, while
 
 
-## Rule `add_brownfield`
+## Rule `add_brownfield` {#add_brownfield}
 
 ::: add_brownfield
 
-## Rule `add_existing_baseyear`
+## Rule `add_existing_baseyear` {#add_existing_baseyear}
 
 ::: add_existing_baseyear
 
-## Rule `build_existing_heating_distribution`
+## Rule `build_existing_heating_distribution` {#build_existing_heating_distribution}
 
 ::: build_existing_heating_distribution
 
@@ -39,7 +39,7 @@ Having downloaded the necessary data,
 
 ::: build_egs_potentials
 
-## Rule `build_biomass_transport_costs`
+## Rule `build_biomass_transport_costs` {#build_biomass_transport_costs}
 
 ::: build_biomass_transport_costs
 
@@ -51,7 +51,7 @@ Having downloaded the necessary data,
 
 <!-- ::: build_simplified_population_layouts (module not found) -->
 
-## Rule `build_clustered_solar_rooftop_potentials`
+## Rule `build_clustered_solar_rooftop_potentials` {#build_clustered_solar_rooftop_potentials}
 
 ::: build_clustered_solar_rooftop_potentials
 
@@ -95,11 +95,11 @@ Having downloaded the necessary data,
 
 <!-- ::: build_tes_capacity_profiles (module not found) -->
 
-## Rule `build_eurostat_balances`
+## Rule `build_eurostat_balances` {#build_eurostat_balances}
 
 ::: build_eurostat_balances
 
-## Rule `build_energy_totals`
+## Rule `build_energy_totals` {#build_energy_totals}
 
 ::: build_energy_totals
 
@@ -107,11 +107,11 @@ Having downloaded the necessary data,
 
 ::: build_heat_totals
 
-## Rule `build_gas_input_locations`
+## Rule `build_gas_input_locations` {#build_gas_input_locations}
 
 ::: build_gas_input_locations
 
-## Rule `build_gas_network`
+## Rule `build_gas_network` {#build_gas_network}
 
 ::: build_gas_network
 
@@ -119,11 +119,11 @@ Having downloaded the necessary data,
 
 ::: build_daily_heat_demand
 
-## Rule `build_hourly_heat_demand`
+## Rule `build_hourly_heat_demand` {#build_hourly_heat_demand}
 
 ::: build_hourly_heat_demand
 
-## Rule `build_district_heat_share`
+## Rule `build_district_heat_share` {#build_district_heat_share}
 
 ::: build_district_heat_share
 
@@ -155,7 +155,7 @@ Having downloaded the necessary data,
 
 ::: build_industrial_production_per_node
 
-## Rule `build_industry_sector_ratios`
+## Rule `build_industry_sector_ratios` {#build_industry_sector_ratios}
 
 ::: build_industry_sector_ratios
 
@@ -179,7 +179,7 @@ Having downloaded the necessary data,
 
 ::: build_salt_cavern_potentials
 
-## Rule `build_co2_sequestration_potentials`
+## Rule `build_co2_sequestration_potentials` {#build_co2_sequestration_potentials}
 
 ::: build_co2_sequestration_potentials
 
@@ -211,10 +211,10 @@ Having downloaded the necessary data,
 
 ::: cluster_gas_network
 
-## Rule `time_aggregation`
+## Rule `time_aggregation` {#time_aggregation}
 
 ::: time_aggregation
 
-## Rule `prepare_sector_network`
+## Rule `prepare_sector_network` {#prepare_sector_network}
 
 ::: prepare_sector_network

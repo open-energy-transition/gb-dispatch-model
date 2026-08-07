@@ -5,20 +5,20 @@
 # Plotting and Summaries
 
 
-## Rule `make_summary`
+## Rule `make_summary` {#make_summary}
 
 ::: make_summary
 
 
-## Rule `make_global_summary`
+## Rule `make_global_summary` {#make_global_summary}
 
 ::: make_global_summary
 
-## Rule `make_cumulative_costs`
+## Rule `make_cumulative_costs` {#make_cumulative_costs}
 
 ::: make_cumulative_costs
 
-## Rule `plot_summary` {#summary_plot}
+## Rule `plot_summary` {#plot_summary}
 
 ::: plot_summary
 
@@ -56,11 +56,11 @@
 
 ::: plot_heat_source_map
 
-## Rule `plot_balance_timeseries`
+## Rule `plot_balance_timeseries` {#plot_balance_timeseries}
 
 ::: plot_balance_timeseries
 
-## Rule `plot_heatmap_timeseries`
+## Rule `plot_heatmap_timeseries` {#plot_heatmap_timeseries}
 
 ::: plot_heatmap_timeseries
 
