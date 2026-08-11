@@ -114,53 +114,51 @@ By default, we optimise with a perfect foresight at an hourly resolution for ind
 **Key Modifications**:
 
 1. **Fixed dispatch & redispatch generators**
+    The initial dispatch profiles for generators, GB → neighbour interconnectors, and storage units are all fixed to their optimal values from stage 1.
+    We also impose limits on intra-GB transmission using GB Electricity Ten-Year Statement (ETYS) boundary constraints, defined below.
+    Generators (except nuclear power), interconnectors, and storage units can deviate from their optimal dispatch via virtual `up` and `down` generators that we create for each asset.
+    `down` generators can only remove energy from the system, `up` generators can only add energy to it.
+    To these virtual generators we then apply redispatch (bid/offer) costs.
 
-   The initial dispatch profiles for generators, GB → neighbour interconnectors, and storage units are all fixed to their optimal values from stage 1.
-   We also impose limits on intra-GB transmission using GB Electricity Ten-Year Statement (ETYS) boundary constraints, defined below.
-   Generators (except nuclear power), interconnectors, and storage units can deviate from their optimal dispatch via virtual `up` and `down` generators that we create for each asset.
-   `down` generators can only remove energy from the system, `up` generators can only add energy to it.
-   To these virtual generators we then apply redispatch (bid/offer) costs.
-
-   !!! note
-       This process requires updates to core PyPSA-Eur storage constraints to (a) fix their optimal dispatch correctly and (b) include the virtual generators in the storage energy balance constraint.
+    !!! note
+        This process requires updates to core PyPSA-Eur storage constraints to (a) fix their optimal dispatch correctly and (b) include the virtual generators in the storage energy balance constraint.
 
 2. **Bid/Offer Costs Applied**
+    Generators that deviate from unconstrained dispatch incur bid (decrease) or offer (increase) costs based on technology-specific multipliers.
+    The modified marginal cost becomes:
 
-   Generators that deviate from unconstrained dispatch incur bid (decrease) or offer (increase) costs based on technology-specific multipliers.
-   The modified marginal cost becomes:
-
-   $$
-   MC'_g = \begin{cases}
-   MC_g \times offer\_multiplier & \text{if increase from unconstrained} \\
-   MC_g \times bid\_multiplier & \text{if decrease from unconstrained} \\
-   \end{cases}
-   $$
+    $$
+    MC'_g = \begin{cases}
+    MC_g \times offer\_multiplier & \text{if increase from unconstrained} \\
+    MC_g \times bid\_multiplier & \text{if decrease from unconstrained} \\
+    \end{cases}
+    $$
 
 3. **ETYS Boundary Constraints**
 
-   Transmission boundaries between ETYS regions are constrained to their capabilities:
+    Transmission boundaries between ETYS regions are constrained to their capabilities:
 
-   $$
-   \sum_{line \in boundary} flow_{line} \leq capability_{boundary}
-   $$
+    $$
+    \sum_{line \in boundary} flow_{line} \leq capability_{boundary}
+    $$
 
-   Several transmission lines cross each boundary.
-   Some lines cross several boundaries, such as offshore HVDC lines that connect northern Scotland with central England.
-   The boundary capabilities are scaled in shoulder and summer seasons to reflect the impact of thermal limits on the lines crossing those boundaries.
-   This scaling is configurable and based initially on values defined by NESO in table 2.3 of their [network options assessment methodology](https://www.neso.energy/document/285321/download).
+    Several transmission lines cross each boundary.
+    Some lines cross several boundaries, such as offshore HVDC lines that connect northern Scotland with central England.
+    The boundary capabilities are scaled in shoulder and summer seasons to reflect the impact of thermal limits on the lines crossing those boundaries.
+    This scaling is configurable and based initially on values defined by NESO in table 2.3 of their [network options assessment methodology](https://www.neso.energy/document/285321/download).
 
-   By default, transmission lines are not otherwise constrained to their individual physical capacities.
-   This behaviour can be changed in the configuration so that individual transmission line capacities, as calculated by the PyPSA-Eur workflow, can *also* constrain intra-GB flows.
+    By default, transmission lines are not otherwise constrained to their individual physical capacities.
+    This behaviour can be changed in the configuration so that individual transmission line capacities, as calculated by the PyPSA-Eur workflow, can *also* constrain intra-GB flows.
 
 4. **Rest of Europe**
 
-   At this stage, the operation of assets in the rest of Europe is fixed, with no scope for deviation.
-   In fact, we don't care about distinguishing between European countries, we only care about the bid/offer costs on each interconnector with GB.
-   We assume that GB can fully deviate from the use of these interconnectors as defined in the initial dispatch stage.
-   That is, if it is exporting at full capacity in the optimal dispatch, it can feasibly redispatch to importing at full capacity.
-   We assume that the rest of Europe can absorb this change without a change of redispatch costs along the interconnectors.
+    At this stage, the operation of assets in the rest of Europe is fixed, with no scope for deviation.
+    In fact, we don't care about distinguishing between European countries, we only care about the bid/offer costs on each interconnector with GB.
+    We assume that GB can fully deviate from the use of these interconnectors as defined in the initial dispatch stage.
+    That is, if it is exporting at full capacity in the optimal dispatch, it can feasibly redispatch to importing at full capacity.
+    We assume that the rest of Europe can absorb this change without a change of redispatch costs along the interconnectors.
 
-   Since we only care about the redispatch costs on the interconnectors, we simplify the rest of Europe at this stage to a single node with an infinite store that can inject/remove any quantity of energy from the system at zero additional cost.
+    Since we only care about the redispatch costs on the interconnectors, we simplify the rest of Europe at this stage to a single node with an infinite store that can inject/remove any quantity of energy from the system at zero additional cost.
 
 **Objective**: Minimize redispatch cost
 

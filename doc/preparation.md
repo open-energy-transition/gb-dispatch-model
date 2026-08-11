@@ -35,7 +35,7 @@ Then, the process continues by calculating conventional power plant capacities, 
 The rules [add_electricity][] and [prepare_network][] then tie all the different data inputs
 together into a detailed PyPSA network stored in `networks/base_s_{clusters}_elec.nc`.
 
-## Rule `build_cutout` {#cutout}
+## Rule `build_cutout` {#build_cutout}
 
 ::: build_cutout
 
@@ -44,7 +44,7 @@ together into a detailed PyPSA network stored in `networks/base_s_{clusters}_ele
 
 ::: build_osm_boundaries
 
-## Rule `clean_osm_data`
+## Rule `clean_osm_data` {#clean_osm_data}
 
 ::: clean_osm_data
 
@@ -57,7 +57,7 @@ together into a detailed PyPSA network stored in `networks/base_s_{clusters}_ele
 
 ::: build_tyndp_network
 
-## Rule `base_network` {#base}
+## Rule `base_network` {#base_network}
 
 ::: base_network
 
@@ -66,11 +66,11 @@ together into a detailed PyPSA network stored in `networks/base_s_{clusters}_ele
 ::: build_natura
 
 
-## Rule `build_transmission_projects`
+## Rule `build_transmission_projects` {#build_transmission_projects}
 
 ::: build_transmission_projects
 
-## Rule `build_line_rating`
+## Rule `build_line_rating` {#build_line_rating}
 
 ::: build_line_rating
 
@@ -82,7 +82,7 @@ together into a detailed PyPSA network stored in `networks/base_s_{clusters}_ele
 
 ::: build_bidding_zones
 
-## Rule `build_shapes` {#shapes}
+## Rule `build_shapes` {#build_shapes}
 
 ::: build_shapes
 
@@ -91,7 +91,7 @@ together into a detailed PyPSA network stored in `networks/base_s_{clusters}_ele
 
 ::: build_electricity_demand_base
 
-## Rule `build_electricity_demand` {#electricity_demand}
+## Rule `build_electricity_demand` {#build_electricity_demand}
 
 ::: build_electricity_demand
 
@@ -99,16 +99,16 @@ together into a detailed PyPSA network stored in `networks/base_s_{clusters}_ele
 
 ::: build_hac_features
 
-## Rule `simplify_network` {#simplify}
+## Rule `simplify_network` {#simplify_network}
 
 ::: simplify_network
 
-## Rule `cluster_network` {#cluster}
+## Rule `cluster_network` {#cluster_network}
 
 ::: cluster_network
 
 
-## Rule `build_monthly_prices` {#monthlyprices}
+## Rule `build_monthly_prices` {#build_monthly_prices}
 
 ::: build_monthly_prices
 
@@ -116,33 +116,33 @@ together into a detailed PyPSA network stored in `networks/base_s_{clusters}_ele
 
 ::: build_ship_raster
 
-## Rule `determine_availability_matrix_MD_UA` {#availabilitymatrixmdua}
+## Rule `determine_availability_matrix_MD_UA` {#determine_availability_matrix_MD_UA}
 
 ::: determine_availability_matrix_MD_UA
 
 
-## Rule `determine_availability_matrix` {#renewableprofiles}
+## Rule `determine_availability_matrix` {#determine_availability_matrix}
 
 ::: determine_availability_matrix
 
 
-## Rule `build_renewable_profiles`
+## Rule `build_renewable_profiles` {#build_renewable_profiles}
 
 ::: build_renewable_profiles
 
 
-## Rule `build_hydro_profile` {#hydroprofiles}
+## Rule `build_hydro_profile` {#build_hydro_profile}
 
 ::: build_hydro_profile
 
-## Rule `build_powerplants` {#powerplants}
+## Rule `build_powerplants` {#build_powerplants}
 
 ::: build_powerplants
 
-## Rule `add_electricity` {#electricity}
+## Rule `add_electricity` {#add_electricity}
 
 ::: add_electricity
 
-## Rule `prepare_network` {#prepare}
+## Rule `prepare_network` {#prepare_network}
 
 ::: prepare_network

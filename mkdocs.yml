@@ -64,22 +64,20 @@ nav:
   - Data Sources: gb-model/data_sources.md
 
 - PyPSA-Eur:
-  - Home:
-    - Home: index.md
-    - Getting Started:
-      - Introduction: introduction.md
-      - Installation: installation.md
-      - "Tutorial: Electricity-Only": tutorial.md
-      - "Tutorial: Sector-Coupled": tutorial_sector.md
-    - References:
-      - Release Notes: release_notes.md
-      - Licenses: licenses.md
-      - Validation: validation.md
-      - Limitations: limitations.md
-      - Support: support.md
-      - FAQ: faq.md
-      - Publications: publications.md
-
+  - Home: pypsa_eur.md
+  - Getting Started:
+    - Introduction: introduction.md
+    - Installation: installation.md
+    - "Tutorial: Electricity-Only": tutorial.md
+    - "Tutorial: Sector-Coupled": tutorial_sector.md
+  - References:
+    - Release Notes: release_notes.md
+    - Licenses: licenses.md
+    - Validation: validation.md
+    - Limitations: limitations.md
+    - Support: support.md
+    - FAQ: faq.md
+    - Publications: publications.md
   - Design:
     - Spatial Resolution: spatial_resolution.md
     - Supply and Demand: supply_demand.md

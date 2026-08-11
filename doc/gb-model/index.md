@@ -5,7 +5,7 @@
 
 ## About
 
-gb-dispatch-model is an extension of [PyPSA-Eur](../index.md), used to quantify dispatch decisions in Great Britain under the conditions set out by the UK Future Energy Scenarios.
+gb-dispatch-model is an extension of [PyPSA-Eur](../pypsa_eur.md), used to quantify dispatch decisions in Great Britain under the conditions set out by the UK Future Energy Scenarios.
 
 ## Quick start
 

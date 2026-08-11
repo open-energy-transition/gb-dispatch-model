@@ -16,4 +16,4 @@ Closes # (if applicable).
 - [ ] Changes in configuration options are added in `config/config.GB.yaml`.
 - [ ] Changes in configuration options are documented in `doc/gb-model/configtables/*.csv`.
 - [ ] OET SPDX license header added to all touched files.
-- [ ] Sources of newly added data are documented in `doc/gb-model/data_sources.rst`.
+- [ ] Sources of newly added data are documented in `doc/gb-model/data_sources.md`.
