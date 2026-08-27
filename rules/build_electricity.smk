@@ -767,6 +767,9 @@ rule cluster_network:
         length_factor=config_provider("lines", "length_factor"),
         cluster_mode=config_provider("clustering", "mode"),
         copperplate_regions=config_provider("clustering", "copperplate_regions"),
+        overwrite_custom_onshore_clusters=config_provider(
+            "clustering", "overwrite_custom_onshore_clusters"
+        ),
     message:
         "Clustering network to {wildcards.clusters} clusters"
     script:
