@@ -5,6 +5,8 @@
 
 ## Unreleased
 
+- Fix rule missing param from upstream sync.
+- Pin PyPSA lower bound to v1.2.4 to mitigate energy balance issues in optimisation.
 - `dukes-5.11` top-level config key renamed to `dukes-power-producers` to mitigate documentation parsing issues.
 - Sphinx -> markdown documentation
 - Move Elexon bids and offer data download to data/ folder (#340).
