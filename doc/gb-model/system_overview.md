@@ -268,3 +268,30 @@ To create electricity from hydrogen, a fuel cell or hydrogen gas turbine can be 
 
 !!! info "See also"
     [Hydrogen Subsystem](system_hydrogen.md)
+
+## Cross-cutting assumptions {#system-overview-assumptions}
+
+Each system page carries its own "Key Assumptions" section.
+The assumptions below apply to the model as a whole and are not attributable to any one subsystem.
+
+- **Dispatch only, no investment**: every asset in the model is fixed at its FES capacity for the modelled year (`p_nom_extendable = False` throughout, with `electricity.extendable_carriers` empty).
+  The model answers "how would this system be operated?", never "what should be built?".
+  Consequently an infeasible or inadequate FES capacity mix surfaces as load shedding rather than as new capacity.
+- **One weather year for all future years**: a single reanalysis year (`snapshots`, default 2013) drives renewable capacity factors, the baseline demand profile shape, heat demand and hydro inflow in every modelled year.
+  The leap day is dropped (`snapshots.drop_leap_day`), giving a fixed 8760-hour year.
+  No inter-annual weather variability is captured, so resource adequacy results reflect one particular weather year rather than a distribution.
+- **Perfect foresight, each year in isolation**: every model year is solved as a single annual optimisation with full foresight and no state carried between years.
+- **Cost year**: PyPSA technology-data is read at the `scenario.planning_horizons` cost year (default 2035, described in the configuration as "approx average of the year range for our runs") and the same values are used for every modelled year.
+  This currently only affects technology efficiency, not costs.
+  Costs are derived from the FES workbook (fuel, VOM and carbon costs) and those *do* vary by year.
+- **Scenario scope**: only the FES scenarios listed in `fes.scenarios` are represented, and only for the FES edition given by `fes.fes_year`.
+  Where FES cost data does not carry the modelled scenario names, values are averaged across the scenarios that are present.
+- **Geographic scope**: only the countries in `countries` are modelled, being those covered by the NESO FES European dataset.
+  Flows to and from countries outside this set are not represented, so the modelled European system is smaller and less interconnected than the real one.
+- **Region definition**: GB sub-regions are the result of a manually curated splitting and merging of GSP regions (`region_operations.splits` and `region_operations.merge_groups`), chosen so that region boundaries align with ETYS transmission boundaries.
+  The mapping is fixed and is not derived from the network data, so changing it requires re-deriving the boundary crossings.
+  Northern Ireland is merged into the Ireland bus (`region_operations.add_group_to_neighbour`).
+- **No sector coupling beyond electricity**: heat, transport and hydrogen appear only through their electrical components.
+  Gas, oil, coal, biomass and hydrogen import supply chains are unconstrained and unpriced beyond their per-unit fuel cost, and there is no competition for fuel between the power sector and other sectors.
+- **No policy constraints**: there is no CO₂ budget, renewable target, capacity market or reserve/ancillary service requirement in the optimisation.
+  Carbon appears only as a per-MWh cost on fossil fuel consumption.

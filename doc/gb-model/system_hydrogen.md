@@ -145,7 +145,8 @@ Where regional assignments are missing, capacities are distributed proportionall
 
 **Efficiency**:
 
-Electrolyser efficiency is derived from [PyPSA technology-data](https://github.com/PyPSA/technology-data) (2035 cost year), representing the energy conversion from electricity to hydrogen (lower heating value basis).
+Electrolyser efficiency is derived from the FES WS1 sheet itself, as the ratio of annual hydrogen supplied by networked electrolysis to the annual electricity consumed by networked electrolysis.
+It therefore varies by scenario and by year, and represents a fleet-average conversion efficiency on a lower heating value basis rather than a single technology's nameplate efficiency.
 
 **Operation**:
 
@@ -163,13 +164,10 @@ The hydrogen produced does not appear in the model's hydrogen system but is acco
 
 **Calculation**:
 
-Non-networked electrolysis electricity demand is calculated by dividing the hydrogen production capacity by an assumed electrolysis efficiency (configurable using config option `fes.hydrogen.electrolysis_efficiency`, default 0.7):
+Non-networked electrolysis electricity demand is taken directly from the FES WS1 sheet, selected by the `fes.hydrogen.data_selection.non_networked_electricity_demand` filter (`Category: demand`, `Fuel: Non Networked Electricity`) and converted from TWh to MWh.
+No efficiency assumption is applied, because the FES already reports this quantity as an electricity demand rather than a hydrogen output.
 
-$$
-\text{Electricity Demand} = \frac{\text{H}_2 \text{ Production}}{\text{Efficiency}}
-$$
-
-For GB, this national electricity demand is disaggregated to regions based on the spatial pattern of hydrogen electrolysis capacity, then added to the baseline electricity load in each region.
+For GB, this national electricity demand is disaggregated to regions based on the spatial pattern of hydrogen electrolysis capacity.
 
 ### Hydrogen Storage {#hydrogen-storage}
 
@@ -263,8 +261,14 @@ The hydrogen system is built through a multi-stage data processing pipeline impl
 - **Temporal Profile**: Hydrogen demand is assumed constant across the year due to lack of hourly data
 - **Regionalization**: National hydrogen data is distributed spatially using hydrogen electrolysis capacity as a reference pattern
 - **European Scaling**: European hydrogen infrastructure is synthesised by applying GB demand-to-infrastructure ratios
-- **Off-grid Electrolysis**: Converted to electricity demand using configurable efficiency (`fes.hydrogen.electrolysis_efficiency`, default 0.7)
-- **Technology Data**: Derived from PyPSA technology-data (2035 cost year) for all hydrogen components
+- **Off-grid Electrolysis**: Taken directly from the FES WS1 sheet as an electricity demand (`fes.hydrogen.data_selection.non_networked_electricity_demand`); it is inflexible and its hydrogen output is netted off the modelled hydrogen demand
+- **Electrolysis efficiency**: A single fleet-average value per scenario and year, derived from FES WS1 as networked hydrogen supply divided by networked electricity demand. It is applied to every electrolyser in every region, with no part-load efficiency curve and no minimum load
+- **Technology Data**: Costs, lifetimes and storage parameters are derived from PyPSA technology-data at the planning horizon cost year (default 2035) for all hydrogen components
+- **Unlimited purchased hydrogen**: Each region with hydrogen generation capacity receives a `purchased H2` generator of infinite capacity, priced at the mean FES fuel cost of the hydrogen plants at that bus. Hydrogen-fired generation is therefore never limited by hydrogen availability, and the model has no upstream constraint on hydrogen imports, reforming or biomass gasification
+- **One-way blending**: Grid-produced hydrogen can flow to the blended hydrogen bus without limit, but purchased hydrogen cannot flow back to serve the hydrogen load or to fill hydrogen storage
+- **No hydrogen network**: There is no hydrogen transport between regions. Each region's hydrogen balance must be met from its own electrolysis, its own storage, or purchased hydrogen
+- **Lossless, unconstrained storage**: Hydrogen stores have no standing loss, no compression energy penalty and no charge/discharge power rating; they are cyclic over the modelled year
+- **European hydrogen disabled by default**: `fes.hydrogen.enable_eur_h2_bus` is `false`, so outside GB only hydrogen turbines and fuel cells exist, supplied entirely by purchased hydrogen at the FES fuel price
 
 !!! info "See also"
     **Related Documentation**:

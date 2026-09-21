@@ -333,3 +333,18 @@ The redispatch workflow is built through `rules/gb-model/redispatch.smk`.
 - Electrolyser and demand-side response load profiles can be adapted at zero cost in response to redispatched generation.
 - Nuclear power is not able to redispatch due to ramping limitations.
 - Renewable generators that were curtailed in the dispatch run may _increase_ there generation (bid on) during redispatch.
+- Kirchhoff Voltage Law constraints are removed in **both** stages, so neither optimisation represents linearised power flow.
+  Intra-GB flows are a transport problem bounded by the ETYS boundary capabilities (and, optionally, individual line ratings); power does not split between parallel paths according to impedance, and loop flows are not represented.
+- Each modelled year is solved independently with perfect foresight over the full year at hourly resolution.
+  There is no rolling horizon (`solving.options.rolling_horizon: false`), no carry-over of storage state between years, and no forecast error between the day-ahead and balancing stages — the only thing that changes between the two stages is the imposed network constraint.
+- Redispatch volumes are bounded only by each asset's remaining headroom above, or output below, its stage 1 dispatch.
+  No ramp rates, minimum notice periods, minimum non-zero bid/offer sizes or dynamic parameters limit how fast or how often an asset can be redispatched.
+- A single bid multiplier and a single offer multiplier is derived per carrier, as the mean of quarterly ratios of historical Elexon bid/offer prices to modelled historical marginal costs over `redispatch.elexon.years` (default 2020–2024).
+  These multipliers are held constant across all future years and applied to modelled future marginal costs, i.e. balancing market premia are assumed to scale proportionally with short-run marginal cost and market behaviour is assumed unchanged.
+  Prices are averaged across bid/offer pair IDs, so bid/offer stack depth is not represented.
+- Load shedding is free to move in the redispatch stage at the value of lost load (`fes_costs.voll`) with no bid/offer cost attached, and its cost is counted within the reported constraint cost.
+- Interconnector losses are zero throughout (see [Transmission Components](system_transmission.md#system-transmission-assumptions)), so the $\eta_\text{loss}$ terms in the bid/offer equations above evaluate to zero.
+- The reported total constraint cost is the undiscounted sum over `redispatch.year_range_incl` (default 2025–2044) plus the final year's cost repeated `redispatch.constraint_cost_extra_years` times (default 20).
+  All years are therefore weighted equally, and costs from different FES cost vintages are summed in nominal terms.
+- The redispatch penalty (`redispatch.redispatch_profit_mitigation_penalty`) is a non-monetary term added to the objective only to suppress simultaneous offsetting bids and offers.
+  Its value is an assumption that trades off residual excess redispatch against numerical conditioning, and it does not appear in any reported cost.

@@ -207,10 +207,11 @@ Each generator in the powerplants table is enriched with cost and technical para
 Marginal costs are assembled as:
 
 $$
-c_\text{marginal} = c_\text{CO2} \cdot I_\text{CO2} \cdot \frac{c_\text{fuel}}{\eta} + c_\text{VOM}
+c_\text{marginal} = c_\text{VOM} + \frac{c_\text{fuel} + c_\text{CO2} \cdot I_\text{CO2}}{\eta}
 $$
 
 where $\eta$ is efficiency, $c_\text{fuel}$ thermal price, $c_\text{VOM}$ variable O&M, $c_\text{CO2}$ carbon price, and $I_\text{CO2}$ the CO₂ intensity.
+The carbon term is set to zero for plants in the `CCS` set.
 
 ## Configuration {#generators-configuration}
 
@@ -317,6 +318,14 @@ This hierarchy preserves known regional concentrations (e.g., offshore wind clus
 - **Cost averaging**: FES fuel and VOM costs are averaged across scenarios due to naming changes between FES editions; this has a small effect (≤ ~10% for battery VOM) on marginal costs
 - **Infinite fuel supply**: Fuel feedstocks (gas, coal, oil, biomass, etc.) are assumed to be available in unlimited quantities at the modelled marginal cost; no supply constraints or fuel capacity limits are enforced
 - **European generators**: European countries use the PyPSA-Eur conventional generator database; availability fractions are applied outside GB by default (disable via `entsoe_unavailability.extend_to_eur_regions`), but CHP constraints are not applied outside GB
+- **No unit commitment**: generators are continuously dispatchable between their `p_min_pu` and `p_max_pu`; no start-up/shut-down costs, minimum up/down times, minimum stable generation levels or ramp rate limits are applied
+- **Nuclear dispatchability**: rather than unit commitment, nuclear output is bounded over the year between `conventional.nuclear.min_annual_capacity_factor` (default 0.70) and `conventional.nuclear.max_annual_capacity_factor` (default 0.87) of the fleet's annual maximum output. Within the year it remains free to vary hour-to-hour
+- **CCS carbon price exemption**: plants with `set == CCS` pay no carbon price on their fuel input, i.e. capture is treated as complete. The energy penalty and operating cost of capture are only represented insofar as they are embedded in the FES AS.1 VOM/fuel figures for the CCS technologies
+- **Carbon pricing only**: emissions are internalised solely through the FES AS.7 carbon price (averaged across scenarios). There is no CO₂ emissions cap or budget constraint on the system
+- **Currency conversion**: PyPSA technology-data values are converted to GBP at fixed 2021 annual-average exchange rates (`fes_costs.GBP_to_EUR`, `fes_costs.GBP_to_USD`). No inflation adjustment or exchange-rate trajectory is applied, so costs from different source vintages are mixed in nominal terms
+- **Uniform cost per carrier for renewables**: wind, solar and hydro generators attached via the PyPSA-Eur helpers take a single cost and efficiency value per carrier — the first row of that carrier in the powerplants table — so there is no cost variation between regions or sites
+- **Single weather year**: capacity factor profiles for every modelled future year come from the one reanalysis year configured under `snapshots` (default 2013), with the leap day dropped (`snapshots.drop_leap_day`) to give a fixed 8760-hour year. Inter-annual weather variability and correlations between weather and future demand are therefore not represented
+- **Outages smeared across the month**: ENTSO-E-derived availability is applied as a monthly-constant scaling of `p_max_pu` for every generator of a carrier, so outages reduce output slightly in all hours rather than removing discrete units for discrete periods. Availability is applied multiplicatively on top of the renewable capacity factor profiles
 
 !!! info "See also"
     **Related Documentation**:

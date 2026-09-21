@@ -159,6 +159,11 @@ The storage system is built through a pipeline implemented in `rules/gb-model/st
 - **Fixed capacity**: All storage assets are non-extendable (`p_nom_extendable = False`); the model dispatches within given capacities and cannot invest in new storage
 - **Round-trip efficiency**: Cycle efficiency is split symmetrically between charging and discharging ($\eta_\text{store} = \eta_\text{dispatch} = \sqrt{\eta}$)
 - **PHS energy capacity**: Sized from PyPSA-Eur ERA5-derived `hydro_capacities.csv`; no GB-specific reservoir volume data is used
+- **Annual cyclic state of charge**: every storage asset is cyclic over the modelled year (`cyclic_state_of_charge` / `e_cyclic`), so the state of charge at the end of the year must equal the state of charge at the start. Nothing is carried between modelled years, and the constraint can bind artificially in the first and last hours of the year
+- **No standing losses**: `standing_loss` is left at the PyPSA default of zero for all storage units and stores, so energy held in storage does not decay over time; only the round-trip conversion loss applies
+- **Symmetric power rating**: the FES (dis)charge capacity is applied unchanged as both the charging and discharging limit, and there is no separate grid connection limit
+- **Uniform duration per carrier and year**: `max_hours` is computed from the GB national $e_\text{nom}/p_\text{nom}$ ratio in FES ES1 and averaged over the carrier, then applied to every unit of that carrier in every region (GB and Europe alike)
+- **No cycling costs or degradation**: storage assets carry only their FES VOM as a marginal cost; no degradation, cycle-life limits or state-of-charge-dependent efficiency are represented
 
 !!! info "See also"
     **Related Documentation**:
