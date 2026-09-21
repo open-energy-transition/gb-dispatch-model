@@ -5,6 +5,8 @@
 
 ## Unreleased
 
+- Fix bus of off-grid electrolysis (was `H2` bus, now `AC` bus).
+- Remove unused and outdated electrolysis demand generation script.
 - Fix rule missing param from upstream sync.
 - Pin PyPSA lower bound to v1.2.4 to mitigate energy balance issues in optimisation.
 - `dukes-5.11` top-level config key renamed to `dukes-power-producers` to mitigate documentation parsing issues.
