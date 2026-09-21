@@ -163,6 +163,14 @@ The heat system pipeline was built based on several key processing steps as foll
 - The share of district heating is assumed from what is provided in the PyPSA-Eur workflow.
 - District heating electricity demand is assumed to be auxiliary demand from district system, not the electricity required for heating.
 - the `ASHP + resistive heating hybrid` technology is categorised as ASHP since that is what is required to match the regionalised heat pump electricity demand in sheet `BB1` to the per-technology total demand in sheet `ED3`.
+  The same applies to the `ASHP + hydrogen boiler` and `ASHP + biofuel boiler` hybrids, so the non-electric half of hybrid operation is not deducted from the electricity load.
+- The district heating share is held at its 2021 value for every modelled future year, since the PyPSA-Eur source data ends in 2021.
+- The ASHP coefficient of performance (COP) is a population-weighted average of the PyPSA-Eur urban central, urban decentral and rural profiles at each node.
+  The GSHP COP uses the rural profile alone, without population weighting, to avoid dividing by zero in regions with no rural population.
+  Resistive heating is assigned a fixed COP of 1.
+- The hourly heat demand shape comes from BDEW representative profiles driven by the reference weather year (default 2013) and is identical in every modelled future year; heat demand does not respond to a changing climate.
+- Buildings have no thermal inertia in the model: heat is represented purely as an electricity load, and the only flexibility available is the sector's DSR store.
+- Heat pumps are not capacity-constrained. The load is the electricity required to meet the FES heat demand at the modelled COP, with no check that the installed heat pump fleet could deliver the implied peak.
 
 !!! info "See also"
     **Related Documentation**:
