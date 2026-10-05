@@ -196,6 +196,14 @@ The demand and DSR workflow was built based on several key processing steps as f
 - Direct transmission demands do not vary in time.
 - T&D losses follow the baseline electricity demand profile shape.
 - Electrification of end-use energy consumption in European countries occurs at the same rate as in GB.
+- DSR store energy capacity is the FES peak-shaving capacity multiplied by the length of the DSR window (`fes.gb.flexibility.dsr_hours`), so widening a window increases both the hours over which load can move *and* the total energy that can be shifted.
+- DSR stores have no standing losses, and the shift and reverse links can both run at the full FES peak-shaving capacity whenever the DSR window is open.
+- European DSR windows are the GB windows of `fes.gb.flexibility.dsr_hours` shifted by each country's standard UTC offset; no country-specific behavioural differences are represented.
+- Additional demand (direct transmission connections and T&D losses) has no DSR applied to it.
+- A load-shedding generator of unlimited capacity is attached to every AC bus, priced at the value of lost load `fes_costs.voll` (default £6000/MWh). GB load-shedding generators are *removed* before the unconstrained dispatch stage, so GB demand must be met in stage 1, but they are retained in the redispatch stage where shedding carries no bid/offer cost. European load-shedding generators are repriced to the most expensive European dispatchable plant plus `fes.eur.load_shedding_cost_above_marginal` so that they always set the marginal price when used.
+- Where the simulated historical resistive heating demand exceeds the historical baseline electricity demand in an hour, the net baseline is clipped to zero before the profile is normalised (the share of hours affected is logged at runtime).
+- Annual demand is spread over a fixed 8760-hour year (`snapshots.drop_leap_day: true`); the direct transmission baseload and the T&D loss totals are divided by 8760 rather than the true hour count of the modelled calendar year.
+- The split of European annual demand between load types uses the PyPSA-Eur energy balances for `energy.energy_totals_year` (default 2013) as the starting sectoral shares.
 
 !!! info "See also"
     **Related Documentation**:

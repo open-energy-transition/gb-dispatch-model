@@ -236,6 +236,9 @@
     To find out more about the assumptions, check the "key assumptions" section of each system sub-page.
     For instance, key assumptions of the hydrogen subsystem can be found [here](system_hydrogen.md#system-hydrogen-assumptions).
 
+    Assumptions that apply to the model as a whole — rather than to one subsystem — are listed under
+    [cross-cutting assumptions](system_overview.md#system-overview-assumptions).
+
 ??? question "Q: How much do you rely on the PyPSA-Eur workflow to prepare input data?"
 
     Although most of the data used in this workflow is from separate sources to the "parent" PyPSA-Eur workflow, we still use several parts of it to prepare our PyPSA network and to fill data gaps:

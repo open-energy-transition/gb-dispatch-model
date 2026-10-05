@@ -202,6 +202,10 @@ The EV system is built through a pipeline implemented across `rules/gb-model/ev.
 - **V2G energy**: Storage capacity is a fixed multiple of V2G power capacity (ratio 7.14 from FES 2021); no temporal trend is applied
 - **DSR window**: Smart charging flexibility is available across most of the day (default 08:00–06:00)
 - **Profile scaling**: Simple annual scaling is applied first; a gamma power transformation is used only when simple scaling cannot satisfy the peak constraint within `relative_peak_tolerance` (default 5%)
+- **Lossless V2G**: Both V2G links (EV bus → V2G bus, V2G bus → AC bus) have an efficiency of 1 and the V2G store has no standing loss, so V2G round-trip efficiency is 100%. No battery degradation cost, cycle limit or payment to vehicle owners is applied
+- **V2G cycles annually, not daily**: Unlike the DSR stores, the V2G store is cyclic over the whole modelled year, so V2G energy can in principle be shifted seasonally. It is bounded in each hour only by the vehicle availability profile and the V2G power rating
+- **No shared vehicle battery**: The unmanaged load, the EV DSR store and the V2G store are independent virtual components with no common state of charge. Smart charging and V2G therefore do not compete for the same stored energy, and neither is tied to a driving-pattern energy balance
+- **Availability profile**: The PyPSA-Eur EV availability profile — also derived from German traffic data — constrains both the V2G links and the EV DSR links; it is applied identically across all GB regions and European countries
 
 !!! info "See also"
     **Related Documentation**:
