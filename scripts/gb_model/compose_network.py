@@ -1061,7 +1061,7 @@ def add_H2(
         "Load",
         demand_fixed.index,
         suffix=" Electricity for off-grid electrolysis",
-        bus=demand_fixed.index + " Grid H2",
+        bus=demand_fixed.index,
         carrier="AC",
         p_set=demand_fixed.p_set / n.snapshot_weightings.objective.sum(),
     )
