@@ -77,7 +77,7 @@ jobs:
     # diff against the master baseline artifact here instead
     - name: Download master baseline (fork PRs only)
       if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
-      uses: dawidd6/action-download-artifact@v27
+      uses: dawidd6/action-download-artifact@v28
       with:
         workflow: security-scan.yaml
         name: master-sarif
