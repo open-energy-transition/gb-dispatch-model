@@ -30,7 +30,7 @@ jobs:
 
     - name: Generate SBOM # (master only)
       if: github.ref == 'refs/heads/master'
-      uses: anchore/sbom-action@v0.24.3
+      uses: anchore/sbom-action@v0.24.4
       with:
         path: ".pixi/envs/gb-model"
         output-file: sbom.spdx.json
@@ -38,7 +38,7 @@ jobs:
 
     - name: Vulnerability Scan
       id: scan
-      uses: anchore/scan-action@v7.4.2
+      uses: anchore/scan-action@v7.4.3
       with:
         path: ".pixi/envs/gb-model"
         fail-build: false
